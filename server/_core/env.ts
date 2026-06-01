@@ -7,6 +7,11 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // Own Google Maps key (preferred). Falls back to the Manus forge proxy when unset.
+  mapsApiKey: process.env.GOOGLE_MAPS_API_KEY ?? "",
+  // Webhook for ops/central alerts (Slack, email gateway, own system). Preferred
+  // over the Manus notification service.
+  ownerWebhookUrl: process.env.OWNER_WEBHOOK_URL ?? "",
   vapidPublicKey: process.env.VITE_VAPID_PUBLIC_KEY ?? "",
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? "",
 };

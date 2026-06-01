@@ -86,16 +86,24 @@ declare global {
   }
 }
 
-const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
+// Preferred: our own Google Maps browser key (loads directly from Google).
+const OWN_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
+// Fallback: legacy Manus forge proxy.
+const FORGE_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
 const FORGE_BASE_URL =
   import.meta.env.VITE_FRONTEND_FORGE_API_URL ||
   "https://forge.butterfly-effect.dev";
-const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
+
+const MAPS_JS_BASE = OWN_MAPS_KEY
+  ? "https://maps.googleapis.com"
+  : `${FORGE_BASE_URL}/v1/maps/proxy`;
+const MAPS_API_KEY = OWN_MAPS_KEY || FORGE_KEY;
+const MAP_ID = (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined) || "DEMO_MAP_ID";
 
 function loadMapScript() {
   return new Promise(resolve => {
     const script = document.createElement("script");
-    script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry`;
+    script.src = `${MAPS_JS_BASE}/maps/api/js?key=${MAPS_API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry`;
     script.async = true;
     script.crossOrigin = "anonymous";
     script.onload = () => {
@@ -138,7 +146,7 @@ export function MapView({
       fullscreenControl: true,
       zoomControl: true,
       streetViewControl: true,
-      mapId: "DEMO_MAP_ID",
+      mapId: MAP_ID,
     });
     if (onMapReady) {
       onMapReady(map.current);

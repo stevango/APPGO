@@ -14,24 +14,37 @@ import { ENV } from "./env";
 // ============================================================================
 
 type MapsConfig = {
+  // "direct" → call Google Maps directly with our own key.
+  // "forge"  → legacy Manus proxy (kept as a fallback).
+  mode: "direct" | "forge";
   baseUrl: string;
   apiKey: string;
 };
 
 function getMapsConfig(): MapsConfig {
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
-
-  if (!baseUrl || !apiKey) {
-    throw new Error(
-      "Google Maps proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
-    );
+  // Preferred: our own Google Maps API key (fully independent of Manus).
+  if (ENV.mapsApiKey) {
+    return {
+      mode: "direct",
+      baseUrl: "https://maps.googleapis.com",
+      apiKey: ENV.mapsApiKey,
+    };
   }
 
-  return {
-    baseUrl: baseUrl.replace(/\/+$/, ""),
-    apiKey,
-  };
+  // Fallback: Manus forge proxy (legacy).
+  const baseUrl = ENV.forgeApiUrl;
+  const apiKey = ENV.forgeApiKey;
+  if (baseUrl && apiKey) {
+    return {
+      mode: "forge",
+      baseUrl: baseUrl.replace(/\/+$/, ""),
+      apiKey,
+    };
+  }
+
+  throw new Error(
+    "Maps not configured: set GOOGLE_MAPS_API_KEY (recommended) or the Manus forge credentials."
+  );
 }
 
 // ============================================================================
@@ -56,10 +69,11 @@ export async function makeRequest<T = unknown>(
   params: Record<string, unknown> = {},
   options: RequestOptions = {}
 ): Promise<T> {
-  const { baseUrl, apiKey } = getMapsConfig();
+  const { mode, baseUrl, apiKey } = getMapsConfig();
 
-  // Construct full URL: baseUrl + /v1/maps/proxy + endpoint
-  const url = new URL(`${baseUrl}/v1/maps/proxy${endpoint}`);
+  // Direct Google calls hit the endpoint as-is; the legacy forge proxy prefixes it.
+  const fullPath = mode === "direct" ? endpoint : `/v1/maps/proxy${endpoint}`;
+  const url = new URL(`${baseUrl}${fullPath}`);
 
   // Add API key as query parameter (standard Google Maps API authentication)
   url.searchParams.append("key", apiKey);

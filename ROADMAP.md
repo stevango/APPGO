@@ -25,13 +25,15 @@ Substituído o login OAuth da Manus por **e-mail + senha** próprio, reaproveita
 - Testes: `server/auth.password.test.ts`
 - **Pendência operacional:** rodar `pnpm db:push` no seu banco MySQL para criar a coluna `passwordHash`.
 
-### Fase 2 — Desacoplar serviços da Manus
-Hoje ainda dependem da Manus (em `server/_core`): LLM, mapa/geocodificação, storage (S3), notificações e o runtime do Vite.
-- Mapa/geocodificação reversa → Google Maps Geocoding API direta (chave própria) ou Mapbox
-- Storage → bucket S3 próprio (o código já usa `@aws-sdk/client-s3`)
-- Notificações → manter Web Push (VAPID, já implementado) como canal principal
-- LLM/assistente (AIChatBox) → opcional; ligar a um provedor próprio ou desativar na v1
-- Remover `vite-plugin-manus-runtime` e dependências `__manus__`
+### 🟢 Fase 2 — Desacoplar serviços da Manus — EM ANDAMENTO
+- ✅ **Mapa/geocodificação**: `server/_core/map.ts` agora usa Google Maps direto com `GOOGLE_MAPS_API_KEY` (proxy Manus só como fallback)
+- ✅ **Mapa no frontend**: `Map.tsx` carrega o Google Maps com `VITE_GOOGLE_MAPS_API_KEY` próprio
+- ✅ **Notificações da central**: `notifyOwner` envia para `OWNER_WEBHOOK_URL` (Slack/e-mail/seu sistema), sem derrubar o app quando ausente
+- ✅ **Runtime da Manus removido**: tirado `vite-plugin-manus-runtime` — `index.html` caiu de ~368KB para ~1.4KB
+- ✅ **Web Push (VAPID)** já é próprio e segue como canal principal de push
+- ⏳ Storage S3 → apontar para bucket próprio (código já usa `@aws-sdk/client-s3`; falta `.env`)
+- ⏳ LLM/assistente (AIChatBox) → ligar a provedor próprio ou desativar na v1
+- ⏳ Auth OAuth Manus (`server/_core/oauth.ts`) → já substituído pelo login e-mail/senha; rota OAuth pode ser removida
 
 ### Fase 3 — Integração do rastreador (coração do produto)
 - Definir a API/protocolo do rastreador do cliente (REST da plataforma, ou protocolo GPS tipo GT06/Suntech via Traccar)
@@ -76,10 +78,18 @@ VITE_APP_ID=go-app                                # identificador do app
 VITE_VAPID_PUBLIC_KEY=...
 VAPID_PRIVATE_KEY=...
 
-# Mapa (Fase 2)
-GOOGLE_MAPS_API_KEY=...
+# Mapa — Google Maps próprio
+GOOGLE_MAPS_API_KEY=...            # backend (geocodificação)
+VITE_GOOGLE_MAPS_API_KEY=...       # frontend (mapa no navegador/app)
+VITE_GOOGLE_MAPS_MAP_ID=...        # opcional (mapId p/ marcadores avançados)
 
-# Storage S3 próprio (Fase 2) — se usado
+# Alertas da central (opcional) — webhook próprio (Slack/e-mail/seu sistema)
+OWNER_WEBHOOK_URL=https://...
+
+# App nativo (Capacitor) — URL do backend de produção
+VITE_API_URL=https://api.seu-dominio.com
+
+# Storage S3 próprio (se usado)
 AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
 ```

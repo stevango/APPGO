@@ -68,18 +68,30 @@ export async function notifyOwner(
 ): Promise<boolean> {
   const { title, content } = validatePayload(payload);
 
-  if (!ENV.forgeApiUrl) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Notification service URL is not configured.",
-    });
+  // Preferred: own webhook (Slack, email gateway, ops system).
+  if (ENV.ownerWebhookUrl) {
+    try {
+      const response = await fetch(ENV.ownerWebhookUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title, content, text: `${title}\n${content}` }),
+      });
+      if (!response.ok) {
+        console.warn(`[Notification] Webhook failed (${response.status} ${response.statusText})`);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.warn("[Notification] Error calling webhook:", error);
+      return false;
+    }
   }
 
-  if (!ENV.forgeApiKey) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Notification service API key is not configured.",
-    });
+  // Fallback: Manus notification service (legacy). Returns false (no throw) when
+  // unconfigured so the app keeps working off-Manus.
+  if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
+    console.warn("[Notification] No notification channel configured (set OWNER_WEBHOOK_URL).");
+    return false;
   }
 
   const endpoint = buildEndpointUrl(ENV.forgeApiUrl);
