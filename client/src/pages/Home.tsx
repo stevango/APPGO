@@ -3,10 +3,11 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
   MapPin, Lock, Shield, AlertTriangle, Wrench, Clock,
-  Car, Signal, Battery, Wifi, ChevronRight, BatteryWarning, X, Zap, Gauge, Share2,
+  Car, Signal, Battery, Wifi, ChevronRight, BatteryWarning, X, Zap, Gauge, Share2, Power,
   Home as HomeIcon, Heart, PawPrint, DollarSign, Building2, Users, MessageCircle, Phone
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BrandMark, LicensePlate } from "@/lib/vehicle";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -344,19 +345,21 @@ function VehicleCard({
       }`}
     >
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3.5">
-          <div className="w-[52px] h-[52px] bg-gradient-to-br from-[#243FF7]/10 to-[#243FF7]/5 rounded-2xl flex items-center justify-center">
-            <Car className="w-6 h-6 text-[#243FF7]" />
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="w-[58px] h-[58px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl flex items-center justify-center border border-gray-100 shrink-0 overflow-hidden">
+            <BrandMark brand={vehicle.brand} className="w-full h-full" />
           </div>
-          <div>
-            <h3 className="font-bold text-[#111111] text-[15px] tracking-tight">
+          <div className="min-w-0">
+            <h3 className="font-bold text-[#111111] text-[15px] tracking-tight truncate">
               {vehicle.brand} {vehicle.model}
             </h3>
-            <p className="text-sm text-gray-400 font-mono tracking-wider mt-0.5">{vehicle.plate}</p>
+            <div className="mt-1.5">
+              <LicensePlate plate={vehicle.plate} size="sm" />
+            </div>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1.5">
-          <div className="flex items-center gap-1.5">
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${vehicle.trackerStatus === "online" ? "bg-green-50" : "bg-red-50"}`}>
             <div className={`w-2 h-2 rounded-full ${vehicle.trackerStatus === "online" ? "bg-green-500 pulse-online" : "bg-red-400"}`} />
             <span className={`text-[11px] font-semibold ${vehicle.trackerStatus === "online" ? "text-green-600" : "text-red-500"}`}>
               {vehicle.trackerStatus === "online" ? "Online" : "Offline"}
@@ -375,7 +378,25 @@ function VehicleCard({
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-2 text-gray-400">
+      {/* Speed + ignition mini-stats for a richer, "live" feel */}
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
+          <Gauge className="w-4 h-4 text-[#243FF7] shrink-0" />
+          <div className="leading-tight">
+            <p className="text-[10px] text-gray-400 font-medium">Velocidade</p>
+            <p className="text-[13px] font-bold text-[#111111]">{vehicle.speed ?? 0} <span className="text-[10px] font-medium text-gray-400">km/h</span></p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
+          <Power className={`w-4 h-4 shrink-0 ${vehicle.ignition ? "text-green-500" : "text-gray-400"}`} />
+          <div className="leading-tight">
+            <p className="text-[10px] text-gray-400 font-medium">Ignição</p>
+            <p className="text-[13px] font-bold text-[#111111]">{vehicle.ignition ? "Ligada" : "Desligada"}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-center gap-2 text-gray-400">
         <MapPin className="w-3.5 h-3.5 shrink-0" />
         <span className="text-[12px] truncate flex-1 leading-tight">
           {vehicle.lastAddress || "Localização não disponível"}
