@@ -3,7 +3,7 @@ import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, Ch
 import { useLocation } from "wouter";
 import { useState, useCallback, useEffect, useRef } from "react";
 import L from "leaflet";
-import { MapView, createArrowMarker, createCircle, createPolyline, fitToPoints } from "@/components/Map";
+import { MapView, createArrowMarker, updateArrowMarker, createCircle, createPolyline, fitToPoints } from "@/components/Map";
 
 export default function Tracking() {
   const [, setLocation] = useLocation();
@@ -22,25 +22,33 @@ export default function Tracking() {
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   const handleMapReady = useCallback((map: L.Map) => {
     mapRef.current = map;
-    if (vehicle?.lastLatitude && vehicle?.lastLongitude) {
-      const lat = parseFloat(String(vehicle.lastLatitude));
-      const lng = parseFloat(String(vehicle.lastLongitude));
-      map.setView([lat, lng], 16);
+    setMapReady(true);
+  }, []);
 
+  // Create the marker once the map AND vehicle position are both available,
+  // then keep it moving as the position updates (real tracker or demo).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    if (!vehicle?.lastLatitude || !vehicle?.lastLongitude) return;
+    const lat = parseFloat(String(vehicle.lastLatitude));
+    const lng = parseFloat(String(vehicle.lastLongitude));
+
+    if (!markerRef.current) {
+      map.setView([lat, lng], 16);
       markerRef.current = createArrowMarker(map, { lat, lng }, vehicle.heading || 0, {
         title: `${vehicle.brand} ${vehicle.model}`,
       });
-
-      createCircle(map, { lat, lng }, 30, {
-        fillOpacity: 0.08,
-        strokeOpacity: 0.2,
-        weight: 1,
-      });
+      createCircle(map, { lat, lng }, 30, { fillOpacity: 0.08, strokeOpacity: 0.2, weight: 1 });
+    } else {
+      updateArrowMarker(markerRef.current, { lat, lng }, vehicle.heading || 0);
+      map.panTo([lat, lng], { animate: true, duration: 0.8 });
     }
-  }, [vehicle]);
+  }, [mapReady, vehicle?.lastLatitude, vehicle?.lastLongitude, vehicle?.heading, vehicle?.brand, vehicle?.model]);
 
   // Draw route when routePoints change
   useEffect(() => {
@@ -75,6 +83,21 @@ export default function Tracking() {
       polylineRef.current = null;
     }
   }, [showRoute]);
+
+  // Demo mode: drive the simulated vehicle in real time while this screen is open.
+  const utils = trpc.useUtils();
+  const tickMutation = trpc.demo.tick.useMutation({
+    onSuccess: () => {
+      utils.vehicles.list.invalidate();
+      if (showRoute) utils.routeHistory.list.invalidate();
+    },
+  });
+  useEffect(() => {
+    if (!vehicle?.isDemo) return;
+    const id = setInterval(() => tickMutation.mutate(), 4000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vehicle?.isDemo, showRoute]);
 
   function getTrackerModeLabel(mode: string | null | undefined) {
     switch (mode) {

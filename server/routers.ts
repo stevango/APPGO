@@ -8,6 +8,7 @@ import { nanoid } from "nanoid";
 import * as db from "./db";
 import { hashPassword, verifyPassword, generateEmailOpenId, issueSessionCookie } from "./auth";
 import { rateLimit, getClientIp } from "./rateLimit";
+import { seedDemoVehicle, tickDemoVehicle } from "./demo";
 
 // Auth abuse protection (per-instance, in-memory).
 const LOGIN_MAX_ATTEMPTS = 10;
@@ -101,6 +102,27 @@ export const appRouter = router({
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
+    }),
+  }),
+
+  demo: router({
+    status: protectedProcedure.query(async ({ ctx }) => {
+      const vehicle = await db.getUserDemoVehicle(ctx.user.id);
+      return { enabled: !!vehicle, vehicleId: vehicle?.id ?? null };
+    }),
+    enable: protectedProcedure.mutation(async ({ ctx }) => {
+      const vehicleId = await seedDemoVehicle(ctx.user.id);
+      return { success: true, vehicleId } as const;
+    }),
+    disable: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.deleteDemoVehicleData(ctx.user.id);
+      return { success: true } as const;
+    }),
+    // Advances the simulated vehicle; called periodically by the client while
+    // a map screen is open so the marker and route move in real time.
+    tick: protectedProcedure.mutation(async ({ ctx }) => {
+      const pos = await tickDemoVehicle(ctx.user.id);
+      return { success: !!pos, position: pos } as const;
     }),
   }),
 

@@ -155,6 +155,13 @@
 .page-enter {
   animation: page-slide-in 280ms var(--ease-out-expo) forwards;
 }
+.animate-go-icon {
+  animation: go-icon-pulse 1.4s ease-in-out infinite;
+}
+@keyframes go-icon-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
 @keyframes page-slide-in {
   from {
     /* Start almost fully opaque so the gray layout background never shows

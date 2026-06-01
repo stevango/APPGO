@@ -7,6 +7,7 @@ import Onboarding from "./pages/Onboarding";
 import MobileLayout from "./components/MobileLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { LoadingSplash, SplashScreen } from "./components/SplashScreen";
+import PageLoader from "./components/PageLoader";
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
 
 // Lazy-loaded pages: each becomes its own chunk, so the initial load only ships
@@ -32,7 +33,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 function AuthenticatedApp() {
   return (
     <MobileLayout>
-      <Suspense fallback={<LoadingSplash />}>
+      <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/tracking" component={Tracking} />
@@ -77,7 +78,7 @@ function Router() {
 
   if (!isAuthenticated) {
     return (
-      <Suspense fallback={<LoadingSplash />}>
+      <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/shared/:token" component={SharedView} />
           <Route><Onboarding /></Route>
@@ -94,7 +95,7 @@ function Router() {
           onFinish={() => setShowSplash(false)}
         />
       )}
-      <Suspense fallback={<LoadingSplash />}>
+      <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/shared/:token" component={SharedView} />
           <Route><AuthenticatedApp /></Route>

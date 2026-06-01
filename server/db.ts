@@ -151,6 +151,31 @@ export async function getUserVehicles(userId: number) {
   return db.select().from(vehicles).where(eq(vehicles.userId, userId));
 }
 
+export async function getUserDemoVehicle(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(vehicles)
+    .where(and(eq(vehicles.userId, userId), eq(vehicles.isDemo, true)))
+    .limit(1);
+  return result[0];
+}
+
+/** Remove a demo vehicle and all data attached to it (keeps the user account). */
+export async function deleteDemoVehicleData(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const vehicle = await getUserDemoVehicle(userId);
+  if (!vehicle) return;
+  const vehicleId = vehicle.id;
+  await db.delete(routeHistory).where(eq(routeHistory.vehicleId, vehicleId));
+  await db.delete(trips).where(eq(trips.vehicleId, vehicleId));
+  await db.delete(geofences).where(eq(geofences.vehicleId, vehicleId));
+  await db.delete(notifications).where(eq(notifications.vehicleId, vehicleId));
+  await db.delete(vehicles).where(eq(vehicles.id, vehicleId));
+}
+
 export async function getVehicleById(vehicleId: number) {
   const db = await getDb();
   if (!db) return undefined;

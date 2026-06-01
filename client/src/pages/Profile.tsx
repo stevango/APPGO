@@ -4,9 +4,10 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import {
   ChevronLeft, User, Car, CreditCard, Shield, Bell,
-  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2
+  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -37,6 +38,24 @@ export default function Profile() {
       toast.error("Não foi possível excluir a conta. Tente novamente.");
     },
   });
+
+  const demoStatus = trpc.demo.status.useQuery();
+  const enableDemo = trpc.demo.enable.useMutation({
+    onSuccess: async () => {
+      toast.success("Modo demonstração ativado! Veja em Rastrear.");
+      await Promise.all([utils.demo.status.invalidate(), utils.vehicles.list.invalidate()]);
+    },
+    onError: () => toast.error("Não foi possível ativar a demonstração."),
+  });
+  const disableDemo = trpc.demo.disable.useMutation({
+    onSuccess: async () => {
+      toast.success("Modo demonstração desativado.");
+      await Promise.all([utils.demo.status.invalidate(), utils.vehicles.list.invalidate()]);
+    },
+    onError: () => toast.error("Não foi possível desativar a demonstração."),
+  });
+  const demoEnabled = demoStatus.data?.enabled ?? false;
+  const demoPending = enableDemo.isPending || disableDemo.isPending;
 
   const setSpeedLimitMutation = trpc.vehicles.setSpeedLimit.useMutation({
     onSuccess: () => {
@@ -156,6 +175,31 @@ export default function Profile() {
             <ChevronRight className="w-4 h-4 text-gray-300" />
           </button>
         ))}
+      </div>
+
+      {/* Modo demonstração */}
+      <div className="bg-gradient-to-r from-[#243FF7] to-[#1a2fd4] rounded-2xl p-4 mb-4 shadow-lg shadow-[#243FF7]/20">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5 text-[#E2FF04]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-bold text-sm">Modo demonstração</p>
+            <p className="text-white/70 text-xs leading-snug">
+              Veículo simulado andando no mapa em tempo real, com rota, alertas e telemetria.
+            </p>
+          </div>
+          {demoPending ? (
+            <Loader2 className="w-5 h-5 text-white animate-spin shrink-0" />
+          ) : (
+            <Switch
+              checked={demoEnabled}
+              onCheckedChange={(checked) => (checked ? enableDemo.mutate() : disableDemo.mutate())}
+              className="shrink-0 data-[state=checked]:bg-[#E2FF04]"
+              aria-label="Ativar modo demonstração"
+            />
+          )}
+        </div>
       </div>
 
       {/* Logout */}

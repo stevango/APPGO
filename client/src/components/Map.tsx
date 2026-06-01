@@ -44,15 +44,8 @@ export function createDot(
   }).addTo(map);
 }
 
-/** A vehicle marker rendered as a rotatable navigation arrow. */
-export function createArrowMarker(
-  map: L.Map,
-  pos: LatLngLiteral,
-  heading = 0,
-  opts: { color?: string; title?: string } = {},
-): L.Marker {
-  const color = opts.color ?? BRAND;
-  const icon = L.divIcon({
+function arrowIcon(heading: number, color: string): L.DivIcon {
+  return L.divIcon({
     className: "go-arrow-marker",
     html: `<div style="transform: rotate(${heading}deg); width:28px; height:28px; display:flex; align-items:center; justify-content:center;">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="${color}" stroke="#fff" stroke-width="1.5" stroke-linejoin="round">
@@ -62,7 +55,30 @@ export function createArrowMarker(
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
-  return L.marker([pos.lat, pos.lng], { icon, title: opts.title }).addTo(map);
+}
+
+/** A vehicle marker rendered as a rotatable navigation arrow. */
+export function createArrowMarker(
+  map: L.Map,
+  pos: LatLngLiteral,
+  heading = 0,
+  opts: { color?: string; title?: string } = {},
+): L.Marker {
+  return L.marker([pos.lat, pos.lng], {
+    icon: arrowIcon(heading, opts.color ?? BRAND),
+    title: opts.title,
+  }).addTo(map);
+}
+
+/** Move/rotate an existing arrow marker (used for live position updates). */
+export function updateArrowMarker(
+  marker: L.Marker,
+  pos: LatLngLiteral,
+  heading = 0,
+  color: string = BRAND,
+): void {
+  marker.setLatLng([pos.lat, pos.lng]);
+  marker.setIcon(arrowIcon(heading, color));
 }
 
 /** A radius circle in meters (geofence, accuracy ring). */

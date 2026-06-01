@@ -27,6 +27,7 @@ export const vehicles = mysqlTable("vehicles", {
   trackerStatus: mysqlEnum("trackerStatus", ["online", "offline", "alert"]).default("online"),
   ignition: boolean("ignition").default(false),
   blocked: boolean("blocked").default(false),
+  isDemo: boolean("isDemo").default(false),
   batteryLevel: int("batteryLevel").default(100),
   lastLatitude: decimal("lastLatitude", { precision: 10, scale: 7 }),
   lastLongitude: decimal("lastLongitude", { precision: 10, scale: 7 }),
