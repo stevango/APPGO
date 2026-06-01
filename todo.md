@@ -1,0 +1,117 @@
+# GO Direction App - TODO
+
+## MVP Fase 1
+
+- [x] Identidade visual GO (cores #243FF7, #E2FF04, #343C42) aplicada globalmente
+- [x] Tela de Login/Onboarding com logo GO e cores oficiais
+- [x] Bottom Navigation Bar (Início, Rastrear, SOS, Notificações, Perfil)
+- [x] Layout mobile-first otimizado para smartphones
+- [x] Home com saudação, card do veículo (placa, modelo, status, última localização)
+- [x] Atalhos rápidos na Home (Localizar, Bloquear, Cerca, Furto/Roubo, Assistência, Histórico)
+- [x] Rastreamento no mapa com posição do veículo e endereço atual
+- [x] Cerca eletrônica: criação e gerenciamento de zonas geográficas com alertas
+- [x] Bloqueio remoto com confirmação de ação e feedback de status
+- [x] Comunicação de furto/roubo com formulário guiado (passo a passo)
+- [x] Envio de notificação ao comunicar furto/roubo
+- [x] Botão SOS com mecanismo anti-acidental (hold-to-confirm)
+- [x] Central de notificações com histórico de alertas
+- [x] Perfil do cliente com dados do veículo e opções de conta
+- [x] Schema do banco de dados para veículos, cercas, ocorrências e notificações
+- [x] Testes unitários (vitest) para autenticação e rotas protegidas
+- [x] Implementar polling/refetch no tracking para atualização periódica
+- [x] Histórico de rotas no mapa com tabela routeHistory e polyline no mapa
+- [x] Permitir seleção de localização no mapa ao criar cerca
+- [x] Integrar notifyOwner para comunicação de furto/roubo com central
+- [x] Exibir plano contratado real do banco no perfil
+- [x] Página de Histórico de Trajetos com lista de viagens (data, distância, duração)
+- [x] Visualização do trajeto completo no mapa com polyline colorida
+- [x] Filtro por data no histórico de trajetos
+- [x] Redesenhar tela de Rastreamento com informações completas do rastreador
+- [x] Exibir telemetria: velocidade, direção, odômetro, horímetro
+- [x] Exibir bateria principal (12V) e backup (4.1V) com indicadores visuais
+- [x] Exibir status GPS: satélites, modo (sleep/ativo), última comunicação
+- [x] Exibir sensores: ignição, posição de log
+- [x] Exibir conectividade: status SIM, modelo do rastreador
+- [x] Atualizar schema do banco com campos de telemetria do rastreador
+- [x] Sistema de alertas visuais de bateria baixa na interface
+- [x] Banner de alerta na Home quando bateria principal < 11V
+- [x] Indicador visual no card do veículo com nível de urgência (amarelo/vermelho)
+- [x] Notificação automática no banco quando bateria cai abaixo do limiar
+- [x] Toast/alerta ao abrir o app se bateria estiver crítica
+- [x] Alerta visual de velocidade excessiva na interface
+- [x] Campo de limite de velocidade configurável por veículo (schema + UI)
+- [x] Banner/indicador na Home quando veículo ultrapassa limite
+- [x] Notificação automática no banco com deduplicação ao exceder velocidade
+- [x] Indicador de velocidade em tempo real na tela de Rastreamento
+- [x] Compartilhamento de localização em tempo real via link temporário
+- [x] Tabela shareLinks no banco com token, expiração e vehicleId
+- [x] Procedure para criar link de compartilhamento com duração configurável
+- [x] Procedure para listar/revogar links ativos
+- [x] Página pública (sem auth) para visualizar localização via token
+- [x] UI no app para gerar link, copiar e gerenciar compartilhamentos ativos
+- [x] Expiração automática de links (1h, 4h, 12h, 24h, 48h)
+- [x] Interface dedicada de gerenciamento e revogação manual de links de compartilhamento ativos (cards com countdown, status visual, confirmação de revogação, copiar link, estado vazio)
+- [x] Limite máximo de links ativos simultâneos por veículo (validação no backend com erro claro, feedback visual no frontend quando limite atingido)
+- [x] Banner carrossel de publicidade/oportunidades na Home (estilo Zul+, com slides de promoções, parceiros e serviços para o cliente)
+- [x] Tela de seleção/cadastro de veículos estilo Zul+ (imagem do veículo ou logo da marca, placa grande, seleção com check, botão adicionar)
+- [x] Termo de responsabilidade obrigatório antes de bloquear veículo (aviso de riscos com veículo em movimento, registro de aceite com IP/timestamp/usuário)
+- [x] Histórico completo de comandos de bloqueio/desbloqueio (tabela no banco com IP, timestamp, usuário, ação, veículo)
+- [x] Persistir aceite do termo como evento independente (mesmo sem enviar bloqueio)
+- [x] Paginação no histórico de bloqueio e estados de loading/erro na UI
+- [x] Splash Screen com mensagens de valor da marca GO durante carregamento (estilo Sem Parar/Zul+)
+- [x] Sistema de internacionalização (i18n) com PT, EN e ES e seletor no perfil
+- [x] Web Push API: gerar VAPID keys e configurar como secrets
+- [x] Tabela pushSubscriptions no banco para armazenar subscriptions dos usuários
+- [x] Service Worker para receber e exibir push notifications
+- [x] Frontend: solicitar permissão e registrar subscription via tRPC
+- [x] Backend: procedure para registrar/remover subscription
+- [x] Backend: função utilitária para enviar push notification a um usuário
+- [x] Integrar envio de push nos alertas de bateria baixa
+- [x] Integrar envio de push nos alertas de velocidade excessiva
+- [x] Integrar envio de push nos alertas de cerca eletrônica
+- [x] UI de configuração de push no perfil (ativar/desativar)
+- [x] Atualizar banners da Home com ofertas: Seguro Residencial, Telemedicina, Rastreador PET, Crédito CLT, Home Equity, Indique e Ganhe (visual gradiente atrativo)
+- [x] Implementar detecção real de entrada/saída de cerca com estado anterior por veículo+cerca
+- [x] Adicionar deduplicação/cooldown para push de cerca eletrônica para evitar spam em telemetria recorrente
+- [x] Botão de compartilhamento via WhatsApp na tela do veículo para enviar localização atual para contatos de emergência (Web Share API + fallback WhatsApp direto)
+- [x] Revisão UI/UX Home: melhorar hierarquia visual, espaçamento, micro-interações, cards com sombras suaves, tipografia premium
+- [x] Revisão UI/UX Tracking/Block/Share: consistência visual, feedback tátil, animações de transição
+- [x] Polimento global: tipografia Inter/DM Sans, cores refinadas, transições suaves, acessibilidade (focus rings, contraste), skeleton loading melhorado
+- [x] Jornada inteligente de alerta de veículo desatualizado (tom de cuidado, não monitoramento)
+- [x] Schema: tabela de pontos de instalação/manutenção com endereço, horários e contato
+- [x] Schema: tabela de agendamentos de manutenção (veículo, ponto, data, status)
+- [x] Backend: procedures para listar pontos, criar agendamento, registrar motivo offline
+- [x] Frontend: fluxo conversacional multi-step (está tudo bem? → motivo → agendar manutenção)
+- [x] Exibir alerta na Home quando veículo está offline há mais de 24h
+- [x] Gestão de meio de pagamento com incentivos (desconto/marketplace)
+- [x] Tela de mudança de pagamento: boleto, cartão, cartão recorrente, PIX
+- [x] Incentivos por troca de pagamento: desconto ou produto do marketplace
+- [x] Integrar jornada de veículo offline na Home (alerta quando offline >24h) e tratar edge cases na VehicleCare
+- [x] Conectar tela de pagamento ao Profile e adicionar loading/erro/empty states
+- [x] Tela de histórico de pagamentos com lista de faturas (status, valor, vencimento, método)
+- [x] Filtros por status (todas, pagas, pendentes, atrasadas)
+- [x] Botão de 2ª via do boleto (abrir URL ou copiar código de barras)
+- [x] Schema: tabela invoices com campos de fatura (valor, vencimento, status, método, boletoUrl, barcode)
+- [x] Backend: procedures getInvoices (paginado) e getInvoiceById
+- [x] Navegação: rota /payment/history integrada ao PaymentManagement e Profile
+- [x] Loading skeletons, empty state e error state na tela de histórico
+- [x] Redesign premium da tela SOS/Emergência: hierarquia visual, categorização por urgência, comunicação empática, micro-interações, acessibilidade
+- [x] Animação de vibração no botão hold-to-confirm do SOS: feedback visual (pulse/shake CSS) + feedback tátil (Vibration API)
+- [x] Contador visual de segundos dentro do botão hold-to-confirm do SOS (ex: "1.2s / 2.0s")
+- [x] Efeito sonoro sutil de confirmação (Web Audio API beep) quando o contador SOS chegar a zero
+- [x] Ícone de alto-falante (toggle mute/unmute) próximo ao botão SOS para ativar/desativar som rapidamente
+- [x] Botão de cancelamento disponível por 10 segundos após acionamento do SOS para evitar envios acidentais
+- [x] Solicitar permissão de localização GPS antes do acionamento do SOS, exibindo mensagem explicativa ao usuário
+- [x] Geocodificação reversa: exibir endereço legível na tela de sucesso do SOS usando Google Maps API
+- [x] Botão para copiar endereço e compartilhar via WhatsApp na tela de sucesso do SOS
+- [x] Botões de compartilhamento via SMS e Telegram na tela de sucesso do SOS
+- [x] Tabela emergencyContacts com campos: id, userId, name, phone, email, isPrimary
+- [x] Procedures tRPC: emergencyContacts.list, .create, .update, .delete, .sendAlert
+- [x] Página EmergencyContacts.tsx com formulário de cadastro e lista de contatos
+- [x] Botão de envio rápido de alerta na tela de sucesso do SOS para contatos favoritos
+- [x] Implementar envio real de alerta (WhatsApp/SMS/email) na procedure emergencyContacts.sendAlert
+- [x] Integrar botão de envio de alerta com 1 clique na tela de sucesso do SOS para contatos favoritos
+- [x] Adicionar feedback visual (loading, sucesso, erro) no fluxo de envio de alerta
+- [x] Adicionar botão de envio direto para contato favorito na tela de sucesso do SOS (1 clique, sem redirecionar)
+- [x] Implementar integração real de envio de alerta (WhatsApp/SMS/email) via serviço externo na procedure sendAlert
+- [ ] Integrar serviço real de SMS/WhatsApp/email para envio de alertas (ex: Twilio, SendGrid, AWS SNS)

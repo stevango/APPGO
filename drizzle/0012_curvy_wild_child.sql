@@ -1,0 +1,1 @@
+ALTER TABLE `sosAlerts` MODIFY COLUMN `status` enum('acionado','em_atendimento','finalizado','cancelado') DEFAULT 'acionado';

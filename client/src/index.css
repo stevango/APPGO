@@ -1,0 +1,261 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: oklch(0.98 0.002 250);
+  --color-foreground: oklch(0.141 0.005 285.823);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.141 0.005 285.823);
+  --color-popover: oklch(1 0 0);
+  --color-popover-foreground: oklch(0.141 0.005 285.823);
+  --color-primary: oklch(0.432 0.258 264.052);
+  --color-primary-foreground: oklch(0.985 0 0);
+  --color-secondary: oklch(0.967 0.001 286.375);
+  --color-secondary-foreground: oklch(0.21 0.006 285.885);
+  --color-muted: oklch(0.967 0.001 286.375);
+  --color-muted-foreground: oklch(0.552 0.016 285.938);
+  --color-accent: oklch(0.918 0.189 110.0);
+  --color-accent-foreground: oklch(0.21 0.006 285.885);
+  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-destructive-foreground: oklch(0.985 0 0);
+  --color-border: oklch(0.93 0.003 264);
+  --color-input: oklch(0.93 0.003 264);
+  --color-ring: oklch(0.432 0.258 264.052);
+  --color-chart-1: oklch(0.432 0.258 264.052);
+  --color-chart-2: oklch(0.918 0.189 110.0);
+  --color-chart-3: oklch(0.398 0.07 227.392);
+  --color-chart-4: oklch(0.828 0.189 84.429);
+  --color-chart-5: oklch(0.769 0.188 70.08);
+  --color-sidebar: oklch(0.985 0 0);
+  --color-sidebar-foreground: oklch(0.141 0.005 285.823);
+  --color-sidebar-primary: oklch(0.432 0.258 264.052);
+  --color-sidebar-primary-foreground: oklch(0.985 0 0);
+  --color-sidebar-accent: oklch(0.967 0.001 286.375);
+  --color-sidebar-accent-foreground: oklch(0.21 0.006 285.885);
+  --color-sidebar-border: oklch(0.92 0.004 286.32);
+  --color-sidebar-ring: oklch(0.432 0.258 264.052);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.25rem;
+
+  /* GO Direction Brand Colors */
+  --color-go-blue: #243FF7;
+  --color-go-lime: #E2FF04;
+  --color-go-grafite: #343C42;
+  --color-go-light: #D7D8DF;
+  --color-go-carbon: #111111;
+}
+
+/* GO Direction Custom Properties */
+:root {
+  --go-blue: #243FF7;
+  --go-lime: #E2FF04;
+  --go-grafite: #343C42;
+  --go-light: #D7D8DF;
+  --go-carbon: #111111;
+  --go-white: #FFFFFF;
+  --ease-out-expo: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-expo: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border);
+  }
+  html {
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'cv01', 'cv02', 'cv03', 'cv04';
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    line-height: 1.6;
+  }
+  /* Better focus rings for accessibility */
+  :focus-visible {
+    outline: 2px solid var(--go-blue);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  .container {
+    margin-inline: auto;
+    padding-inline: 1rem;
+    @media (width >= 640px) {
+      max-width: 640px;
+    }
+    @media (width >= 768px) {
+      max-width: 768px;
+    }
+    @media (width >= 1024px) {
+      max-width: 1024px;
+    }
+    @media (width >= 1280px) {
+      max-width: 1280px;
+    }
+  }
+}
+
+@utility flex {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Mobile-first scrollbar hiding for app feel */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area for bottom navigation */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* GO Button active state - snappy press feedback */
+.go-btn-active {
+  transition: transform 160ms var(--ease-out-expo);
+}
+.go-btn-active:active {
+  transform: scale(0.96);
+}
+
+/* Card hover/press elevation */
+.go-card {
+  background: white;
+  border-radius: 1.25rem;
+  border: 1px solid oklch(0.93 0.003 264);
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.04), 0 4px 12px oklch(0 0 0 / 0.03);
+  transition: box-shadow 200ms var(--ease-out-expo), transform 160ms var(--ease-out-expo);
+}
+.go-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.06);
+}
+
+/* Smooth page transitions */
+.page-enter {
+  animation: page-slide-in 280ms var(--ease-out-expo) forwards;
+}
+@keyframes page-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Stagger animation for lists */
+.stagger-item {
+  opacity: 0;
+  animation: stagger-fade-in 300ms var(--ease-out-expo) forwards;
+}
+@keyframes stagger-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Splash Screen loading bar animation */
+@keyframes loading-bar {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+.animate-loading-bar {
+  animation: loading-bar linear forwards;
+}
+
+/* Smooth gradient shimmer for skeleton loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.go-shimmer {
+  background: linear-gradient(90deg, oklch(0.95 0 0) 25%, oklch(0.92 0 0) 50%, oklch(0.95 0 0) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* Pulse dot for online status */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
+}
+.pulse-online {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* SOS hold-to-confirm vibration — intensity scales with CSS custom property */
+@keyframes sos-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-1px, 0.5px) rotate(-0.5deg); }
+  20% { transform: translate(1.5px, -0.5px) rotate(0.5deg); }
+  30% { transform: translate(-0.5px, 1px) rotate(-0.3deg); }
+  40% { transform: translate(1px, -1px) rotate(0.4deg); }
+  50% { transform: translate(-1.5px, 0.5px) rotate(-0.5deg); }
+  60% { transform: translate(0.5px, -0.5px) rotate(0.3deg); }
+  70% { transform: translate(-1px, 1px) rotate(-0.4deg); }
+  80% { transform: translate(1.5px, 0.5px) rotate(0.5deg); }
+  90% { transform: translate(-0.5px, -1px) rotate(-0.3deg); }
+}
+
+@keyframes sos-complete-burst {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.08); }
+  60% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+.sos-vibrate {
+  animation: sos-shake 0.15s ease-in-out infinite;
+}
+
+.sos-complete-pulse {
+  animation: sos-complete-burst 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .go-btn-active:active,
+  .go-card:active {
+    transform: none;
+  }
+  .page-enter,
+  .stagger-item {
+    animation: none;
+    opacity: 1;
+  }
+  .pulse-online {
+    animation: none;
+  }
+  .sos-vibrate,
+  .sos-complete-pulse {
+    animation: none;
+  }
+}

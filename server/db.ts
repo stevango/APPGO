@@ -1,0 +1,677 @@
+import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/mysql2";
+import { InsertUser, users, vehicles, geofences, notifications, occurrences, blockLogs, sosAlerts, routeHistory, trips, shareLinks, emergencyContacts } from "../drizzle/schema";
+import type { InsertTrip, InsertShareLink, InsertEmergencyContact, EmergencyContact } from "../drizzle/schema";
+import type { InsertVehicle, InsertGeofence, InsertOccurrence, InsertNotification } from "../drizzle/schema";
+import { ENV } from './_core/env';
+
+let _db: ReturnType<typeof drizzle> | null = null;
+
+export async function getDb() {
+  if (!_db && process.env.DATABASE_URL) {
+    try {
+      _db = drizzle(process.env.DATABASE_URL);
+    } catch (error) {
+      console.warn("[Database] Failed to connect:", error);
+      _db = null;
+    }
+  }
+  return _db;
+}
+
+export async function upsertUser(user: InsertUser): Promise<void> {
+  if (!user.openId) {
+    throw new Error("User openId is required for upsert");
+  }
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot upsert user: database not available");
+    return;
+  }
+  try {
+    const values: InsertUser = { openId: user.openId };
+    const updateSet: Record<string, unknown> = {};
+    const textFields = ["name", "email", "loginMethod"] as const;
+    type TextField = (typeof textFields)[number];
+    const assignNullable = (field: TextField) => {
+      const value = user[field];
+      if (value === undefined) return;
+      const normalized = value ?? null;
+      values[field] = normalized;
+      updateSet[field] = normalized;
+    };
+    textFields.forEach(assignNullable);
+    if (user.lastSignedIn !== undefined) {
+      values.lastSignedIn = user.lastSignedIn;
+      updateSet.lastSignedIn = user.lastSignedIn;
+    }
+    if (user.role !== undefined) {
+      values.role = user.role;
+      updateSet.role = user.role;
+    } else if (user.openId === ENV.ownerOpenId) {
+      values.role = 'admin';
+      updateSet.role = 'admin';
+    }
+    if (!values.lastSignedIn) {
+      values.lastSignedIn = new Date();
+    }
+    if (Object.keys(updateSet).length === 0) {
+      updateSet.lastSignedIn = new Date();
+    }
+    await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+  } catch (error) {
+    console.error("[Database] Failed to upsert user:", error);
+    throw error;
+  }
+}
+
+export async function getUserByOpenId(openId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// Vehicle helpers
+export async function getUserVehicles(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(vehicles).where(eq(vehicles.userId, userId));
+}
+
+export async function getVehicleById(vehicleId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(vehicles).where(eq(vehicles.id, vehicleId)).limit(1);
+  return result[0];
+}
+
+export async function createVehicle(vehicle: InsertVehicle) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(vehicles).values(vehicle);
+  return result;
+}
+
+export async function updateVehicleBlock(vehicleId: number, blocked: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(vehicles).set({ blocked }).where(eq(vehicles.id, vehicleId));
+}
+
+// Geofence helpers
+export async function getUserGeofences(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(geofences).where(eq(geofences.userId, userId));
+}
+
+export async function createGeofence(geofence: InsertGeofence) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(geofences).values(geofence);
+}
+
+export async function deleteGeofence(geofenceId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(geofences).where(eq(geofences.id, geofenceId));
+}
+
+// Notification helpers
+export async function getUserNotifications(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
+}
+
+export async function createNotification(notification: InsertNotification) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(notifications).values(notification);
+}
+
+// Check if a battery notification was sent in the last hour (deduplication)
+export async function getRecentBatteryNotification(userId: number, vehicleId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const result = await db.select().from(notifications)
+    .where(and(
+      eq(notifications.userId, userId),
+      eq(notifications.vehicleId, vehicleId),
+      eq(notifications.type, "bateria_baixa"),
+      gte(notifications.createdAt, oneHourAgo)
+    ))
+    .limit(1);
+  return result[0] || null;
+}
+
+// Check if a geofence notification was sent in the last 30 minutes per fence+direction (deduplication)
+export async function getRecentGeofenceNotification(userId: number, vehicleId: number, fenceId: number, direction: "entrada" | "saida" = "saida") {
+  const db = await getDb();
+  if (!db) return null;
+  const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000);
+  const notifType = direction === "entrada" ? "cerca_entrada" : "cerca_saida";
+  const result = await db.select().from(notifications)
+    .where(and(
+      eq(notifications.userId, userId),
+      eq(notifications.vehicleId, vehicleId),
+      eq(notifications.type, notifType),
+      gte(notifications.createdAt, thirtyMinAgo)
+    ))
+    .limit(1);
+  return result[0] || null;
+}
+
+// Check if a speed notification was sent in the last 5 minutes (deduplication)
+export async function getRecentSpeedNotification(userId: number, vehicleId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+  const result = await db.select().from(notifications)
+    .where(and(
+      eq(notifications.userId, userId),
+      eq(notifications.vehicleId, vehicleId),
+      eq(notifications.title, "Velocidade Excessiva!"),
+      gte(notifications.createdAt, fiveMinAgo)
+    ))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function updateVehicleSpeedLimit(vehicleId: number, speedLimit: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(vehicles).set({ speedLimit }).where(eq(vehicles.id, vehicleId));
+}
+
+export async function markNotificationRead(notificationId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(notifications).set({ read: true }).where(eq(notifications.id, notificationId));
+}
+
+export async function markAllNotificationsRead(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(notifications).set({ read: true }).where(eq(notifications.userId, userId));
+}
+
+// Occurrence helpers
+export async function createOccurrence(occurrence: InsertOccurrence) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(occurrences).values(occurrence);
+}
+
+export async function getUserOccurrences(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(occurrences).where(eq(occurrences.userId, userId)).orderBy(desc(occurrences.createdAt));
+}
+
+// Block log helpers
+export async function createBlockLog(log: {
+  userId: number;
+  vehicleId: number;
+  action: "block" | "unblock";
+  termsAcceptedAt?: Date;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  reason?: string | null;
+  vehicleSpeed?: number;
+  vehicleIgnition?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(blockLogs).values(log);
+}
+
+export async function updateBlockLogStatus(logId: number, status: "requested" | "sent" | "confirmed" | "failed") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(blockLogs).set({ status }).where(eq(blockLogs.id, logId));
+}
+
+export async function getBlockHistory(vehicleId: number, userId: number, page = 1, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  const offset = (page - 1) * limit;
+  return db.select().from(blockLogs)
+    .where(and(eq(blockLogs.vehicleId, vehicleId), eq(blockLogs.userId, userId)))
+    .orderBy(desc(blockLogs.createdAt))
+    .limit(limit)
+    .offset(offset);
+}
+
+// SOS helpers
+export async function createSosAlert(alert: { userId: number; vehicleId?: number; type: string; latitude?: string; longitude?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(sosAlerts).values(alert as any);
+}
+
+export async function cancelSosAlert(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Cancel the most recent 'acionado' alert for this user (within last 30 seconds)
+  const thirtySecondsAgo = new Date(Date.now() - 30000);
+  const [latest] = await db.select().from(sosAlerts)
+    .where(and(
+      eq(sosAlerts.userId, userId),
+      eq(sosAlerts.status, "acionado"),
+      gte(sosAlerts.createdAt, thirtySecondsAgo)
+    ))
+    .orderBy(desc(sosAlerts.createdAt))
+    .limit(1);
+  if (!latest) return { cancelled: false, reason: "no_recent_alert" };
+  await db.update(sosAlerts).set({ status: "cancelado" }).where(eq(sosAlerts.id, latest.id));
+  return { cancelled: true, alertId: latest.id };
+}
+
+// Vehicle position update
+export async function updateVehiclePosition(vehicleId: number, data: { latitude: string; longitude: string; address?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(vehicles).set({
+    lastLatitude: data.latitude,
+    lastLongitude: data.longitude,
+    lastAddress: data.address || null,
+    lastSignalAt: new Date(),
+  } as any).where(eq(vehicles.id, vehicleId));
+}
+
+// Telemetry update
+export async function updateVehicleTelemetry(vehicleId: number, data: {
+  latitude?: string;
+  longitude?: string;
+  address?: string;
+  speed?: number;
+  heading?: number;
+  odometer?: string;
+  hourmeter?: string;
+  batteryMain?: string;
+  batteryBackup?: string;
+  ignition?: boolean;
+  gpsSatellites?: number;
+  gpsSignal?: number;
+  trackerMode?: string;
+  simStatus?: string;
+  simSignal?: number;
+  trackerModel?: string;
+  trackerSerial?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const updateSet: Record<string, unknown> = {
+    lastSignalAt: new Date(),
+  };
+  if (data.latitude) updateSet.lastLatitude = data.latitude;
+  if (data.longitude) updateSet.lastLongitude = data.longitude;
+  if (data.address) updateSet.lastAddress = data.address;
+  if (data.speed !== undefined) updateSet.speed = data.speed;
+  if (data.heading !== undefined) updateSet.heading = data.heading;
+  if (data.odometer) updateSet.odometer = data.odometer;
+  if (data.hourmeter) updateSet.hourmeter = data.hourmeter;
+  if (data.batteryMain) updateSet.batteryMain = data.batteryMain;
+  if (data.batteryBackup) updateSet.batteryBackup = data.batteryBackup;
+  if (data.ignition !== undefined) updateSet.ignition = data.ignition;
+  if (data.gpsSatellites !== undefined) updateSet.gpsSatellites = data.gpsSatellites;
+  if (data.gpsSignal !== undefined) updateSet.gpsSignal = data.gpsSignal;
+  if (data.trackerMode) updateSet.trackerMode = data.trackerMode;
+  if (data.simStatus) updateSet.simStatus = data.simStatus;
+  if (data.simSignal !== undefined) updateSet.simSignal = data.simSignal;
+  if (data.trackerModel) updateSet.trackerModel = data.trackerModel;
+  if (data.trackerSerial) updateSet.trackerSerial = data.trackerSerial;
+  if (data.latitude || data.longitude) updateSet.lastGpsAt = new Date();
+  if (data.simStatus || data.simSignal !== undefined) updateSet.lastGprsAt = new Date();
+  await db.update(vehicles).set(updateSet as any).where(eq(vehicles.id, vehicleId));
+}
+
+// Route History helpers
+export async function getVehicleRouteHistory(vehicleId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(routeHistory).where(eq(routeHistory.vehicleId, vehicleId)).orderBy(desc(routeHistory.recordedAt)).limit(limit);
+}
+
+export async function addRoutePoint(data: { vehicleId: number; latitude: string; longitude: string; speed?: number; heading?: number; address?: string }) {
+  const db = await getDb();
+  if (!db) return;
+  return db.insert(routeHistory).values(data);
+}
+
+// Trip helpers
+export async function getVehicleTrips(vehicleId: number, limit = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(trips).where(eq(trips.vehicleId, vehicleId)).orderBy(desc(trips.startedAt)).limit(limit);
+}
+
+export async function getTripById(tripId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(trips).where(eq(trips.id, tripId)).limit(1);
+  return result[0] || null;
+}
+
+export async function getTripRoutePoints(vehicleId: number, startedAt: Date, endedAt: Date) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(routeHistory)
+    .where(and(
+      eq(routeHistory.vehicleId, vehicleId),
+      gte(routeHistory.recordedAt, startedAt),
+      lte(routeHistory.recordedAt, endedAt)
+    ))
+    .orderBy(routeHistory.recordedAt);
+}
+
+export async function createTrip(data: Omit<InsertTrip, 'id' | 'createdAt'>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(trips).values(data as any);
+}
+
+// ========== Share Links ==========
+
+export async function createShareLink(data: Omit<InsertShareLink, 'id' | 'createdAt' | 'viewCount' | 'lastViewedAt'>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(shareLinks).values(data as any);
+}
+
+export async function getShareLinkByToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(shareLinks).where(eq(shareLinks.token, token)).limit(1);
+  return result[0] || null;
+}
+
+export async function getUserShareLinks(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(shareLinks).where(eq(shareLinks.userId, userId)).orderBy(desc(shareLinks.createdAt));
+}
+
+export async function revokeShareLink(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(shareLinks).set({ active: false }).where(and(eq(shareLinks.id, id), eq(shareLinks.userId, userId)));
+}
+
+export async function countActiveShareLinksForVehicle(vehicleId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select().from(shareLinks).where(
+    and(
+      eq(shareLinks.vehicleId, vehicleId),
+      eq(shareLinks.active, true),
+      gte(shareLinks.expiresAt, new Date())
+    )
+  );
+  return result.length;
+}
+
+export async function incrementShareLinkView(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  const link = await db.select().from(shareLinks).where(eq(shareLinks.id, id)).limit(1);
+  if (link[0]) {
+    await db.update(shareLinks).set({ 
+      viewCount: (link[0].viewCount || 0) + 1,
+      lastViewedAt: new Date()
+    }).where(eq(shareLinks.id, id));
+  }
+}
+
+// === JORNADA DE CUIDADO ===
+import { servicePoints, serviceAppointments, vehicleOfflineReasons, paymentMethods, paymentChangeHistory } from "../drizzle/schema";
+
+export async function createOfflineReason(data: {
+  userId: number;
+  vehicleId: number;
+  reason: "all_ok" | "garage" | "workshop" | "maintenance" | "other";
+  details: string | null;
+  needsService: boolean;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(vehicleOfflineReasons).values({
+    userId: data.userId,
+    vehicleId: data.vehicleId,
+    reason: data.reason,
+    details: data.details,
+    needsService: data.needsService,
+  });
+}
+
+export async function getServicePoints(city?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  if (city) {
+    return db.select().from(servicePoints).where(and(eq(servicePoints.active, true), eq(servicePoints.city, city)));
+  }
+  return db.select().from(servicePoints).where(eq(servicePoints.active, true));
+}
+
+export async function createServiceAppointment(data: {
+  userId: number;
+  vehicleId: number;
+  servicePointId: number;
+  scheduledDate: Date;
+  serviceType: string;
+  notes: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(serviceAppointments).values({
+    userId: data.userId,
+    vehicleId: data.vehicleId,
+    servicePointId: data.servicePointId,
+    scheduledDate: data.scheduledDate,
+    serviceType: data.serviceType,
+    notes: data.notes,
+  });
+  return { id: result[0].insertId };
+}
+
+export async function getUserAppointments(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(serviceAppointments)
+    .where(eq(serviceAppointments.userId, userId))
+    .orderBy(desc(serviceAppointments.createdAt));
+}
+
+export async function cancelAppointment(appointmentId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(serviceAppointments)
+    .set({ status: "cancelled" })
+    .where(and(eq(serviceAppointments.id, appointmentId), eq(serviceAppointments.userId, userId)));
+}
+
+// === GESTÃO DE PAGAMENTO ===
+
+export async function getCurrentPaymentMethod(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(paymentMethods)
+    .where(and(eq(paymentMethods.userId, userId), eq(paymentMethods.isActive, true)))
+    .orderBy(desc(paymentMethods.createdAt))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function setPaymentMethod(data: {
+  userId: number;
+  type: "boleto" | "credit_card" | "debit_card" | "pix" | "recurring_card";
+  cardLast4: string | null;
+  cardBrand: string | null;
+  billingDay: number | null;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  // Desativar métodos anteriores
+  await db.update(paymentMethods)
+    .set({ isActive: false })
+    .where(eq(paymentMethods.userId, data.userId));
+  // Criar novo método ativo
+  await db.insert(paymentMethods).values({
+    userId: data.userId,
+    type: data.type,
+    isActive: true,
+    cardLast4: data.cardLast4,
+    cardBrand: data.cardBrand,
+    billingDay: data.billingDay,
+  });
+}
+
+export async function createPaymentChangeHistory(data: {
+  userId: number;
+  previousMethod: string;
+  newMethod: string;
+  incentiveType: "discount" | "marketplace_product" | "none";
+  incentiveValue: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(paymentChangeHistory).values({
+    userId: data.userId,
+    previousMethod: data.previousMethod,
+    newMethod: data.newMethod,
+    incentiveType: data.incentiveType,
+    incentiveValue: data.incentiveValue,
+  });
+}
+
+export async function getPaymentChangeHistory(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(paymentChangeHistory)
+    .where(eq(paymentChangeHistory.userId, userId))
+    .orderBy(desc(paymentChangeHistory.createdAt));
+}
+
+// === FATURAS / HISTÓRICO DE PAGAMENTOS ===
+import { invoices } from "../drizzle/schema";
+import type { InsertInvoice } from "../drizzle/schema";
+
+export async function getInvoices(userId: number, options?: { status?: string; page?: number; limit?: number }) {
+  const db = await getDb();
+  if (!db) return { items: [], total: 0 };
+  const page = options?.page || 1;
+  const limit = options?.limit || 20;
+  const offset = (page - 1) * limit;
+
+  const conditions = [eq(invoices.userId, userId)];
+  if (options?.status && options.status !== "all") {
+    conditions.push(eq(invoices.status, options.status as any));
+  }
+
+  const whereClause = and(...conditions);
+  const items = await db.select().from(invoices)
+    .where(whereClause)
+    .orderBy(desc(invoices.dueDate))
+    .limit(limit)
+    .offset(offset);
+
+  const countResult = await db.select({ count: sql<number>`count(*)` }).from(invoices)
+    .where(whereClause);
+  const total = countResult[0]?.count || 0;
+
+  return { items, total };
+}
+
+export async function getInvoiceById(invoiceId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(invoices)
+    .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)))
+    .limit(1);
+  return result[0] || null;
+}
+
+export async function createInvoice(data: InsertInvoice) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(invoices).values(data);
+}
+
+
+// Emergency Contacts
+export async function getUserEmergencyContacts(userId: number): Promise<EmergencyContact[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db.select().from(emergencyContacts).where(eq(emergencyContacts.userId, userId));
+  } catch (error) {
+    console.error("[Database] Error fetching emergency contacts:", error);
+    return [];
+  }
+}
+
+export async function createEmergencyContact(data: InsertEmergencyContact): Promise<EmergencyContact | null> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    const result = await db.insert(emergencyContacts).values(data);
+    const id = result[0].insertId;
+    return await db.select().from(emergencyContacts).where(eq(emergencyContacts.id, id as number)).then(r => r[0] || null);
+  } catch (error) {
+    console.error("[Database] Error creating emergency contact:", error);
+    throw error;
+  }
+}
+
+export async function updateEmergencyContact(id: number, userId: number, data: Partial<InsertEmergencyContact>): Promise<EmergencyContact | null> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    await db.update(emergencyContacts).set(data).where(and(eq(emergencyContacts.id, id), eq(emergencyContacts.userId, userId)));
+    return await db.select().from(emergencyContacts).where(eq(emergencyContacts.id, id)).then(r => r[0] || null);
+  } catch (error) {
+    console.error("[Database] Error updating emergency contact:", error);
+    throw error;
+  }
+}
+
+export async function deleteEmergencyContact(id: number, userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    await db.delete(emergencyContacts).where(and(eq(emergencyContacts.id, id), eq(emergencyContacts.userId, userId)));
+    return true;
+  } catch (error) {
+    console.error("[Database] Error deleting emergency contact:", error);
+    throw error;
+  }
+}
+
+export async function setPrimaryEmergencyContact(id: number, userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  try {
+    // Remove primary from all contacts
+    await db.update(emergencyContacts).set({ isPrimary: false }).where(eq(emergencyContacts.userId, userId));
+    // Set new primary
+    await db.update(emergencyContacts).set({ isPrimary: true }).where(and(eq(emergencyContacts.id, id), eq(emergencyContacts.userId, userId)));
+  } catch (error) {
+    console.error("[Database] Error setting primary emergency contact:", error);
+    throw error;
+  }
+}
+
+export async function getPrimaryEmergencyContact(userId: number): Promise<EmergencyContact | null> {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.select().from(emergencyContacts).where(and(eq(emergencyContacts.userId, userId), eq(emergencyContacts.isPrimary, true))).limit(1);
+    return result[0] || null;
+  } catch (error) {
+    console.error("[Database] Error fetching primary emergency contact:", error);
+    return null;
+  }
+}

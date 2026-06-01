@@ -1,0 +1,104 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1780251670413,
+      "tag": "0000_gigantic_zaladane",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1780251835721,
+      "tag": "0001_harsh_silvermane",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1780252719774,
+      "tag": "0002_freezing_iceman",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1780253627244,
+      "tag": "0003_sudden_mephistopheles",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1780253832813,
+      "tag": "0004_daily_shaman",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1780254770282,
+      "tag": "0005_free_dracula",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1780255238459,
+      "tag": "0006_black_omega_flight",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1780255398348,
+      "tag": "0007_narrow_major_mapleleaf",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1780257096156,
+      "tag": "0008_outstanding_vulture",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1780257787444,
+      "tag": "0009_thin_gambit",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1780259465543,
+      "tag": "0010_free_franklin_richards",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1780260475638,
+      "tag": "0011_tranquil_prodigy",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1780272232919,
+      "tag": "0012_curvy_wild_child",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1780273275351,
+      "tag": "0013_silent_shooting_star",
+      "breakpoints": true
+    }
+  ]
+}
