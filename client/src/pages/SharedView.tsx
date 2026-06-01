@@ -1,7 +1,8 @@
 import { trpc } from "@/lib/trpc";
 import { useParams } from "wouter";
 import { MapPin, Clock, Gauge, Wifi, WifiOff, Car } from "lucide-react";
-import { MapView } from "@/components/Map";
+import L from "leaflet";
+import { MapView, createDot, createCircle } from "@/components/Map";
 import { useRef, useEffect } from "react";
 
 export default function SharedView() {
@@ -51,16 +52,16 @@ export default function SharedView() {
   const lat = parseFloat(vehicle.latitude || "0");
   const lng = parseFloat(vehicle.longitude || "0");
   const hasLocation = lat !== 0 && lng !== 0;
-  const markerRef = useRef<google.maps.Marker | null>(null);
-  const circleRef = useRef<google.maps.Circle | null>(null);
-  const mapRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<L.CircleMarker | null>(null);
+  const circleRef = useRef<L.Circle | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
 
   // Atualizar marcador e mapa quando dados refetcham
   useEffect(() => {
     if (mapRef.current && markerRef.current && hasLocation) {
-      const position = { lat, lng };
-      markerRef.current.setPosition(position);
-      circleRef.current?.setCenter(position);
+      const position: [number, number] = [lat, lng];
+      markerRef.current.setLatLng(position);
+      circleRef.current?.setLatLng(position);
       mapRef.current.panTo(position);
     }
   }, [lat, lng, hasLocation]);
@@ -85,34 +86,13 @@ export default function SharedView() {
           <MapView
             onMapReady={(map) => {
               mapRef.current = map;
-              const position = { lat, lng };
-              map.setCenter(position);
-              map.setZoom(15);
-              const marker = new google.maps.Marker({
-                position,
-                map,
-                icon: {
-                  path: google.maps.SymbolPath.CIRCLE,
-                  scale: 12,
-                  fillColor: "#243FF7",
-                  fillOpacity: 1,
-                  strokeColor: "#ffffff",
-                  strokeWeight: 3,
-                },
-              });
-              markerRef.current = marker;
-              // Pulse ring
-              const circle = new google.maps.Circle({
-                center: position,
-                radius: 50,
-                map,
-                fillColor: "#243FF7",
+              map.setView([lat, lng], 15);
+              markerRef.current = createDot(map, { lat, lng }, { radius: 11 });
+              circleRef.current = createCircle(map, { lat, lng }, 50, {
                 fillOpacity: 0.1,
-                strokeColor: "#243FF7",
                 strokeOpacity: 0.3,
-                strokeWeight: 1,
+                weight: 1,
               });
-              circleRef.current = circle;
             }}
           />
         ) : (

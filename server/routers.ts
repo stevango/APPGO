@@ -27,7 +27,7 @@ function enforceRateLimit(key: string, max: number, windowMs: number) {
 }
 import { notifyOwner } from "./_core/notification";
 import { registerPushSubscription, unregisterPushSubscription, sendPushToUser } from "./pushService";
-import { makeRequest, type GeocodingResult } from "./_core/map";
+import { reverseGeocode } from "./geocode";
 
 // Haversine distance in km
 function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -531,15 +531,11 @@ export const appRouter = router({
       longitude: z.string(),
     })).query(async ({ input }) => {
       try {
-        const result = await makeRequest<GeocodingResult>(
-          "/maps/api/geocode/json",
-          { latlng: `${input.latitude},${input.longitude}` }
-        );
-        if (result.status === "OK" && result.results.length > 0) {
-          const address = result.results[0].formatted_address;
+        const address = await reverseGeocode(input.latitude, input.longitude);
+        if (address) {
           return { success: true, address };
         }
-        return { success: false, address: null, error: result.status };
+        return { success: false, address: null, error: "ZERO_RESULTS" };
       } catch (error) {
         console.error("[Reverse Geocode] Error:", error);
         return { success: false, address: null, error: "Failed to geocode" };

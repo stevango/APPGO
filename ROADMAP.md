@@ -26,8 +26,8 @@ Substituído o login OAuth da Manus por **e-mail + senha** próprio, reaproveita
 - **Pendência operacional:** rodar `pnpm db:push` no seu banco MySQL para criar a coluna `passwordHash`.
 
 ### 🟢 Fase 2 — Desacoplar serviços da Manus — EM ANDAMENTO
-- ✅ **Mapa/geocodificação**: `server/_core/map.ts` agora usa Google Maps direto com `GOOGLE_MAPS_API_KEY` (proxy Manus só como fallback)
-- ✅ **Mapa no frontend**: `Map.tsx` carrega o Google Maps com `VITE_GOOGLE_MAPS_API_KEY` próprio
+- ✅ **Mapa (OpenStreetMap/Leaflet)**: `Map.tsx` usa OSM — **sem chave de API, sem cobrança**
+- ✅ **Geocodificação (Nominatim/OSM)**: `server/geocode.ts` faz reverse geocode sem chave; Google removido
 - ✅ **Notificações da central**: `notifyOwner` envia para `OWNER_WEBHOOK_URL` (Slack/e-mail/seu sistema), sem derrubar o app quando ausente
 - ✅ **Runtime da Manus removido**: tirado `vite-plugin-manus-runtime` — `index.html` caiu de ~368KB para ~1.4KB
 - ✅ **Web Push (VAPID)** já é próprio e segue como canal principal de push
@@ -80,10 +80,8 @@ VITE_APP_ID=go-app                                # identificador do app
 VITE_VAPID_PUBLIC_KEY=...
 VAPID_PRIVATE_KEY=...
 
-# Mapa — Google Maps próprio
-GOOGLE_MAPS_API_KEY=...            # backend (geocodificação)
-VITE_GOOGLE_MAPS_API_KEY=...       # frontend (mapa no navegador/app)
-VITE_GOOGLE_MAPS_MAP_ID=...        # opcional (mapId p/ marcadores avançados)
+# Mapas: OpenStreetMap (Leaflet) + Nominatim — SEM chave de API
+# NOMINATIM_URL=...                 # opcional (Nominatim próprio/self-hosted)
 
 # Alertas da central (opcional) — webhook próprio (Slack/e-mail/seu sistema)
 OWNER_WEBHOOK_URL=https://...

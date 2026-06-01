@@ -2,7 +2,8 @@ import { trpc } from "@/lib/trpc";
 import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, ChevronDown, Gauge, Compass, Battery, Satellite, Zap, Power, Activity, AlertTriangle } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useCallback, useEffect, useRef } from "react";
-import { MapView } from "@/components/Map";
+import L from "leaflet";
+import { MapView, createArrowMarker, createCircle, createPolyline, fitToPoints } from "@/components/Map";
 
 export default function Tracking() {
   const [, setLocation] = useLocation();
@@ -18,42 +19,25 @@ export default function Tracking() {
     { enabled: !!vehicle?.id && showRoute }
   );
 
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
-  const polylineRef = useRef<google.maps.Polyline | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const markerRef = useRef<L.Marker | null>(null);
+  const polylineRef = useRef<L.Polyline | null>(null);
 
-  const handleMapReady = useCallback((map: google.maps.Map) => {
+  const handleMapReady = useCallback((map: L.Map) => {
     mapRef.current = map;
     if (vehicle?.lastLatitude && vehicle?.lastLongitude) {
       const lat = parseFloat(String(vehicle.lastLatitude));
       const lng = parseFloat(String(vehicle.lastLongitude));
-      map.setCenter({ lat, lng });
-      map.setZoom(16);
+      map.setView([lat, lng], 16);
 
-      markerRef.current = new google.maps.Marker({
-        position: { lat, lng },
-        map,
-        icon: {
-          path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-          scale: 7,
-          fillColor: "#243FF7",
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
-          strokeWeight: 2,
-          rotation: vehicle.heading || 0,
-        },
+      markerRef.current = createArrowMarker(map, { lat, lng }, vehicle.heading || 0, {
         title: `${vehicle.brand} ${vehicle.model}`,
       });
 
-      new google.maps.Circle({
-        map,
-        center: { lat, lng },
-        radius: 30,
-        fillColor: "#243FF7",
+      createCircle(map, { lat, lng }, 30, {
         fillOpacity: 0.08,
-        strokeColor: "#243FF7",
         strokeOpacity: 0.2,
-        strokeWeight: 1,
+        weight: 1,
       });
     }
   }, [vehicle]);
@@ -62,7 +46,7 @@ export default function Tracking() {
   useEffect(() => {
     if (!mapRef.current || !routePoints || routePoints.length === 0) {
       if (polylineRef.current) {
-        polylineRef.current.setMap(null);
+        polylineRef.current.remove();
         polylineRef.current = null;
       }
       return;
@@ -77,26 +61,17 @@ export default function Tracking() {
       }));
 
     if (polylineRef.current) {
-      polylineRef.current.setPath(path);
+      polylineRef.current.setLatLngs(path.map((p) => [p.lat, p.lng] as [number, number]));
     } else {
-      polylineRef.current = new google.maps.Polyline({
-        path,
-        geodesic: true,
-        strokeColor: "#243FF7",
-        strokeOpacity: 0.8,
-        strokeWeight: 4,
-        map: mapRef.current,
-      });
+      polylineRef.current = createPolyline(mapRef.current, path, { opacity: 0.8 });
     }
 
-    const bounds = new google.maps.LatLngBounds();
-    path.forEach((p) => bounds.extend(p));
-    mapRef.current.fitBounds(bounds, { top: 80, bottom: 280, left: 20, right: 20 });
+    fitToPoints(mapRef.current, path, 40);
   }, [routePoints]);
 
   useEffect(() => {
     if (!showRoute && polylineRef.current) {
-      polylineRef.current.setMap(null);
+      polylineRef.current.remove();
       polylineRef.current = null;
     }
   }, [showRoute]);

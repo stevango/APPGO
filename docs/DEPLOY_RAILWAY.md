@@ -36,9 +36,9 @@ No serviço do **app** (não no MySQL), aba **Variables**, adicione:
 | `NODE_ENV` | `production` |
 | `VITE_VAPID_PUBLIC_KEY` | (ver passo 4) |
 | `VAPID_PRIVATE_KEY` | (ver passo 4) |
-| `GOOGLE_MAPS_API_KEY` | sua chave de servidor do Google Maps |
-| `VITE_GOOGLE_MAPS_API_KEY` | sua chave de navegador do Google Maps |
 | `OWNER_WEBHOOK_URL` | *(opcional)* webhook de alertas da central |
+
+> 🗺️ **Mapas:** o app usa **OpenStreetMap** (Leaflet) + **Nominatim** — não precisa de chave de API nem configuração. Funciona out-of-the-box.
 
 > ⚠️ **Importante:** variáveis que começam com `VITE_` são embutidas **no momento do build**. Defina-as **antes** do deploy. Se mudar uma `VITE_*` depois, é preciso **redeployar** (Deploy → Redeploy).
 

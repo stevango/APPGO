@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
@@ -8,7 +8,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { MapView } from "@/components/Map";
+import L from "leaflet";
+import { MapView, createDot, createCircle } from "@/components/Map";
 
 const geofenceTypes = [
   { value: "casa", icon: Home, label: "Casa" },
@@ -30,12 +31,19 @@ export default function Geofences() {
   const [selectedLat, setSelectedLat] = useState("");
   const [selectedLng, setSelectedLng] = useState("");
   const [selectedAddress, setSelectedAddress] = useState("");
-  const markerRef = useRef<google.maps.Marker | null>(null);
-  const circleRef = useRef<google.maps.Circle | null>(null);
+  const markerRef = useRef<L.CircleMarker | null>(null);
+  const circleRef = useRef<L.Circle | null>(null);
+  const radiusRef = useRef(radius);
 
   const { data: geofences } = trpc.geofences.list.useQuery();
   const { data: vehicles } = trpc.vehicles.list.useQuery();
   const utils = trpc.useUtils();
+
+  // Keep the live circle in sync when the user changes the radius.
+  useEffect(() => {
+    radiusRef.current = radius;
+    if (circleRef.current) circleRef.current.setRadius(parseInt(radius) || 200);
+  }, [radius]);
 
   const createMutation = trpc.geofences.create.useMutation({
     onSuccess: () => {
@@ -62,61 +70,43 @@ export default function Geofences() {
     },
   });
 
-  const handleMapReady = useCallback((map: google.maps.Map) => {
-    map.addListener("click", (e: google.maps.MapMouseEvent) => {
-      const lat = e.latLng?.lat();
-      const lng = e.latLng?.lng();
-      if (lat === undefined || lng === undefined) return;
+  const handleMapReady = useCallback((map: L.Map) => {
+    map.on("click", (e: L.LeafletMouseEvent) => {
+      const { lat, lng } = e.latlng;
 
       setSelectedLat(lat.toString());
       setSelectedLng(lng.toString());
 
       // Update marker
       if (markerRef.current) {
-        markerRef.current.setPosition({ lat, lng });
+        markerRef.current.setLatLng([lat, lng]);
       } else {
-        markerRef.current = new google.maps.Marker({
-          position: { lat, lng },
-          map,
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 10,
-            fillColor: "#243FF7",
-            fillOpacity: 1,
-            strokeColor: "#fff",
-            strokeWeight: 3,
-          },
-        });
+        markerRef.current = createDot(map, { lat, lng }, { radius: 9 });
       }
 
       // Update circle
-      const radiusVal = parseInt(radius) || 200;
+      const radiusVal = parseInt(radiusRef.current) || 200;
       if (circleRef.current) {
-        circleRef.current.setCenter({ lat, lng });
+        circleRef.current.setLatLng([lat, lng]);
         circleRef.current.setRadius(radiusVal);
       } else {
-        circleRef.current = new google.maps.Circle({
-          map,
-          center: { lat, lng },
-          radius: radiusVal,
-          fillColor: "#243FF7",
+        circleRef.current = createCircle(map, { lat, lng }, radiusVal, {
           fillOpacity: 0.15,
-          strokeColor: "#243FF7",
-          strokeWeight: 2,
+          strokeOpacity: 1,
+          weight: 2,
         });
       }
 
-      // Reverse geocode
-      const geocoder = new google.maps.Geocoder();
-      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-        if (status === "OK" && results?.[0]) {
-          setSelectedAddress(results[0].formatted_address);
-        } else {
-          setSelectedAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-        }
-      });
+      // Reverse geocode via our own backend (OpenStreetMap / Nominatim)
+      setSelectedAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+      utils.sos.reverseGeocode
+        .fetch({ latitude: lat.toString(), longitude: lng.toString() })
+        .then((res) => {
+          if (res?.success && res.address) setSelectedAddress(res.address);
+        })
+        .catch(() => {});
     });
-  }, [radius]);
+  }, [utils]);
 
   const handleCreate = () => {
     if (!name.trim()) {

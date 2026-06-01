@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { MapPin, Clock, Gauge, ArrowLeft, Route, Calendar, ChevronRight } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
-import { MapView } from "@/components/Map";
+import { MapView, createDot, createPolyline, fitToPoints } from "@/components/Map";
 
 export default function TripHistory() {
   const { user } = useAuth();
@@ -95,54 +95,18 @@ export default function TripHistory() {
                   lng: parseFloat(String(p.longitude)),
                 }));
 
-                new google.maps.Polyline({
-                  path,
-                  geodesic: true,
-                  strokeColor: "#243FF7",
-                  strokeOpacity: 1.0,
-                  strokeWeight: 4,
-                  map,
-                });
+                createPolyline(map, path, { opacity: 1 });
 
-                // Start marker
-                new google.maps.Marker({
-                  position: path[0],
-                  map,
-                  icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 10,
-                    fillColor: "#E2FF04",
-                    fillOpacity: 1,
-                    strokeColor: "#111",
-                    strokeWeight: 2,
-                  },
-                  title: "Início",
-                });
+                // Start marker (yellow) and end marker (blue)
+                createDot(map, path[0], { fill: "#E2FF04", color: "#111", radius: 9, stroke: 2 });
+                createDot(map, path[path.length - 1], { fill: "#243FF7", radius: 9, stroke: 2 });
 
-                // End marker
-                new google.maps.Marker({
-                  position: path[path.length - 1],
-                  map,
-                  icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 10,
-                    fillColor: "#243FF7",
-                    fillOpacity: 1,
-                    strokeColor: "#fff",
-                    strokeWeight: 2,
-                  },
-                  title: "Fim",
-                });
-
-                const bounds = new google.maps.LatLngBounds();
-                path.forEach(p => bounds.extend(p));
-                map.fitBounds(bounds, 50);
+                fitToPoints(map, path, 50);
               } else if (trip.startLatitude && trip.startLongitude) {
-                map.setCenter({
-                  lat: parseFloat(String(trip.startLatitude)),
-                  lng: parseFloat(String(trip.startLongitude)),
-                });
-                map.setZoom(14);
+                map.setView([
+                  parseFloat(String(trip.startLatitude)),
+                  parseFloat(String(trip.startLongitude)),
+                ], 14);
               }
             }}
           />

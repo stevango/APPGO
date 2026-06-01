@@ -1,163 +1,152 @@
 /**
- * GOOGLE MAPS FRONTEND INTEGRATION - ESSENTIAL GUIDE
+ * OpenStreetMap map component (Leaflet) — no API key, no billing.
  *
- * USAGE FROM PARENT COMPONENT:
- * ======
+ * USAGE:
+ *   const mapRef = useRef<L.Map | null>(null);
+ *   <MapView
+ *     initialCenter={{ lat: -23.55, lng: -46.63 }}
+ *     initialZoom={15}
+ *     onMapReady={(map) => { mapRef.current = map; }}
+ *   />
  *
- * const mapRef = useRef<google.maps.Map | null>(null);
- *
- * <MapView
- *   initialCenter={{ lat: 40.7128, lng: -74.0060 }}
- *   initialZoom={15}
- *   onMapReady={(map) => {
- *     mapRef.current = map; // Store to control map from parent anytime, google map itself is in charge of the re-rendering, not react state.
- * </MapView>
- *
- * ======
- * Available Libraries and Core Features:
- * -------------------------------
- * 📍 MARKER (from `marker` library)
- * - Attaches to map using { map, position }
- * new google.maps.marker.AdvancedMarkerElement({
- *   map,
- *   position: { lat: 37.7749, lng: -122.4194 },
- *   title: "San Francisco",
- * });
- *
- * -------------------------------
- * 🏢 PLACES (from `places` library)
- * - Does not attach directly to map; use data with your map manually.
- * const place = new google.maps.places.Place({ id: PLACE_ID });
- * await place.fetchFields({ fields: ["displayName", "location"] });
- * map.setCenter(place.location);
- * new google.maps.marker.AdvancedMarkerElement({ map, position: place.location });
- *
- * -------------------------------
- * 🧭 GEOCODER (from `geocoding` library)
- * - Standalone service; manually apply results to map.
- * const geocoder = new google.maps.Geocoder();
- * geocoder.geocode({ address: "New York" }, (results, status) => {
- *   if (status === "OK" && results[0]) {
- *     map.setCenter(results[0].geometry.location);
- *     new google.maps.marker.AdvancedMarkerElement({
- *       map,
- *       position: results[0].geometry.location,
- *     });
- *   }
- * });
- *
- * -------------------------------
- * 📐 GEOMETRY (from `geometry` library)
- * - Pure utility functions; not attached to map.
- * const dist = google.maps.geometry.spherical.computeDistanceBetween(p1, p2);
- *
- * -------------------------------
- * 🛣️ ROUTES (from `routes` library)
- * - Combines DirectionsService (standalone) + DirectionsRenderer (map-attached)
- * const directionsService = new google.maps.DirectionsService();
- * const directionsRenderer = new google.maps.DirectionsRenderer({ map });
- * directionsService.route(
- *   { origin, destination, travelMode: "DRIVING" },
- *   (res, status) => status === "OK" && directionsRenderer.setDirections(res)
- * );
- *
- * -------------------------------
- * 🌦️ MAP LAYERS (attach directly to map)
- * - new google.maps.TrafficLayer().setMap(map);
- * - new google.maps.TransitLayer().setMap(map);
- * - new google.maps.BicyclingLayer().setMap(map);
- *
- * -------------------------------
- * ✅ SUMMARY
- * - “map-attached” → AdvancedMarkerElement, DirectionsRenderer, Layers.
- * - “standalone” → Geocoder, DirectionsService, DistanceMatrixService, ElevationService.
- * - “data-only” → Place, Geometry utilities.
+ * Helpers below cover the common needs (markers, circles, routes, fit-bounds)
+ * so pages don't depend on Leaflet internals directly.
  */
 
-/// <reference types="@types/google.maps" />
-
 import { useEffect, useRef } from "react";
-import { usePersistFn } from "@/hooks/usePersistFn";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import { cn } from "@/lib/utils";
 
-declare global {
-  interface Window {
-    google?: typeof google;
-  }
+const BRAND = "#243FF7";
+
+export type LatLngLiteral = { lat: number; lng: number };
+
+const OSM_TILES = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+const OSM_ATTRIB = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+
+// -----------------------------------------------------------------------------
+// Map helpers
+// -----------------------------------------------------------------------------
+
+/** A circular dot marker (replaces Google's SymbolPath.CIRCLE markers). */
+export function createDot(
+  map: L.Map,
+  pos: LatLngLiteral,
+  opts: { color?: string; fill?: string; radius?: number; stroke?: number } = {},
+): L.CircleMarker {
+  return L.circleMarker([pos.lat, pos.lng], {
+    radius: opts.radius ?? 9,
+    color: opts.stroke === 0 ? undefined : opts.color ?? "#ffffff",
+    weight: opts.stroke ?? 3,
+    fillColor: opts.fill ?? BRAND,
+    fillOpacity: 1,
+  }).addTo(map);
 }
 
-// Preferred: our own Google Maps browser key (loads directly from Google).
-const OWN_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
-// Fallback: legacy Manus forge proxy.
-const FORGE_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
-const FORGE_BASE_URL =
-  import.meta.env.VITE_FRONTEND_FORGE_API_URL ||
-  "https://forge.butterfly-effect.dev";
-
-const MAPS_JS_BASE = OWN_MAPS_KEY
-  ? "https://maps.googleapis.com"
-  : `${FORGE_BASE_URL}/v1/maps/proxy`;
-const MAPS_API_KEY = OWN_MAPS_KEY || FORGE_KEY;
-const MAP_ID = (import.meta.env.VITE_GOOGLE_MAPS_MAP_ID as string | undefined) || "DEMO_MAP_ID";
-
-function loadMapScript() {
-  return new Promise(resolve => {
-    const script = document.createElement("script");
-    script.src = `${MAPS_JS_BASE}/maps/api/js?key=${MAPS_API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry`;
-    script.async = true;
-    script.crossOrigin = "anonymous";
-    script.onload = () => {
-      resolve(null);
-      script.remove(); // Clean up immediately
-    };
-    script.onerror = () => {
-      console.error("Failed to load Google Maps script");
-    };
-    document.head.appendChild(script);
+/** A vehicle marker rendered as a rotatable navigation arrow. */
+export function createArrowMarker(
+  map: L.Map,
+  pos: LatLngLiteral,
+  heading = 0,
+  opts: { color?: string; title?: string } = {},
+): L.Marker {
+  const color = opts.color ?? BRAND;
+  const icon = L.divIcon({
+    className: "go-arrow-marker",
+    html: `<div style="transform: rotate(${heading}deg); width:28px; height:28px; display:flex; align-items:center; justify-content:center;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="${color}" stroke="#fff" stroke-width="1.5" stroke-linejoin="round">
+        <path d="M12 2 L20 21 L12 16 L4 21 Z" />
+      </svg>
+    </div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
   });
+  return L.marker([pos.lat, pos.lng], { icon, title: opts.title }).addTo(map);
 }
+
+/** A radius circle in meters (geofence, accuracy ring). */
+export function createCircle(
+  map: L.Map,
+  pos: LatLngLiteral,
+  radiusMeters: number,
+  opts: { color?: string; fillOpacity?: number; strokeOpacity?: number; weight?: number } = {},
+): L.Circle {
+  return L.circle([pos.lat, pos.lng], {
+    radius: radiusMeters,
+    color: opts.color ?? BRAND,
+    opacity: opts.strokeOpacity ?? 0.3,
+    weight: opts.weight ?? 1,
+    fillColor: opts.color ?? BRAND,
+    fillOpacity: opts.fillOpacity ?? 0.1,
+  }).addTo(map);
+}
+
+/** A route polyline. */
+export function createPolyline(
+  map: L.Map,
+  points: LatLngLiteral[],
+  opts: { color?: string; weight?: number; opacity?: number } = {},
+): L.Polyline {
+  const latlngs = points.map(p => [p.lat, p.lng] as [number, number]);
+  return L.polyline(latlngs, {
+    color: opts.color ?? BRAND,
+    weight: opts.weight ?? 4,
+    opacity: opts.opacity ?? 0.9,
+  }).addTo(map);
+}
+
+/** Fit the viewport to a set of points with pixel padding. */
+export function fitToPoints(map: L.Map, points: LatLngLiteral[], paddingPx = 40): void {
+  if (points.length === 0) return;
+  const bounds = L.latLngBounds(points.map(p => [p.lat, p.lng] as [number, number]));
+  map.fitBounds(bounds, { padding: [paddingPx, paddingPx] });
+}
+
+// -----------------------------------------------------------------------------
+// MapView component
+// -----------------------------------------------------------------------------
 
 interface MapViewProps {
   className?: string;
-  initialCenter?: google.maps.LatLngLiteral;
+  initialCenter?: LatLngLiteral;
   initialZoom?: number;
-  onMapReady?: (map: google.maps.Map) => void;
+  onMapReady?: (map: L.Map) => void;
 }
 
 export function MapView({
   className,
-  initialCenter = { lat: 37.7749, lng: -122.4194 },
+  initialCenter = { lat: -23.5505, lng: -46.6333 },
   initialZoom = 12,
   onMapReady,
 }: MapViewProps) {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<google.maps.Map | null>(null);
-
-  const init = usePersistFn(async () => {
-    await loadMapScript();
-    if (!mapContainer.current) {
-      console.error("Map container not found");
-      return;
-    }
-    map.current = new window.google.maps.Map(mapContainer.current, {
-      zoom: initialZoom,
-      center: initialCenter,
-      mapTypeControl: true,
-      fullscreenControl: true,
-      zoomControl: true,
-      streetViewControl: true,
-      mapId: MAP_ID,
-    });
-    if (onMapReady) {
-      onMapReady(map.current);
-    }
-  });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
 
   useEffect(() => {
-    init();
-  }, [init]);
+    if (!containerRef.current || mapRef.current) return;
 
-  return (
-    <div ref={mapContainer} className={cn("w-full h-[500px]", className)} />
-  );
+    const map = L.map(containerRef.current, {
+      center: [initialCenter.lat, initialCenter.lng],
+      zoom: initialZoom,
+      zoomControl: true,
+      attributionControl: true,
+    });
+
+    L.tileLayer(OSM_TILES, { maxZoom: 19, attribution: OSM_ATTRIB }).addTo(map);
+    mapRef.current = map;
+
+    // Flex/late-mounted containers can report a wrong size on first paint.
+    setTimeout(() => map.invalidateSize(), 0);
+
+    onMapReady?.(map);
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return <div ref={containerRef} className={cn("w-full h-[500px]", className)} />;
 }
