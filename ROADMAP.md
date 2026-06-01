@@ -57,11 +57,13 @@ Base configurada neste repositório (ver `docs/MOBILE.md`):
 - ✅ Exclusão de conta e dados implementada (Perfil → "Excluir minha conta" + `account.deleteAccount`)
 - Falta: publicar URLs de Política de Privacidade e Termos de Uso
 
-### Fase 6 — Produção & escala
-- Hospedagem do backend (Node) + MySQL gerenciado (PlanetScale/RDS/Railway)
-- HTTPS, segredos via variáveis de ambiente, rate limiting no login
-- Observabilidade (logs/erros), backup do banco
-- Code-splitting do bundle (hoje o JS principal tem ~744KB) para acelerar o carregamento
+### 🟢 Fase 6 — Produção & escala (Railway) — CONFIGURADA
+- ✅ Deploy na **Railway** pronto: `railway.json` (build → migração `db:deploy` → start), `.nvmrc`, `engines.node>=22`
+- ✅ Porta determinística em produção; HTTPS automático da Railway (cookies seguros funcionam)
+- ✅ Guia completo em `docs/DEPLOY_RAILWAY.md` (projeto, MySQL, variáveis, domínio)
+- ⏳ Rate limiting no login (recomendado antes de abrir ao público)
+- ⏳ Observabilidade (Sentry) e backup do MySQL
+- ⏳ Code-splitting do bundle (~755KB JS) para acelerar o carregamento
 
 ---
 
