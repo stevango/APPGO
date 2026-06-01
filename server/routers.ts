@@ -7,6 +7,24 @@ import { z } from "zod";
 import { nanoid } from "nanoid";
 import * as db from "./db";
 import { hashPassword, verifyPassword, generateEmailOpenId, issueSessionCookie } from "./auth";
+import { rateLimit, getClientIp } from "./rateLimit";
+
+// Auth abuse protection (per-instance, in-memory).
+const LOGIN_MAX_ATTEMPTS = 10;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 min
+const REGISTER_MAX = 5;
+const REGISTER_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+
+function enforceRateLimit(key: string, max: number, windowMs: number) {
+  const { allowed, retryAfterMs } = rateLimit(key, { max, windowMs });
+  if (!allowed) {
+    const minutes = Math.ceil(retryAfterMs / 60000);
+    throw new TRPCError({
+      code: "TOO_MANY_REQUESTS",
+      message: `Muitas tentativas. Tente novamente em ${minutes} min.`,
+    });
+  }
+}
 import { notifyOwner } from "./_core/notification";
 import { registerPushSubscription, unregisterPushSubscription, sendPushToUser } from "./pushService";
 import { makeRequest, type GeocodingResult } from "./_core/map";
@@ -31,6 +49,7 @@ export const appRouter = router({
         password: z.string().min(8, "A senha deve ter ao menos 8 caracteres").max(128),
       }))
       .mutation(async ({ ctx, input }) => {
+        enforceRateLimit(`register:${getClientIp(ctx.req)}`, REGISTER_MAX, REGISTER_WINDOW_MS);
         const existing = await db.getUserByEmail(input.email);
         if (existing) {
           throw new TRPCError({ code: "CONFLICT", message: "Já existe uma conta com este e-mail." });
@@ -55,6 +74,10 @@ export const appRouter = router({
         password: z.string().min(1, "Informe sua senha"),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Limit by IP+email so one attacker can't brute-force a single account,
+        // and also by IP overall.
+        enforceRateLimit(`login:${getClientIp(ctx.req)}:${input.email}`, LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_MS);
+        enforceRateLimit(`login-ip:${getClientIp(ctx.req)}`, LOGIN_MAX_ATTEMPTS * 5, LOGIN_WINDOW_MS);
         const user = await db.getUserByEmail(input.email);
         const ok = await verifyPassword(input.password, user?.passwordHash ?? null);
         if (!user || !ok) {

@@ -1,53 +1,58 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
-import Tracking from "./pages/Tracking";
-import SOS from "./pages/SOS";
-import Notifications from "./pages/Notifications";
-import Profile from "./pages/Profile";
-import Geofences from "./pages/Geofences";
-import BlockVehicle from "./pages/BlockVehicle";
-import ReportTheft from "./pages/ReportTheft";
 import Onboarding from "./pages/Onboarding";
-import TripHistory from "./pages/TripHistory";
-import ShareLocation from "./pages/ShareLocation";
-import SharedView from "./pages/SharedView";
-import VehicleSelector from "./pages/VehicleSelector";
-import VehicleCare from "./pages/VehicleCare";
-import PaymentManagement from "./pages/PaymentManagement";
-import PaymentHistory from "./pages/PaymentHistory";
-import EmergencyContacts from "./pages/EmergencyContacts";
 import MobileLayout from "./components/MobileLayout";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { LoadingSplash, SplashScreen } from "./components/SplashScreen";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
+
+// Lazy-loaded pages: each becomes its own chunk, so the initial load only ships
+// what the first screen needs. Heavy pages (maps, charts) load on demand.
+const Home = lazy(() => import("./pages/Home"));
+const Tracking = lazy(() => import("./pages/Tracking"));
+const SOS = lazy(() => import("./pages/SOS"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Geofences = lazy(() => import("./pages/Geofences"));
+const BlockVehicle = lazy(() => import("./pages/BlockVehicle"));
+const ReportTheft = lazy(() => import("./pages/ReportTheft"));
+const TripHistory = lazy(() => import("./pages/TripHistory"));
+const ShareLocation = lazy(() => import("./pages/ShareLocation"));
+const SharedView = lazy(() => import("./pages/SharedView"));
+const VehicleSelector = lazy(() => import("./pages/VehicleSelector"));
+const VehicleCare = lazy(() => import("./pages/VehicleCare"));
+const PaymentManagement = lazy(() => import("./pages/PaymentManagement"));
+const PaymentHistory = lazy(() => import("./pages/PaymentHistory"));
+const EmergencyContacts = lazy(() => import("./pages/EmergencyContacts"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 function AuthenticatedApp() {
   return (
     <MobileLayout>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/tracking" component={Tracking} />
-        <Route path="/sos" component={SOS} />
-        <Route path="/notifications" component={Notifications} />
-        <Route path="/profile" component={Profile} />
-        <Route path="/geofences" component={Geofences} />
-        <Route path="/block" component={BlockVehicle} />
-        <Route path="/report-theft" component={ReportTheft} />
-        <Route path="/trip-history" component={TripHistory} />
-        <Route path="/share" component={ShareLocation} />
-        <Route path="/vehicles" component={VehicleSelector} />
-        <Route path="/vehicle-care" component={VehicleCare} />
-        <Route path="/payment" component={PaymentManagement} />
-        <Route path="/payment/history" component={PaymentHistory} />
-        <Route path="/emergency-contacts" component={EmergencyContacts} />
-        <Route path="/404" component={NotFound} />
-        <Route component={NotFound} />
-      </Switch>
+      <Suspense fallback={<LoadingSplash />}>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/tracking" component={Tracking} />
+          <Route path="/sos" component={SOS} />
+          <Route path="/notifications" component={Notifications} />
+          <Route path="/profile" component={Profile} />
+          <Route path="/geofences" component={Geofences} />
+          <Route path="/block" component={BlockVehicle} />
+          <Route path="/report-theft" component={ReportTheft} />
+          <Route path="/trip-history" component={TripHistory} />
+          <Route path="/share" component={ShareLocation} />
+          <Route path="/vehicles" component={VehicleSelector} />
+          <Route path="/vehicle-care" component={VehicleCare} />
+          <Route path="/payment" component={PaymentManagement} />
+          <Route path="/payment/history" component={PaymentHistory} />
+          <Route path="/emergency-contacts" component={EmergencyContacts} />
+          <Route path="/404" component={NotFound} />
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
     </MobileLayout>
   );
 }
@@ -72,10 +77,12 @@ function Router() {
 
   if (!isAuthenticated) {
     return (
-      <Switch>
-        <Route path="/shared/:token" component={SharedView} />
-        <Route><Onboarding /></Route>
-      </Switch>
+      <Suspense fallback={<LoadingSplash />}>
+        <Switch>
+          <Route path="/shared/:token" component={SharedView} />
+          <Route><Onboarding /></Route>
+        </Switch>
+      </Suspense>
     );
   }
 
@@ -87,10 +94,12 @@ function Router() {
           onFinish={() => setShowSplash(false)}
         />
       )}
-      <Switch>
-        <Route path="/shared/:token" component={SharedView} />
-        <Route><AuthenticatedApp /></Route>
-      </Switch>
+      <Suspense fallback={<LoadingSplash />}>
+        <Switch>
+          <Route path="/shared/:token" component={SharedView} />
+          <Route><AuthenticatedApp /></Route>
+        </Switch>
+      </Suspense>
     </>
   );
 }

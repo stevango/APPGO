@@ -61,9 +61,9 @@ Base configurada neste repositório (ver `docs/MOBILE.md`):
 - ✅ Deploy na **Railway** pronto: `railway.json` (build → migração `db:deploy` → start), `.nvmrc`, `engines.node>=22`
 - ✅ Porta determinística em produção; HTTPS automático da Railway (cookies seguros funcionam)
 - ✅ Guia completo em `docs/DEPLOY_RAILWAY.md` (projeto, MySQL, variáveis, domínio)
-- ⏳ Rate limiting no login (recomendado antes de abrir ao público)
+- ✅ **Rate limiting** no login/cadastro (proteção contra força bruta, por IP+e-mail)
+- ✅ **Code-splitting**: páginas carregam sob demanda (bundle inicial 755KB → ~332KB core)
 - ⏳ Observabilidade (Sentry) e backup do MySQL
-- ⏳ Code-splitting do bundle (~755KB JS) para acelerar o carregamento
 
 ---
 
