@@ -39,18 +39,21 @@ Hoje ainda dependem da Manus (em `server/_core`): LLM, mapa/geocodificação, st
 - Mapear campos reais → schema (velocidade, bateria 12V/backup, GPS, ignição, odômetro)
 - Substituir dados simulados por dados reais; manter modo demo para testes
 
-### Fase 4 — Empacotamento Capacitor (iOS + Android)
-- Adicionar Capacitor, gerar projetos `ios/` e `android/`
-- Plugins nativos: Geolocation, Push Notifications (FCM/APNs), App, Share, Haptics
-- Ícones e splash a partir da marca GO (#243FF7, #E2FF04)
-- `capacitor.config` apontando para o backend de produção
-- Permissões nativas (localização, notificações) com textos de justificativa
+### 🟡 Fase 4 — Empacotamento Capacitor (iOS + Android) — EM ANDAMENTO
+Base configurada neste repositório (ver `docs/MOBILE.md`):
+- ✅ Capacitor instalado + `capacitor.config.ts` (`com.godirection.app`, webDir `dist/public`)
+- ✅ Plugins: App, Geolocation, Push Notifications, Share, Haptics, Status Bar, Splash Screen
+- ✅ Ícones/splash da marca GO gerados (`resources/`, `client/public/icons/`) + manifest PWA
+- ✅ URL da API configurável (`VITE_API_URL`) para o app nativo + init nativo (`client/src/lib/native.ts`)
+- ✅ Scripts `cap:sync`, `cap:assets`, `cap:ios`, `cap:android`
+- ⏳ Falta (na sua máquina, exige Xcode/Android Studio): `npx cap add ios/android`, APNs/FCM, build e envio
 
 ### Fase 5 — Loja & conformidade
 - Apple: conta Developer (US$99/ano), Sign in with Apple se houver login social, política de privacidade, App Privacy
 - Google Play: conta Developer (US$25 único), Data Safety, política de privacidade
-- LGPD: termo de uso, política de privacidade, consentimento de localização, exclusão de conta (exigência das lojas)
-- Telas obrigatórias: exclusão de conta, exclusão de dados
+- LGPD: termo de uso, política de privacidade, consentimento de localização
+- ✅ Exclusão de conta e dados implementada (Perfil → "Excluir minha conta" + `account.deleteAccount`)
+- Falta: publicar URLs de Política de Privacidade e Termos de Uso
 
 ### Fase 6 — Produção & escala
 - Hospedagem do backend (Node) + MySQL gerenciado (PlanetScale/RDS/Railway)

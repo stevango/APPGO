@@ -4,9 +4,13 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import {
   ChevronLeft, User, Car, CreditCard, Shield, Bell,
-  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt
+  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useLanguage, LANGUAGE_LABELS, type Language } from "@/contexts/LanguageContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -22,6 +26,17 @@ export default function Profile() {
   const { language, setLanguage, t } = useLanguage();
   const { permission, isSubscribed, isLoading: pushLoading, subscribe, unsubscribe, isSupported } = usePushNotifications();
   const [showPushConfig, setShowPushConfig] = useState(false);
+
+  const utils = trpc.useUtils();
+  const deleteAccountMutation = trpc.account.deleteAccount.useMutation({
+    onSuccess: async () => {
+      toast.success("Sua conta foi excluída.");
+      await utils.auth.me.invalidate();
+    },
+    onError: () => {
+      toast.error("Não foi possível excluir a conta. Tente novamente.");
+    },
+  });
 
   const setSpeedLimitMutation = trpc.vehicles.setSpeedLimit.useMutation({
     onSuccess: () => {
@@ -152,6 +167,43 @@ export default function Profile() {
         <LogOut className="w-4 h-4 mr-2" />
         Sair da conta
       </Button>
+
+      {/* Delete account (LGPD / app store requirement) */}
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <button className="w-full mt-3 text-center text-xs text-gray-400 underline underline-offset-4 go-btn-active">
+            Excluir minha conta
+          </button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <Trash2 className="w-5 h-5" /> Excluir conta permanentemente
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é irreversível. Todos os seus dados — veículos, trajetos,
+              cercas, contatos de emergência, faturas e notificações — serão
+              apagados definitivamente. Tem certeza?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteAccountMutation.isPending}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteAccountMutation.isPending}
+              onClick={(e) => { e.preventDefault(); deleteAccountMutation.mutate(); }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteAccountMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Sim, excluir tudo"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* App Version */}
       <p className="text-center text-xs text-gray-300 mt-6">

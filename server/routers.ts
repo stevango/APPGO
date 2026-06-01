@@ -70,6 +70,17 @@ export const appRouter = router({
     }),
   }),
 
+  account: router({
+    // LGPD / app-store requirement: lets the user permanently delete their
+    // account and all associated data, then ends the session.
+    deleteAccount: protectedProcedure.mutation(async ({ ctx }) => {
+      await db.deleteUserAccount(ctx.user.id);
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      return { success: true } as const;
+    }),
+  }),
+
   vehicles: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       return db.getUserVehicles(ctx.user.id);

@@ -1,6 +1,6 @@
-import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, vehicles, geofences, notifications, occurrences, blockLogs, sosAlerts, routeHistory, trips, shareLinks, emergencyContacts } from "../drizzle/schema";
+import { InsertUser, users, vehicles, geofences, notifications, occurrences, blockLogs, sosAlerts, routeHistory, trips, shareLinks, emergencyContacts, pushSubscriptions } from "../drizzle/schema";
 import type { InsertTrip, InsertShareLink, InsertEmergencyContact, EmergencyContact } from "../drizzle/schema";
 import type { InsertVehicle, InsertGeofence, InsertOccurrence, InsertNotification } from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -106,6 +106,42 @@ export async function setUserPassword(openId: string, passwordHash: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(users).set({ passwordHash }).where(eq(users.openId, openId));
+}
+
+/**
+ * Permanently delete a user and all data linked to them (LGPD / app-store
+ * "delete account" requirement). Removes vehicle-scoped data first, then
+ * user-scoped data, then the user row itself.
+ */
+export async function deleteUserAccount(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const userVehicles = await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.userId, userId));
+  const vehicleIds = userVehicles.map(v => v.id);
+
+  if (vehicleIds.length > 0) {
+    await db.delete(routeHistory).where(inArray(routeHistory.vehicleId, vehicleIds));
+    await db.delete(trips).where(inArray(trips.vehicleId, vehicleIds));
+  }
+
+  // Tables keyed directly by userId.
+  await db.delete(shareLinks).where(eq(shareLinks.userId, userId));
+  await db.delete(geofences).where(eq(geofences.userId, userId));
+  await db.delete(occurrences).where(eq(occurrences.userId, userId));
+  await db.delete(notifications).where(eq(notifications.userId, userId));
+  await db.delete(blockLogs).where(eq(blockLogs.userId, userId));
+  await db.delete(sosAlerts).where(eq(sosAlerts.userId, userId));
+  await db.delete(pushSubscriptions).where(eq(pushSubscriptions.userId, userId));
+  await db.delete(serviceAppointments).where(eq(serviceAppointments.userId, userId));
+  await db.delete(vehicleOfflineReasons).where(eq(vehicleOfflineReasons.userId, userId));
+  await db.delete(paymentMethods).where(eq(paymentMethods.userId, userId));
+  await db.delete(paymentChangeHistory).where(eq(paymentChangeHistory.userId, userId));
+  await db.delete(invoices).where(eq(invoices.userId, userId));
+  await db.delete(emergencyContacts).where(eq(emergencyContacts.userId, userId));
+
+  await db.delete(vehicles).where(eq(vehicles.userId, userId));
+  await db.delete(users).where(eq(users.id, userId));
 }
 
 // Vehicle helpers
