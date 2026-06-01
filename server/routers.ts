@@ -2,9 +2,11 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import * as db from "./db";
+import { hashPassword, verifyPassword, generateEmailOpenId, issueSessionCookie } from "./auth";
 import { notifyOwner } from "./_core/notification";
 import { registerPushSubscription, unregisterPushSubscription, sendPushToUser } from "./pushService";
 import { makeRequest, type GeocodingResult } from "./_core/map";
@@ -22,6 +24,45 @@ export const appRouter = router({
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    register: publicProcedure
+      .input(z.object({
+        name: z.string().trim().min(2, "Informe seu nome").max(120),
+        email: z.string().trim().toLowerCase().email("E-mail inválido"),
+        password: z.string().min(8, "A senha deve ter ao menos 8 caracteres").max(128),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const existing = await db.getUserByEmail(input.email);
+        if (existing) {
+          throw new TRPCError({ code: "CONFLICT", message: "Já existe uma conta com este e-mail." });
+        }
+        const passwordHash = await hashPassword(input.password);
+        const openId = generateEmailOpenId();
+        const user = await db.createUserWithPassword({
+          openId,
+          name: input.name,
+          email: input.email,
+          passwordHash,
+        });
+        if (!user) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao criar a conta." });
+        }
+        await issueSessionCookie(ctx.req, ctx.res, user);
+        return { success: true } as const;
+      }),
+    login: publicProcedure
+      .input(z.object({
+        email: z.string().trim().toLowerCase().email("E-mail inválido"),
+        password: z.string().min(1, "Informe sua senha"),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const user = await db.getUserByEmail(input.email);
+        const ok = await verifyPassword(input.password, user?.passwordHash ?? null);
+        if (!user || !ok) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "E-mail ou senha incorretos." });
+        }
+        await issueSessionCookie(ctx.req, ctx.res, user);
+        return { success: true } as const;
+      }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });

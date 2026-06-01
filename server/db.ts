@@ -72,6 +72,42 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const normalized = email.trim().toLowerCase();
+  const result = await db.select().from(users).where(eq(users.email, normalized)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createUserWithPassword(input: {
+  openId: string;
+  name: string | null;
+  email: string;
+  passwordHash: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const normalizedEmail = input.email.trim().toLowerCase();
+  const now = new Date();
+  await db.insert(users).values({
+    openId: input.openId,
+    name: input.name,
+    email: normalizedEmail,
+    passwordHash: input.passwordHash,
+    loginMethod: "email",
+    lastSignedIn: now,
+    role: input.openId === ENV.ownerOpenId ? "admin" : "user",
+  });
+  return getUserByOpenId(input.openId);
+}
+
+export async function setUserPassword(openId: string, passwordHash: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ passwordHash }).where(eq(users.openId, openId));
+}
+
 // Vehicle helpers
 export async function getUserVehicles(userId: number) {
   const db = await getDb();
