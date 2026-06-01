@@ -136,17 +136,31 @@ export function MapView({
     L.tileLayer(OSM_TILES, { maxZoom: 19, attribution: OSM_ATTRIB }).addTo(map);
     mapRef.current = map;
 
-    // Flex/late-mounted containers can report a wrong size on first paint.
-    setTimeout(() => map.invalidateSize(), 0);
-
     onMapReady?.(map);
 
+    // Flex / lazily-mounted containers often report a 0 size on the first paint,
+    // which leaves Leaflet without tiles. Recompute the size as soon as the
+    // container actually has dimensions (ResizeObserver) and after paint (rAF).
+    const refresh = () => map.invalidateSize();
+    requestAnimationFrame(refresh);
+    const t1 = setTimeout(refresh, 200);
+    const t2 = setTimeout(refresh, 600);
+
+    let ro: ResizeObserver | undefined;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => map.invalidateSize());
+      ro.observe(containerRef.current);
+    }
+
     return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      ro?.disconnect();
       map.remove();
       mapRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <div ref={containerRef} className={cn("w-full h-[500px]", className)} />;
+  return <div ref={containerRef} className={cn("w-full h-[500px] min-h-[240px]", className)} />;
 }
