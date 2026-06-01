@@ -157,8 +157,10 @@
 }
 @keyframes page-slide-in {
   from {
-    opacity: 0;
-    transform: translateY(8px);
+    /* Start almost fully opaque so the gray layout background never shows
+       through during the transition (avoids the "gray flash" on page load). */
+    opacity: 0.85;
+    transform: translateY(6px);
   }
   to {
     opacity: 1;

@@ -112,8 +112,22 @@ export function SplashScreen({ onFinish, duration = 2500 }: SplashScreenProps) {
 
 export function LoadingSplash() {
   const [currentMessage, setCurrentMessage] = useState(
-    Math.floor(Math.random() * SPLASH_MESSAGES.length)
+    () => Math.floor(Math.random() * SPLASH_MESSAGES.length)
   );
+  const [fade, setFade] = useState(true);
+
+  // Rotate the brand messages so longer loads look like an intentional,
+  // premium "carousel" instead of a blank/gray wait.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFade(false);
+      setTimeout(() => {
+        setCurrentMessage((i) => (i + 1) % SPLASH_MESSAGES.length);
+        setFade(true);
+      }, 250);
+    }, 1800);
+    return () => clearInterval(interval);
+  }, []);
 
   const message = SPLASH_MESSAGES[currentMessage];
   const Icon = message.icon;
@@ -127,22 +141,24 @@ export function LoadingSplash() {
         </span>
       </div>
 
-      {/* Ícone central */}
-      <div className="relative mb-8">
-        <div className="absolute inset-0 bg-white/10 rounded-full blur-2xl scale-150" />
-        <div className="relative w-24 h-24 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20">
-          <Icon className="w-12 h-12 text-white" strokeWidth={1.5} />
+      <div className={`flex flex-col items-center transition-opacity duration-300 ${fade ? "opacity-100" : "opacity-0"}`}>
+        {/* Ícone central */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-white/10 rounded-full blur-2xl scale-150" />
+          <div className="relative w-24 h-24 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20">
+            <Icon className="w-12 h-12 text-white" strokeWidth={1.5} />
+          </div>
         </div>
+
+        {/* Mensagem */}
+        <h1 className="text-white text-3xl font-black text-center leading-tight whitespace-pre-line tracking-tight px-6">
+          {message.text}
+        </h1>
+
+        <p className="text-white/60 text-sm mt-4 font-medium">
+          {message.subtitle}
+        </p>
       </div>
-
-      {/* Mensagem */}
-      <h1 className="text-white text-3xl font-black text-center leading-tight whitespace-pre-line tracking-tight">
-        {message.text}
-      </h1>
-
-      <p className="text-white/60 text-sm mt-4 font-medium">
-        {message.subtitle}
-      </p>
 
       {/* Spinner pulsante */}
       <div className="absolute bottom-16 left-1/2 -translate-x-1/2">
