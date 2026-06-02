@@ -28,6 +28,7 @@ export const vehicles = mysqlTable("vehicles", {
   ignition: boolean("ignition").default(false),
   blocked: boolean("blocked").default(false),
   isDemo: boolean("isDemo").default(false),
+  iconType: varchar("iconType", { length: 32 }).default("car"),
   batteryLevel: int("batteryLevel").default(100),
   lastLatitude: decimal("lastLatitude", { precision: 10, scale: 7 }),
   lastLongitude: decimal("lastLongitude", { precision: 10, scale: 7 }),

@@ -127,6 +127,7 @@ export async function seedDemoVehicle(userId: number): Promise<number> {
     color: "Prata",
     year: 2023,
     isDemo: true,
+    iconType: "car",
     trackerStatus: "online",
     ignition: t.ignition,
     blocked: false,

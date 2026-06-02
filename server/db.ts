@@ -283,6 +283,12 @@ export async function updateVehicleSpeedLimit(vehicleId: number, speedLimit: num
   await db.update(vehicles).set({ speedLimit }).where(eq(vehicles.id, vehicleId));
 }
 
+export async function updateVehicleIconType(vehicleId: number, userId: number, iconType: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(vehicles).set({ iconType }).where(and(eq(vehicles.id, vehicleId), eq(vehicles.userId, userId)));
+}
+
 export async function markNotificationRead(notificationId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

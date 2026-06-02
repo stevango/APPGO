@@ -347,7 +347,7 @@ function VehicleCard({
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="w-[58px] h-[58px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl flex items-center justify-center border border-gray-100 shrink-0 overflow-hidden">
-            <BrandMark brand={vehicle.brand} className="w-full h-full" />
+            <BrandMark brand={vehicle.brand} iconType={vehicle.iconType} className="w-full h-full" />
           </div>
           <div className="min-w-0">
             <h3 className="font-bold text-[#111111] text-[15px] tracking-tight truncate">

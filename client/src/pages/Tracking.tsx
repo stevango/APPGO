@@ -3,7 +3,8 @@ import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, Ch
 import { useLocation } from "wouter";
 import { useState, useCallback, useEffect, useRef } from "react";
 import L from "leaflet";
-import { MapView, createArrowMarker, updateArrowMarker, createCircle, createPolyline, fitToPoints } from "@/components/Map";
+import { MapView, createAssetMarker, updateAssetMarker, createCircle, createPolyline, fitToPoints } from "@/components/Map";
+import { getAssetIcon } from "@/lib/assetIcons";
 
 export default function Tracking() {
   const [, setLocation] = useLocation();
@@ -40,15 +41,15 @@ export default function Tracking() {
 
     if (!markerRef.current) {
       map.setView([lat, lng], 16);
-      markerRef.current = createArrowMarker(map, { lat, lng }, vehicle.heading || 0, {
+      markerRef.current = createAssetMarker(map, { lat, lng }, getAssetIcon(vehicle.iconType), {
         title: `${vehicle.brand} ${vehicle.model}`,
       });
       createCircle(map, { lat, lng }, 30, { fillOpacity: 0.08, strokeOpacity: 0.2, weight: 1 });
     } else {
-      updateArrowMarker(markerRef.current, { lat, lng }, vehicle.heading || 0);
+      updateAssetMarker(markerRef.current, { lat, lng });
       map.panTo([lat, lng], { animate: true, duration: 0.8 });
     }
-  }, [mapReady, vehicle?.lastLatitude, vehicle?.lastLongitude, vehicle?.heading, vehicle?.brand, vehicle?.model]);
+  }, [mapReady, vehicle?.lastLatitude, vehicle?.lastLongitude, vehicle?.iconType, vehicle?.brand, vehicle?.model]);
 
   // Draw route when routePoints change
   useEffect(() => {

@@ -1,4 +1,4 @@
-import { Car } from "lucide-react";
+import { getAssetIcon, isVehicleAsset } from "./assetIcons";
 
 // Brand logos (served from a public CDN). Lowercase brand name → logo URL.
 const BRAND_LOGOS: Record<string, string> = {
@@ -39,13 +39,28 @@ export function formatPlate(plate: string): string {
   return clean;
 }
 
-/** Brand logo with a graceful car-icon fallback. */
-export function BrandMark({ brand, className = "" }: { brand: string | null | undefined; className?: string }) {
+/**
+ * Visual mark for an asset:
+ * - vehicles with a known brand → brand logo
+ * - everything else (pets, instruments, gear…) → the asset-type icon
+ */
+export function BrandMark({
+  brand,
+  iconType,
+  className = "",
+}: {
+  brand?: string | null;
+  iconType?: string | null;
+  className?: string;
+}) {
   const logo = getBrandLogo(brand);
-  if (!logo) {
+  const AssetIcon = getAssetIcon(iconType);
+  const useLogo = logo && isVehicleAsset(iconType);
+
+  if (!useLogo) {
     return (
-      <div className={`bg-gray-100 rounded-2xl flex items-center justify-center ${className}`}>
-        <Car className="w-1/2 h-1/2 text-gray-400" />
+      <div className={`bg-[#243FF7]/8 rounded-2xl flex items-center justify-center ${className}`}>
+        <AssetIcon className="w-1/2 h-1/2 text-[#243FF7]" />
       </div>
     );
   }
@@ -61,8 +76,8 @@ export function BrandMark({ brand, className = "" }: { brand: string | null | un
           img.nextElementSibling?.classList.remove("hidden");
         }}
       />
-      <div className="hidden absolute inset-0 bg-gray-100 rounded-2xl flex items-center justify-center">
-        <Car className="w-1/2 h-1/2 text-gray-400" />
+      <div className="hidden absolute inset-0 bg-[#243FF7]/8 rounded-2xl flex items-center justify-center">
+        <AssetIcon className="w-1/2 h-1/2 text-[#243FF7]" />
       </div>
     </div>
   );
