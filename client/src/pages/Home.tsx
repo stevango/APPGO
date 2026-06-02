@@ -604,8 +604,10 @@ const PRODUCTS: Array<{ id: string; cat: string; title: string; subtitle: string
   { id: "rast-implementos", cat: "rastreador", title: "Rastreador Implementos", subtitle: "Carretinhas e implementos", icon: Caravan },
   // Finanças
   { id: "credito-clt", cat: "financas", title: "Crédito CLT", subtitle: "Antecipe seu salário com taxa baixa", icon: DollarSign },
-  { id: "home-equity", cat: "financas", title: "Home Equity", subtitle: "Crédito com garantia de imóvel", icon: Building2 },
-  { id: "conta-digital", cat: "financas", title: "Conta Digital GO", subtitle: "Sem tarifas de manutenção", icon: Wallet },
+  { id: "antecipacao-fgts", cat: "financas", title: "Antecipação FGTS", subtitle: "Receba seu saque-aniversário adiantado", icon: Wallet },
+  { id: "consorcio", cat: "financas", title: "Consórcio", subtitle: "Realize seus planos sem juros", icon: Users },
+  { id: "financiamento-veicular", cat: "financas", title: "Financiamento Veicular", subtitle: "Financie seu veículo com as melhores taxas", icon: Car },
+  { id: "financiamento-imobiliario", cat: "financas", title: "Financiamento Imobiliário", subtitle: "Conquiste seu imóvel", icon: Building2 },
   // Seguros
   { id: "seguro-auto", cat: "seguros", title: "Seguro Auto", subtitle: "Proteção completa para seu veículo", icon: Shield },
   { id: "seguro-celular", cat: "seguros", title: "Seguro Celular", subtitle: "Cobertura contra roubo e quebra", icon: Phone },
