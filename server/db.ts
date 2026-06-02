@@ -873,3 +873,38 @@ export async function getOpenInvoicesSummary(userId: number) {
     daysLate,
   };
 }
+
+/** Users with late invoices (for the scheduled billing reminder push). */
+export async function getUsersWithLateInvoices() {
+  const db = await getDb();
+  if (!db) return [] as Array<{ userId: number; totalAmount: number; daysLate: number; lastBillingReminderAt: Date | null }>;
+  const now = new Date();
+  const rows = await db.select().from(invoices).where(inArray(invoices.status, ["overdue", "pending"]));
+  const late = rows.filter((i) => i.status === "overdue" || (i.status === "pending" && new Date(i.dueDate) < now));
+
+  const byUser = new Map<number, { userId: number; totalAmount: number; oldest: Date }>();
+  for (const i of late) {
+    const amt = parseFloat(String(i.amount));
+    const cur = byUser.get(i.userId);
+    if (!cur) byUser.set(i.userId, { userId: i.userId, totalAmount: amt, oldest: new Date(i.dueDate) });
+    else { cur.totalAmount += amt; if (new Date(i.dueDate) < cur.oldest) cur.oldest = new Date(i.dueDate); }
+  }
+  if (byUser.size === 0) return [];
+
+  const ids = Array.from(byUser.keys());
+  const us = await db.select({ id: users.id, lastBillingReminderAt: users.lastBillingReminderAt }).from(users).where(inArray(users.id, ids));
+  const lastMap = new Map(us.map((u) => [u.id, u.lastBillingReminderAt]));
+
+  return Array.from(byUser.values()).map((v) => ({
+    userId: v.userId,
+    totalAmount: v.totalAmount,
+    daysLate: Math.max(0, Math.floor((now.getTime() - v.oldest.getTime()) / 86400000)),
+    lastBillingReminderAt: lastMap.get(v.userId) ?? null,
+  }));
+}
+
+export async function markBillingReminderSent(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ lastBillingReminderAt: new Date() }).where(eq(users.id, userId));
+}

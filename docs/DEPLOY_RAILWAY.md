@@ -75,6 +75,16 @@ VITE_API_URL=https://goapp-production.up.railway.app
 
 ---
 
+## Lembretes de cobrança (cron diário)
+
+Para enviar o push/aviso de fatura em aberto a quem não abre o app:
+1. Defina a variável `CRON_SECRET` (uma string aleatória) no serviço do app.
+2. Crie um **Cron Job** no Railway (ou um agendador externo) que faça uma vez ao dia:
+   ```
+   GET https://SEU-DOMINIO/api/cron/billing-reminders?token=SEU_CRON_SECRET
+   ```
+   O endpoint envia o lembrete (deduplicado para 1x/dia por cliente) e responde `{ sent, skipped, total }`.
+
 ## Custos (estimativa)
 - Plano **Hobby** da Railway (US$ 5/mês de crédito incluído) costuma cobrir app + MySQL para começar
 - Escala conforme uso (CPU/RAM/banco)

@@ -8,6 +8,8 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { ENV } from "./env";
+import { sendOverdueReminders } from "../billing";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -45,6 +47,23 @@ async function startServer() {
   });
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+
+  // Scheduled job endpoint (call daily from a scheduler, e.g. Railway Cron):
+  //   GET /api/cron/billing-reminders?token=CRON_SECRET
+  app.get("/api/cron/billing-reminders", async (req, res) => {
+    const token = (req.query.token as string) || (req.headers["x-cron-secret"] as string);
+    if (!ENV.cronSecret || token !== ENV.cronSecret) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    try {
+      const result = await sendOverdueReminders();
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      console.error("[Cron] billing-reminders failed", error);
+      res.status(500).json({ error: "failed" });
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",

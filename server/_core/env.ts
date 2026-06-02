@@ -12,6 +12,8 @@ export const ENV = {
   // Webhook for ops/central alerts (Slack, email gateway, own system). Preferred
   // over the Manus notification service.
   ownerWebhookUrl: process.env.OWNER_WEBHOOK_URL ?? "",
+  // Secret to authorize scheduled jobs (e.g. daily billing reminders).
+  cronSecret: process.env.CRON_SECRET ?? "",
   vapidPublicKey: process.env.VITE_VAPID_PUBLIC_KEY ?? "",
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? "",
 };

@@ -28,6 +28,7 @@ export default function Home() {
   });
   const [alertDismissed, setAlertDismissed] = useState(false);
   const openInvoices = trpc.payment.openSummary.useQuery();
+  const currentMethod = trpc.payment.getCurrent.useQuery();
 
   const activeVehicleId = useActiveVehicleId();
   const vehicle = pickActiveVehicle(vehicles, activeVehicleId);
@@ -193,7 +194,7 @@ export default function Home() {
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-bold text-[13px]">Nunca mais se preocupe com vencimento</p>
                   <p className="text-white/80 text-[11px] leading-snug">
-                    Ative o cartão recorrente e ganhe <span className="font-bold text-[#E2FF04]">10% de desconto</span> na mensalidade.
+                    Ative o cartão recorrente e ganhe <span className="font-bold text-[#E2FF04]">15% de desconto</span> na mensalidade.
                   </p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-white/70 shrink-0" />
@@ -282,6 +283,28 @@ export default function Home() {
           }} />
         </div>
       </div>
+
+      {/* Preventive nudge: on-time boleto payers → recurring card with discount */}
+      {(!openInvoices.data || openInvoices.data.count === 0) &&
+        (!currentMethod.data || currentMethod.data.type === "boleto") && (
+          <button
+            onClick={() => setLocation("/payment")}
+            className="mt-7 w-full rounded-2xl bg-gradient-to-r from-[#243FF7] to-[#1a2fd4] p-4 text-left go-btn-active shadow-md shadow-[#243FF7]/20"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
+                <CreditCard className="w-5 h-5 text-[#E2FF04]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-bold text-sm">Economize todo mês 💸</p>
+                <p className="text-white/80 text-xs leading-snug">
+                  Troque o boleto pelo cartão recorrente e ganhe <span className="font-bold text-[#E2FF04]">15% de desconto</span> — sem se preocupar com vencimento.
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-white/70 shrink-0" />
+            </div>
+          </button>
+        )}
 
       {/* Banner Carrossel - Publicidade e Oportunidades */}
       <PromoBannerCarousel />
