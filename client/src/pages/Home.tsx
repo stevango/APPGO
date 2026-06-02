@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
   MapPin, Lock, Shield, AlertTriangle, Wrench, Clock,
-  Car, Signal, Battery, Wifi, ChevronRight, BatteryWarning, X, Zap, Gauge, Share2, Power,
+  Car, Signal, Battery, Wifi, ChevronRight, BatteryWarning, X, Gauge, Share2, Power,
   Home as HomeIcon, Heart, PawPrint, DollarSign, Building2, Users, MessageCircle, Phone
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -194,46 +194,6 @@ export default function Home() {
         <EmptyVehicleCard />
       )}
 
-      {/* Status do equipamento — logo abaixo do card, calmo por padrão e ciente do tipo */}
-      {vehicle && (
-        <div className="mt-4 go-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider">
-              Status do {isVehicleAsset(vehicle.iconType) ? "veículo" : "rastreador"}
-            </h3>
-            <div className="flex items-center gap-1.5">
-              <div className={`w-2 h-2 rounded-full ${vehicle.trackerStatus === "online" ? "bg-green-500 pulse-online" : "bg-red-400"}`} />
-              <span className={`text-[11px] font-medium ${vehicle.trackerStatus === "online" ? "text-green-600" : "text-red-500"}`}>
-                {vehicle.trackerStatus === "online" ? "Online" : "Offline"}
-              </span>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {isVehicleAsset(vehicle.iconType) ? (
-              <>
-                <StatusPill icon={Battery} label="Bateria" value={`${batteryMain.toFixed(1)}V`}
-                  status={isBatteryCritical ? "danger" : isBatteryWarning ? "warning" : "ok"} />
-                <StatusPill icon={Zap} label="Backup" value={`${batteryBackup.toFixed(1)}V`}
-                  status={isBackupCritical ? "danger" : isBackupWarning ? "warning" : "ok"} />
-                <StatusPill icon={Power} label="Ignição" value={vehicle.ignition ? "Ligada" : "Desligada"} status="neutral" />
-                <StatusPill icon={Lock} label="Bloqueio" value={vehicle.blocked ? "Bloqueado" : "Livre"}
-                  status={vehicle.blocked ? "warning" : "neutral"} />
-              </>
-            ) : (
-              <>
-                <StatusPill icon={Battery} label="Bateria" value={`${vehicle.batteryLevel ?? 100}%`}
-                  status={(vehicle.batteryLevel ?? 100) < 20 ? "danger" : (vehicle.batteryLevel ?? 100) < 40 ? "warning" : "ok"} />
-                <StatusPill icon={Signal} label="Sinal GPS" value={`${vehicle.gpsSatellites ?? 0} sat`}
-                  status={(vehicle.gpsSatellites ?? 0) < 4 ? "warning" : "neutral"} />
-                <StatusPill icon={Zap} label="Backup" value={`${batteryBackup.toFixed(1)}V`}
-                  status={isBackupCritical ? "danger" : isBackupWarning ? "warning" : "ok"} />
-                <StatusPill icon={Wifi} label="Conexão" value={vehicle.trackerMode === "active" ? "Ativo" : "Repouso"} status="neutral" />
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Quick Actions - Refined grid */}
       <div className="mt-7">
         <div className="flex items-center justify-between mb-3.5">
@@ -364,10 +324,28 @@ function VehicleCard({
     ? getTimeSince(new Date(vehicle.lastSignalAt))
     : "Sem dados";
 
+  const isVeh = isVehicleAsset(vehicle.iconType);
+
+  // Human-readable status headline (communicative, not just raw fields).
+  let headline = "Rastreando";
+  let dot = "bg-gray-400";
+  let htext = "text-gray-500";
+  if (isVeh) {
+    if (vehicle.blocked) { headline = "Bloqueado"; dot = "bg-amber-500"; htext = "text-amber-600"; }
+    else if (vehicle.ignition && (vehicle.speed ?? 0) > 0) { headline = "Em movimento"; dot = "bg-green-500"; htext = "text-green-600"; }
+    else if (vehicle.ignition) { headline = "Ligado, parado"; dot = "bg-green-500"; htext = "text-green-600"; }
+    else { headline = "Estacionado"; dot = "bg-gray-400"; htext = "text-gray-500"; }
+  } else {
+    if (vehicle.trackerMode === "active") { headline = "Rastreador ativo"; dot = "bg-green-500"; htext = "text-green-600"; }
+    else { headline = "Em repouso"; dot = "bg-gray-400"; htext = "text-gray-500"; }
+  }
+
+  const batteryTone = isBatteryCritical ? "danger" : isBatteryWarning ? "warning" : "default";
+
   return (
     <button
       onClick={onPress}
-      className={`w-full go-card p-5 text-left ${
+      className={`w-full go-card p-5 text-left transition-transform active:scale-[0.99] ${
         isBatteryCritical
           ? "ring-2 ring-red-200 border-red-100"
           : isBatteryWarning
@@ -385,7 +363,7 @@ function VehicleCard({
               {vehicle.brand} {vehicle.model}
             </h3>
             <div className="mt-1.5">
-              {isVehicleAsset(vehicle.iconType) ? (
+              {isVeh ? (
                 <LicensePlate plate={vehicle.plate} size="sm" />
               ) : (
                 <AssetTag label={vehicle.plate} size="sm" />
@@ -413,41 +391,31 @@ function VehicleCard({
         </div>
       </div>
 
-      {/* Mini-stats — vehicles show speed/ignition; other assets show battery/signal */}
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        {isVehicleAsset(vehicle.iconType) ? (
+      {/* Status headline — communicative, human-readable */}
+      <div className="mt-3.5 flex items-center gap-2">
+        <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold ${htext}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${dot} ${dot === "bg-green-500" ? "pulse-online" : ""}`} />
+          {headline}
+        </span>
+        {isVeh && (vehicle.speed ?? 0) > 0 && (
+          <span className="text-[12px] text-gray-400 font-medium">• {vehicle.speed} km/h</span>
+        )}
+      </div>
+
+      {/* Key metrics — asset-aware, no duplication */}
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {isVeh ? (
           <>
-            <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
-              <Gauge className="w-4 h-4 text-[#243FF7] shrink-0" />
-              <div className="leading-tight">
-                <p className="text-[10px] text-gray-400 font-medium">Velocidade</p>
-                <p className="text-[13px] font-bold text-[#111111]">{vehicle.speed ?? 0} <span className="text-[10px] font-medium text-gray-400">km/h</span></p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
-              <Power className={`w-4 h-4 shrink-0 ${vehicle.ignition ? "text-green-500" : "text-gray-400"}`} />
-              <div className="leading-tight">
-                <p className="text-[10px] text-gray-400 font-medium">Ignição</p>
-                <p className="text-[13px] font-bold text-[#111111]">{vehicle.ignition ? "Ligada" : "Desligada"}</p>
-              </div>
-            </div>
+            <Metric icon={Gauge} label="Velocidade" value={`${vehicle.speed ?? 0}`} unit="km/h" />
+            <Metric icon={Power} label="Ignição" value={vehicle.ignition ? "Ligada" : "Off"} />
+            <Metric icon={Battery} label="Bateria" value={batteryMain.toFixed(1)} unit="V" tone={batteryTone} />
           </>
         ) : (
           <>
-            <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
-              <Battery className="w-4 h-4 text-[#243FF7] shrink-0" />
-              <div className="leading-tight">
-                <p className="text-[10px] text-gray-400 font-medium">Bateria</p>
-                <p className="text-[13px] font-bold text-[#111111]">{vehicle.batteryLevel ?? 100}<span className="text-[10px] font-medium text-gray-400">%</span></p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
-              <Signal className="w-4 h-4 text-[#243FF7] shrink-0" />
-              <div className="leading-tight">
-                <p className="text-[10px] text-gray-400 font-medium">Sinal GPS</p>
-                <p className="text-[13px] font-bold text-[#111111]">{vehicle.gpsSatellites ?? 0} <span className="text-[10px] font-medium text-gray-400">sat</span></p>
-              </div>
-            </div>
+            <Metric icon={Battery} label="Bateria" value={`${vehicle.batteryLevel ?? 100}`} unit="%"
+              tone={(vehicle.batteryLevel ?? 100) < 20 ? "danger" : (vehicle.batteryLevel ?? 100) < 40 ? "warning" : "default"} />
+            <Metric icon={Signal} label="Sinal GPS" value={`${vehicle.gpsSatellites ?? 0}`} unit="sat" />
+            <Metric icon={Wifi} label="Conexão" value={vehicle.trackerMode === "active" ? "Ativo" : "Repouso"} />
           </>
         )}
       </div>
@@ -459,15 +427,33 @@ function VehicleCard({
         </span>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between">
-        <span className="text-[11px] text-gray-300 font-medium">
-          Último sinal: {timeSinceSignal}
+      {/* Clear call-to-action */}
+      <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
+        <span className="text-[11px] text-gray-400 font-medium">
+          Atualizado {timeSinceSignal}
         </span>
-        <div className="w-6 h-6 rounded-full bg-[#243FF7]/8 flex items-center justify-center">
-          <ChevronRight className="w-3.5 h-3.5 text-[#243FF7]" />
-        </div>
+        <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[#243FF7] bg-[#243FF7]/8 rounded-full pl-3.5 pr-3 py-1.5">
+          Ver no mapa
+          <ChevronRight className="w-4 h-4" />
+        </span>
       </div>
     </button>
+  );
+}
+
+function Metric({ icon: Icon, label, value, unit, tone = "default" }: {
+  icon: any; label: string; value: string; unit?: string; tone?: "default" | "warning" | "danger";
+}) {
+  const text = tone === "danger" ? "text-red-600" : tone === "warning" ? "text-amber-600" : "text-[#111111]";
+  const ic = tone === "danger" ? "text-red-500" : tone === "warning" ? "text-amber-500" : "text-[#243FF7]";
+  return (
+    <div className="bg-gray-50 rounded-xl px-2.5 py-2.5">
+      <Icon className={`w-4 h-4 ${ic} mb-1.5`} />
+      <p className="text-[10px] text-gray-400 font-medium leading-none mb-1">{label}</p>
+      <p className={`text-[13px] font-bold leading-none ${text}`}>
+        {value}{unit ? <span className="text-[10px] font-medium text-gray-400"> {unit}</span> : null}
+      </p>
+    </div>
   );
 }
 
@@ -516,27 +502,6 @@ function QuickAction({ icon: Icon, label, color, onClick }: { icon: any; label: 
       </div>
       <span className="text-[10px] font-semibold text-[#343C42] leading-tight">{label}</span>
     </button>
-  );
-}
-
-function StatusPill({ icon: Icon, label, value, status }: { icon: any; label: string; value: string; status: "ok" | "warning" | "danger" | "neutral" }) {
-  // Calm by default: healthy/neutral states are quiet so problems stand out.
-  const colors = {
-    ok: { bg: "bg-gray-50", text: "text-[#111111]", icon: "text-gray-400" },
-    neutral: { bg: "bg-gray-50", text: "text-[#111111]", icon: "text-gray-400" },
-    warning: { bg: "bg-amber-50", text: "text-amber-700", icon: "text-amber-500" },
-    danger: { bg: "bg-red-50", text: "text-red-700", icon: "text-red-500" },
-  };
-  const c = colors[status];
-
-  return (
-    <div className={`${c.bg} rounded-xl p-3 flex items-center gap-2.5`}>
-      <Icon className={`w-4 h-4 ${c.icon} shrink-0`} />
-      <div className="min-w-0">
-        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">{label}</p>
-        <p className={`text-[13px] font-semibold ${c.text} truncate`}>{value}</p>
-      </div>
-    </div>
   );
 }
 
