@@ -856,17 +856,20 @@ export async function getUserConsents(userId: number) {
 /** Summary of open/late invoices for the gentle overdue reminder. */
 export async function getOpenInvoicesSummary(userId: number) {
   const db = await getDb();
-  if (!db) return { count: 0, totalAmount: 0, oldestDueDate: null as Date | null, invoiceId: null as number | null };
+  if (!db) return { count: 0, totalAmount: 0, oldestDueDate: null as Date | null, invoiceId: null as number | null, daysLate: 0 };
   const now = new Date();
   const open = await db.select().from(invoices)
     .where(and(eq(invoices.userId, userId), inArray(invoices.status, ["overdue", "pending"])))
     .orderBy(invoices.dueDate);
   const late = open.filter((i) => i.status === "overdue" || (i.status === "pending" && new Date(i.dueDate) < now));
   const totalAmount = late.reduce((s, i) => s + parseFloat(String(i.amount)), 0);
+  const oldest = late[0]?.dueDate ?? null;
+  const daysLate = oldest ? Math.max(0, Math.floor((now.getTime() - new Date(oldest).getTime()) / 86400000)) : 0;
   return {
     count: late.length,
     totalAmount,
-    oldestDueDate: late[0]?.dueDate ?? null,
+    oldestDueDate: oldest,
     invoiceId: late[0]?.id ?? null,
+    daysLate,
   };
 }

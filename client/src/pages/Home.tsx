@@ -5,7 +5,7 @@ import {
   MapPin, Lock, Shield, AlertTriangle, Wrench, Clock,
   Car, Signal, Battery, Wifi, ChevronRight, BatteryWarning, X, Gauge, Share2, Power,
   Home as HomeIcon, Heart, PawPrint, DollarSign, Building2, Users, MessageCircle, Phone,
-  Wallet, Headphones, Gift, Zap, Smartphone, Truck, Bike, Anchor, Music, Package, Caravan
+  Wallet, Headphones, Gift, Zap, Smartphone, Truck, Bike, Anchor, Music, Package, Caravan, CreditCard
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
@@ -142,36 +142,66 @@ export default function Home() {
         />
       )}
 
-      {/* Friendly overdue-invoice reminder (empathetic, resolutive — never punitive) */}
-      {openInvoices.data && openInvoices.data.count > 0 && (
-        <button
-          onClick={() => setLocation("/payment/history")}
-          className="mb-5 w-full rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 text-left go-btn-active stagger-item"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
-              <DollarSign className="w-5 h-5 text-amber-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-bold text-sm text-amber-900">Ficou uma fatura em aberto 💛</h4>
-              <p className="text-xs text-amber-700 mt-0.5">
-                Acontece! Regularize {openInvoices.data.totalAmount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} em 1 toque e siga 100% protegido.
-              </p>
-            </div>
-          </div>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="flex-1 text-center text-[13px] font-bold text-white bg-amber-500 rounded-xl py-2.5">
-              Resolver agora
-            </span>
-            <span
-              onClick={(e) => { e.stopPropagation(); setLocation("/help"); }}
-              className="text-[13px] font-semibold text-amber-700 px-3 py-2.5"
+      {/* Friendly overdue-invoice reminder — empathetic, escalates by days late */}
+      {openInvoices.data && openInvoices.data.count > 0 && (() => {
+        const { totalAmount, daysLate } = openInvoices.data!;
+        const money = totalAmount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+        // Tiered tone — always supportive, never punitive.
+        const tier =
+          daysLate <= 7
+            ? { title: "Ficou uma fatura em aberto 💛", msg: `Acontece! Regularize ${money} em 1 toque e siga 100% protegido.`, box: "from-amber-50 to-orange-50 border-amber-200", icon: "bg-amber-100 text-amber-600", h: "text-amber-900", p: "text-amber-700", btn: "bg-amber-500" }
+            : daysLate <= 15
+            ? { title: `Fatura atrasada há ${daysLate} dias`, msg: `Vamos resolver juntos? Pague ${money} agora e mantenha tudo em dia.`, box: "from-orange-50 to-orange-100 border-orange-200", icon: "bg-orange-100 text-orange-600", h: "text-orange-900", p: "text-orange-700", btn: "bg-orange-500" }
+            : { title: "Mantenha sua proteção ativa", msg: `Há ${daysLate} dias em aberto. Regularize ${money} para evitar a suspensão — e conte com a gente se precisar renegociar.`, box: "from-red-50 to-orange-50 border-red-200", icon: "bg-red-100 text-red-600", h: "text-red-900", p: "text-red-700", btn: "bg-red-500" };
+        return (
+          <div className="mb-5 stagger-item">
+            <button
+              onClick={() => setLocation("/payment/history")}
+              className={`w-full rounded-2xl bg-gradient-to-r ${tier.box} border p-4 text-left go-btn-active`}
             >
-              Preciso de ajuda
-            </span>
+              <div className="flex items-center gap-3">
+                <div className={`w-11 h-11 ${tier.icon} rounded-xl flex items-center justify-center shrink-0`}>
+                  <DollarSign className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className={`font-bold text-sm ${tier.h}`}>{tier.title}</h4>
+                  <p className={`text-xs ${tier.p} mt-0.5`}>{tier.msg}</p>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className={`flex-1 text-center text-[13px] font-bold text-white ${tier.btn} rounded-xl py-2.5`}>
+                  Resolver agora
+                </span>
+                <span
+                  onClick={(e) => { e.stopPropagation(); setLocation("/help"); }}
+                  className={`text-[13px] font-semibold ${tier.p} px-3 py-2.5`}
+                >
+                  Preciso de ajuda
+                </span>
+              </div>
+            </button>
+
+            {/* Anti-default nudge: switch boleto → recurring card with a discount */}
+            <button
+              onClick={() => setLocation("/payment")}
+              className="mt-2 w-full rounded-2xl bg-gradient-to-r from-[#243FF7] to-[#1a2fd4] p-3.5 text-left go-btn-active shadow-md shadow-[#243FF7]/20"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
+                  <CreditCard className="w-5 h-5 text-[#E2FF04]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-bold text-[13px]">Nunca mais se preocupe com vencimento</p>
+                  <p className="text-white/80 text-[11px] leading-snug">
+                    Ative o cartão recorrente e ganhe <span className="font-bold text-[#E2FF04]">10% de desconto</span> na mensalidade.
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-white/70 shrink-0" />
+              </div>
+            </button>
           </div>
-        </button>
-      )}
+        );
+      })()}
 
       {/* Asset switcher — tap a chip to change the active equipment */}
       {!isLoading && vehicles && vehicles.length > 1 && (
