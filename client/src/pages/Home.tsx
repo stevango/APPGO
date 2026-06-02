@@ -568,32 +568,53 @@ const PROMO_BANNERS = [
 ];
 
 const PRODUCT_CATEGORIES = [
+  { key: "rastreador", label: "Rastreador", icon: MapPin },
   { key: "financas", label: "Finanças", icon: Wallet },
-  { key: "veiculos", label: "Veículos", icon: Car },
   { key: "seguros", label: "Seguros", icon: Shield },
+  { key: "pravoce", label: "Pra Você", icon: Heart },
+  { key: "veiculo", label: "Veículo", icon: Car },
+  { key: "residencial", label: "Residencial", icon: HomeIcon },
   { key: "servicos", label: "Serviços", icon: Headphones },
   { key: "beneficios", label: "Benefícios", icon: Gift },
 ];
 
 const CAT_COLOR: Record<string, { bg: string; text: string }> = {
+  rastreador: { bg: "bg-[#243FF7]/10", text: "text-[#243FF7]" },
   financas: { bg: "bg-emerald-50", text: "text-emerald-600" },
-  veiculos: { bg: "bg-[#243FF7]/10", text: "text-[#243FF7]" },
   seguros: { bg: "bg-indigo-50", text: "text-indigo-600" },
+  pravoce: { bg: "bg-rose-50", text: "text-rose-600" },
+  veiculo: { bg: "bg-sky-50", text: "text-sky-600" },
+  residencial: { bg: "bg-violet-50", text: "text-violet-600" },
   servicos: { bg: "bg-teal-50", text: "text-teal-600" },
   beneficios: { bg: "bg-amber-50", text: "text-amber-600" },
 };
 
 const PRODUCTS: Array<{ id: string; cat: string; title: string; subtitle: string; icon: any; badge?: string }> = [
-  { id: "credito-clt", cat: "financas", title: "Crédito CLT", subtitle: "Antecipe seu salário com taxa baixa", icon: DollarSign, badge: "NOVO" },
+  // Rastreador
+  { id: "rastreador-pet", cat: "rastreador", title: "Rastreador PET", subtitle: "Localize seu pet em tempo real", icon: PawPrint, badge: "NOVO" },
+  { id: "rastreador-moto", cat: "rastreador", title: "Rastreador Moto", subtitle: "Proteção dedicada para sua moto", icon: Signal },
+  { id: "rastreador-frota", cat: "rastreador", title: "Rastreador Frota", subtitle: "Gestão de vários veículos", icon: Wifi },
+  // Finanças
+  { id: "credito-clt", cat: "financas", title: "Crédito CLT", subtitle: "Antecipe seu salário com taxa baixa", icon: DollarSign },
   { id: "home-equity", cat: "financas", title: "Home Equity", subtitle: "Crédito com garantia de imóvel", icon: Building2 },
   { id: "conta-digital", cat: "financas", title: "Conta Digital GO", subtitle: "Sem tarifas de manutenção", icon: Wallet },
-  { id: "plano-premium", cat: "veiculos", title: "Plano Premium", subtitle: "Mais cobertura e benefícios", icon: Car },
-  { id: "rastreador-pet", cat: "veiculos", title: "Rastreador PET", subtitle: "Proteja também seu pet", icon: PawPrint },
+  // Seguros
   { id: "seguro-auto", cat: "seguros", title: "Seguro Auto", subtitle: "Proteção completa para seu veículo", icon: Shield },
-  { id: "seguro-residencial", cat: "seguros", title: "Seguro Residencial", subtitle: "Sua casa protegida a partir de R$29/mês", icon: HomeIcon },
   { id: "seguro-celular", cat: "seguros", title: "Seguro Celular", subtitle: "Cobertura contra roubo e quebra", icon: Phone },
+  // Pra Você
+  { id: "plano-familia", cat: "pravoce", title: "Plano Família GO", subtitle: "Proteja todos os bens da família", icon: Users },
+  { id: "cashback", cat: "pravoce", title: "Cashback GO", subtitle: "Dinheiro de volta nas suas compras", icon: Wallet, badge: "NOVO" },
+  { id: "ofertas-personalizadas", cat: "pravoce", title: "Ofertas pra você", subtitle: "Selecionadas com base no seu perfil", icon: Heart },
+  // Veículo
+  { id: "plano-premium", cat: "veiculo", title: "Plano Premium", subtitle: "Mais cobertura e benefícios", icon: Car },
+  { id: "manutencao", cat: "veiculo", title: "Revisão & Manutenção", subtitle: "Rede de oficinas parceiras", icon: Wrench },
+  // Residencial
+  { id: "seguro-residencial", cat: "residencial", title: "Seguro Residencial", subtitle: "Sua casa protegida a partir de R$29/mês", icon: HomeIcon },
+  { id: "monitoramento-casa", cat: "residencial", title: "Monitoramento 24h", subtitle: "Câmeras e alarme para sua casa", icon: Lock },
+  // Serviços
   { id: "telemedicina", cat: "servicos", title: "Telemedicina 24h", subtitle: "Consultas para toda a família", icon: Heart, badge: "SAÚDE" },
   { id: "assistencia-24h", cat: "servicos", title: "Assistência 24h", subtitle: "Guincho, chaveiro e mais", icon: Headphones },
+  // Benefícios
   { id: "indique-ganhe", cat: "beneficios", title: "Indique e Ganhe", subtitle: "R$50 por cada amigo que assinar", icon: Users, badge: "R$50" },
   { id: "clube-descontos", cat: "beneficios", title: "Clube de Descontos", subtitle: "Ofertas exclusivas para você", icon: Gift },
 ];
