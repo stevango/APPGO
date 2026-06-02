@@ -414,22 +414,43 @@ function VehicleCard({
         </div>
       </div>
 
-      {/* Speed + ignition mini-stats for a richer, "live" feel */}
+      {/* Mini-stats — vehicles show speed/ignition; other assets show battery/signal */}
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
-          <Gauge className="w-4 h-4 text-[#243FF7] shrink-0" />
-          <div className="leading-tight">
-            <p className="text-[10px] text-gray-400 font-medium">Velocidade</p>
-            <p className="text-[13px] font-bold text-[#111111]">{vehicle.speed ?? 0} <span className="text-[10px] font-medium text-gray-400">km/h</span></p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
-          <Power className={`w-4 h-4 shrink-0 ${vehicle.ignition ? "text-green-500" : "text-gray-400"}`} />
-          <div className="leading-tight">
-            <p className="text-[10px] text-gray-400 font-medium">Ignição</p>
-            <p className="text-[13px] font-bold text-[#111111]">{vehicle.ignition ? "Ligada" : "Desligada"}</p>
-          </div>
-        </div>
+        {isVehicleAsset(vehicle.iconType) ? (
+          <>
+            <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
+              <Gauge className="w-4 h-4 text-[#243FF7] shrink-0" />
+              <div className="leading-tight">
+                <p className="text-[10px] text-gray-400 font-medium">Velocidade</p>
+                <p className="text-[13px] font-bold text-[#111111]">{vehicle.speed ?? 0} <span className="text-[10px] font-medium text-gray-400">km/h</span></p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
+              <Power className={`w-4 h-4 shrink-0 ${vehicle.ignition ? "text-green-500" : "text-gray-400"}`} />
+              <div className="leading-tight">
+                <p className="text-[10px] text-gray-400 font-medium">Ignição</p>
+                <p className="text-[13px] font-bold text-[#111111]">{vehicle.ignition ? "Ligada" : "Desligada"}</p>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
+              <Battery className="w-4 h-4 text-[#243FF7] shrink-0" />
+              <div className="leading-tight">
+                <p className="text-[10px] text-gray-400 font-medium">Bateria</p>
+                <p className="text-[13px] font-bold text-[#111111]">{vehicle.batteryLevel ?? 100}<span className="text-[10px] font-medium text-gray-400">%</span></p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2">
+              <Signal className="w-4 h-4 text-[#243FF7] shrink-0" />
+              <div className="leading-tight">
+                <p className="text-[10px] text-gray-400 font-medium">Sinal GPS</p>
+                <p className="text-[13px] font-bold text-[#111111]">{vehicle.gpsSatellites ?? 0} <span className="text-[10px] font-medium text-gray-400">sat</span></p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="mt-3 flex items-center gap-2 text-gray-400">
