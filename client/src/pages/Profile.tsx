@@ -37,6 +37,13 @@ export default function Profile() {
     onError: () => toast.error("Falha ao enviar push de teste."),
   });
 
+  // iPhone só permite Web Push quando o app é instalado na Tela de Início (PWA).
+  const isIOS = typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone =
+    typeof window !== "undefined" &&
+    (window.matchMedia?.("(display-mode: standalone)").matches || (navigator as any).standalone === true);
+  const iosNeedsInstall = isIOS && !isStandalone;
+
   const utils = trpc.useUtils();
   const deleteAccountMutation = trpc.account.deleteAccount.useMutation({
     onSuccess: async () => {
@@ -337,10 +344,24 @@ export default function Profile() {
             </div>
 
             {!isSupported ? (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
-                <p className="text-sm text-amber-800 font-medium">Navegador não suportado</p>
-                <p className="text-xs text-amber-600 mt-1">Seu navegador não suporta notificações push. Use Chrome, Firefox ou Edge.</p>
-              </div>
+              iosNeedsInstall ? (
+                <div className="bg-[#243FF7]/5 border border-[#243FF7]/20 rounded-xl p-4 mb-4">
+                  <p className="text-sm font-semibold text-[#243FF7]">📲 Ative no seu iPhone</p>
+                  <p className="text-xs text-gray-600 mt-1.5">
+                    Para receber notificações no iPhone, instale o GO na Tela de Início:
+                  </p>
+                  <ol className="text-xs text-gray-700 mt-2.5 space-y-1.5 list-decimal list-inside">
+                    <li>Toque em <b>Compartilhar</b> <span className="text-gray-400">(ícone ⬆️)</span> no Safari</li>
+                    <li>Escolha <b>Adicionar à Tela de Início</b></li>
+                    <li>Abra o GO pelo novo ícone e volte aqui</li>
+                  </ol>
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                  <p className="text-sm text-amber-800 font-medium">Navegador não suportado</p>
+                  <p className="text-xs text-amber-600 mt-1">Use o Chrome/Edge no computador ou Android para ativar as notificações.</p>
+                </div>
+              )
             ) : permission === "denied" ? (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
                 <p className="text-sm text-red-800 font-medium">Permissão bloqueada</p>
