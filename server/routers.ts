@@ -594,6 +594,15 @@ export const appRouter = router({
       await unregisterPushSubscription(ctx.user.id, input.endpoint);
       return { success: true };
     }),
+    test: protectedProcedure.mutation(async ({ ctx }) => {
+      const result = await sendPushToUser(ctx.user.id, {
+        title: "GO Direction 🚀",
+        body: "Notificações ativas! Você receberá alertas de bateria, velocidade e cerca aqui.",
+        tag: "go-test",
+        data: { url: "/" },
+      });
+      return result; // { sent, failed }
+    }),
   }),
 
   sharing: router({

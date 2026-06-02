@@ -29,6 +29,13 @@ export default function Profile() {
   const { language, setLanguage, t } = useLanguage();
   const { permission, isSubscribed, isLoading: pushLoading, subscribe, unsubscribe, isSupported } = usePushNotifications();
   const [showPushConfig, setShowPushConfig] = useState(false);
+  const testPush = trpc.push.test.useMutation({
+    onSuccess: (res) => {
+      if (res.sent > 0) toast.success("Push enviado! Confira suas notificações.");
+      else toast.error("Nenhum dispositivo recebeu. Verifique as chaves VAPID no servidor.");
+    },
+    onError: () => toast.error("Falha ao enviar push de teste."),
+  });
 
   const utils = trpc.useUtils();
   const deleteAccountMutation = trpc.account.deleteAccount.useMutation({
@@ -408,6 +415,17 @@ export default function Profile() {
                     "Ativar notificações push"
                   )}
                 </Button>
+
+                {isSubscribed && (
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 mt-3 rounded-xl border-[#243FF7]/30 text-[#243FF7] font-semibold go-btn-active"
+                    onClick={() => testPush.mutate()}
+                    disabled={testPush.isPending}
+                  >
+                    {testPush.isPending ? "Enviando..." : "Enviar push de teste"}
+                  </Button>
+                )}
               </>
             )}
           </div>
