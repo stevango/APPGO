@@ -1,11 +1,11 @@
 import { trpc } from "@/lib/trpc";
-import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, ChevronDown, Gauge, Compass, Battery, Satellite, Zap, Power, Activity, AlertTriangle, Layers } from "lucide-react";
+import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, ChevronDown, Gauge, Compass, Battery, Satellite, Zap, Power, Activity, AlertTriangle, Layers, Check } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useCallback, useEffect, useRef } from "react";
 import L from "leaflet";
 import { MapView, createAssetMarker, updateAssetMarker, createPolyline, fitToPoints } from "@/components/Map";
 import { getAssetIcon, isVehicleAsset } from "@/lib/assetIcons";
-import { useActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
+import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] || c));
 
@@ -42,6 +42,7 @@ export default function Tracking() {
   const [, setLocation] = useLocation();
   const [showRoute, setShowRoute] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [showSwitcher, setShowSwitcher] = useState(false);
   const [panelExpanded, setPanelExpanded] = useState(false);
   const { data: vehicles } = trpc.vehicles.list.useQuery(undefined, {
     refetchInterval: 10000,
@@ -257,12 +258,19 @@ export default function Tracking() {
             <button onClick={() => setLocation("/")} className="go-btn-active">
               <ChevronLeft className="w-6 h-6 text-[#343C42]" />
             </button>
-            <div>
-              <h1 className="text-base font-bold text-[#111111]">Rastreamento</h1>
+            <button
+              onClick={() => vehicles && vehicles.length > 1 && setShowSwitcher(true)}
+              className="text-left go-btn-active"
+              disabled={!vehicles || vehicles.length <= 1}
+            >
+              <h1 className="text-base font-bold text-[#111111] flex items-center gap-1">
+                {vehicle?.model || "Rastreamento"}
+                {vehicles && vehicles.length > 1 && <ChevronDown className="w-4 h-4 text-gray-400" />}
+              </h1>
               {vehicle && (
                 <p className="text-[10px] text-gray-500 font-mono">{vehicle.plate} • {vehicle.trackerModel || "ST3xx"}</p>
               )}
-            </div>
+            </button>
           </div>
           <div className="flex items-center gap-2">
             {vehicles && vehicles.length > 1 && (
@@ -292,6 +300,41 @@ export default function Tracking() {
           </div>
         </div>
       </div>
+
+      {/* Tracker switcher sheet — change the active equipment without leaving the map */}
+      {showSwitcher && vehicles && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowSwitcher(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-5 pb-8 max-h-[70vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-[#111111] mb-3">Trocar rastreador</h3>
+            <div className="space-y-2">
+              {vehicles.map((v) => {
+                const Icon = getAssetIcon(v.iconType);
+                const active = v.id === vehicle?.id;
+                return (
+                  <button
+                    key={v.id}
+                    onClick={() => { setActiveVehicleId(v.id); setShowSwitcher(false); }}
+                    className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 go-btn-active ${
+                      active ? "border-[#243FF7] bg-[#243FF7]/5" : "border-gray-100 bg-white"
+                    }`}
+                  >
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-[#243FF7]/10" : "bg-gray-100"}`}>
+                      <Icon className={`w-5 h-5 ${active ? "text-[#243FF7]" : "text-gray-500"}`} />
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="font-bold text-sm text-[#111111] truncate">{v.brand ? v.brand + " " : ""}{v.model}</p>
+                      <p className="text-xs text-gray-400 font-mono">{v.plate}</p>
+                    </div>
+                    {active && <Check className="w-5 h-5 text-[#243FF7] shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Map */}
       <div className="flex-1 pt-14">
