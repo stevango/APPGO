@@ -4,7 +4,8 @@ import { useLocation } from "wouter";
 import {
   MapPin, Lock, Shield, AlertTriangle, Wrench, Clock,
   Car, Signal, Battery, Wifi, ChevronRight, BatteryWarning, X, Gauge, Share2, Power,
-  Home as HomeIcon, Heart, PawPrint, DollarSign, Building2, Users, MessageCircle, Phone
+  Home as HomeIcon, Heart, PawPrint, DollarSign, Building2, Users, MessageCircle, Phone,
+  Wallet, Headphones, Gift, Sparkles
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
@@ -222,6 +223,9 @@ export default function Home() {
 
       {/* Banner Carrossel - Publicidade e Oportunidades */}
       <PromoBannerCarousel />
+
+      {/* Produtos para você */}
+      <ProductsSection />
     </div>
   );
 }
@@ -562,6 +566,100 @@ const PROMO_BANNERS = [
     badge: "R$50",
   },
 ];
+
+const PRODUCT_CATEGORIES = [
+  { key: "todos", label: "Todos", icon: Sparkles },
+  { key: "financas", label: "Finanças", icon: Wallet },
+  { key: "veiculos", label: "Veículos", icon: Car },
+  { key: "seguros", label: "Seguros", icon: Shield },
+  { key: "servicos", label: "Serviços", icon: Headphones },
+  { key: "beneficios", label: "Benefícios", icon: Gift },
+];
+
+const CAT_COLOR: Record<string, { bg: string; text: string }> = {
+  financas: { bg: "bg-emerald-50", text: "text-emerald-600" },
+  veiculos: { bg: "bg-[#243FF7]/10", text: "text-[#243FF7]" },
+  seguros: { bg: "bg-indigo-50", text: "text-indigo-600" },
+  servicos: { bg: "bg-teal-50", text: "text-teal-600" },
+  beneficios: { bg: "bg-amber-50", text: "text-amber-600" },
+};
+
+const PRODUCTS: Array<{ id: string; cat: string; title: string; subtitle: string; icon: any; badge?: string }> = [
+  { id: "credito-clt", cat: "financas", title: "Crédito CLT", subtitle: "Antecipe seu salário com taxa baixa", icon: DollarSign, badge: "NOVO" },
+  { id: "home-equity", cat: "financas", title: "Home Equity", subtitle: "Crédito com garantia de imóvel", icon: Building2 },
+  { id: "conta-digital", cat: "financas", title: "Conta Digital GO", subtitle: "Sem tarifas de manutenção", icon: Wallet },
+  { id: "plano-premium", cat: "veiculos", title: "Plano Premium", subtitle: "Mais cobertura e benefícios", icon: Car },
+  { id: "rastreador-pet", cat: "veiculos", title: "Rastreador PET", subtitle: "Proteja também seu pet", icon: PawPrint },
+  { id: "seguro-auto", cat: "seguros", title: "Seguro Auto", subtitle: "Proteção completa para seu veículo", icon: Shield },
+  { id: "seguro-residencial", cat: "seguros", title: "Seguro Residencial", subtitle: "Sua casa protegida a partir de R$29/mês", icon: HomeIcon },
+  { id: "seguro-celular", cat: "seguros", title: "Seguro Celular", subtitle: "Cobertura contra roubo e quebra", icon: Phone },
+  { id: "telemedicina", cat: "servicos", title: "Telemedicina 24h", subtitle: "Consultas para toda a família", icon: Heart, badge: "SAÚDE" },
+  { id: "assistencia-24h", cat: "servicos", title: "Assistência 24h", subtitle: "Guincho, chaveiro e mais", icon: Headphones },
+  { id: "indique-ganhe", cat: "beneficios", title: "Indique e Ganhe", subtitle: "R$50 por cada amigo que assinar", icon: Users, badge: "R$50" },
+  { id: "clube-descontos", cat: "beneficios", title: "Clube de Descontos", subtitle: "Ofertas exclusivas para você", icon: Gift },
+];
+
+function ProductsSection() {
+  const [cat, setCat] = useState("todos");
+  const items = PRODUCTS.filter((p) => cat === "todos" || p.cat === cat);
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider mb-3">
+        Produtos para você
+      </h2>
+
+      {/* Category tabs */}
+      <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1 mb-3">
+        {PRODUCT_CATEGORIES.map((c) => {
+          const Icon = c.icon;
+          const active = cat === c.key;
+          return (
+            <button
+              key={c.key}
+              onClick={() => setCat(c.key)}
+              className={`flex items-center gap-1.5 shrink-0 pl-2.5 pr-3.5 py-2 rounded-xl text-[13px] font-semibold transition-all go-btn-active ${
+                active ? "bg-[#243FF7] text-white shadow-md shadow-[#243FF7]/20" : "bg-white border border-gray-100 text-gray-600"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Product cards */}
+      <div className="space-y-2.5">
+        {items.map((p) => {
+          const Icon = p.icon;
+          const c = CAT_COLOR[p.cat] || CAT_COLOR.veiculos;
+          return (
+            <button
+              key={p.id}
+              onClick={() => toast.info(`${p.title} — em breve! Avisaremos quando lançar. 🚀`)}
+              className="w-full go-card p-4 flex items-center gap-3.5 text-left go-btn-active"
+            >
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${c.bg}`}>
+                <Icon className={`w-5 h-5 ${c.text}`} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-[#111111] text-sm truncate">{p.title}</p>
+                  {p.badge && (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#E2FF04] text-[#111111] shrink-0">{p.badge}</span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 truncate mt-0.5">{p.subtitle}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function PromoBannerCarousel() {
   const [currentSlide, setCurrentSlide] = useState(0);
