@@ -5,7 +5,7 @@ import {
   MapPin, Lock, Shield, AlertTriangle, Wrench, Clock,
   Car, Signal, Battery, Wifi, ChevronRight, BatteryWarning, X, Gauge, Share2, Power,
   Home as HomeIcon, Heart, PawPrint, DollarSign, Building2, Users, MessageCircle, Phone,
-  Wallet, Headphones, Gift, Sparkles
+  Wallet, Headphones, Gift
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
@@ -568,7 +568,6 @@ const PROMO_BANNERS = [
 ];
 
 const PRODUCT_CATEGORIES = [
-  { key: "todos", label: "Todos", icon: Sparkles },
   { key: "financas", label: "Finanças", icon: Wallet },
   { key: "veiculos", label: "Veículos", icon: Car },
   { key: "seguros", label: "Seguros", icon: Shield },
@@ -600,24 +599,24 @@ const PRODUCTS: Array<{ id: string; cat: string; title: string; subtitle: string
 ];
 
 function ProductsSection() {
-  const [cat, setCat] = useState("todos");
-  const items = PRODUCTS.filter((p) => cat === "todos" || p.cat === cat);
+  const [openCat, setOpenCat] = useState<string | null>(null);
+  const items = openCat ? PRODUCTS.filter((p) => p.cat === openCat) : [];
 
   return (
     <div className="mt-8">
       <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider mb-3">
-        Produtos para você
+        Produtos GO para você
       </h2>
 
-      {/* Category tabs */}
+      {/* Category tabs — tap to expand the cards below */}
       <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1 mb-3">
         {PRODUCT_CATEGORIES.map((c) => {
           const Icon = c.icon;
-          const active = cat === c.key;
+          const active = openCat === c.key;
           return (
             <button
               key={c.key}
-              onClick={() => setCat(c.key)}
+              onClick={() => setOpenCat(active ? null : c.key)}
               className={`flex items-center gap-1.5 shrink-0 pl-2.5 pr-3.5 py-2 rounded-xl text-[13px] font-semibold transition-all go-btn-active ${
                 active ? "bg-[#243FF7] text-white shadow-md shadow-[#243FF7]/20" : "bg-white border border-gray-100 text-gray-600"
               }`}
@@ -629,7 +628,7 @@ function ProductsSection() {
         })}
       </div>
 
-      {/* Product cards */}
+      {/* Product cards — only when a category is open */}
       <div className="space-y-2.5">
         {items.map((p) => {
           const Icon = p.icon;
@@ -638,7 +637,7 @@ function ProductsSection() {
             <button
               key={p.id}
               onClick={() => toast.info(`${p.title} — em breve! Avisaremos quando lançar. 🚀`)}
-              className="w-full go-card p-4 flex items-center gap-3.5 text-left go-btn-active"
+              className="w-full go-card p-4 flex items-center gap-3.5 text-left go-btn-active animate-in fade-in slide-in-from-top-1 duration-200"
             >
               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${c.bg}`}>
                 <Icon className={`w-5 h-5 ${c.text}`} />
