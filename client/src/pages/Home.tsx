@@ -194,6 +194,46 @@ export default function Home() {
         <EmptyVehicleCard />
       )}
 
+      {/* Status do equipamento — logo abaixo do card, calmo por padrão e ciente do tipo */}
+      {vehicle && (
+        <div className="mt-4 go-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider">
+              Status do {isVehicleAsset(vehicle.iconType) ? "veículo" : "rastreador"}
+            </h3>
+            <div className="flex items-center gap-1.5">
+              <div className={`w-2 h-2 rounded-full ${vehicle.trackerStatus === "online" ? "bg-green-500 pulse-online" : "bg-red-400"}`} />
+              <span className={`text-[11px] font-medium ${vehicle.trackerStatus === "online" ? "text-green-600" : "text-red-500"}`}>
+                {vehicle.trackerStatus === "online" ? "Online" : "Offline"}
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {isVehicleAsset(vehicle.iconType) ? (
+              <>
+                <StatusPill icon={Battery} label="Bateria" value={`${batteryMain.toFixed(1)}V`}
+                  status={isBatteryCritical ? "danger" : isBatteryWarning ? "warning" : "ok"} />
+                <StatusPill icon={Zap} label="Backup" value={`${batteryBackup.toFixed(1)}V`}
+                  status={isBackupCritical ? "danger" : isBackupWarning ? "warning" : "ok"} />
+                <StatusPill icon={Power} label="Ignição" value={vehicle.ignition ? "Ligada" : "Desligada"} status="neutral" />
+                <StatusPill icon={Lock} label="Bloqueio" value={vehicle.blocked ? "Bloqueado" : "Livre"}
+                  status={vehicle.blocked ? "warning" : "neutral"} />
+              </>
+            ) : (
+              <>
+                <StatusPill icon={Battery} label="Bateria" value={`${vehicle.batteryLevel ?? 100}%`}
+                  status={(vehicle.batteryLevel ?? 100) < 20 ? "danger" : (vehicle.batteryLevel ?? 100) < 40 ? "warning" : "ok"} />
+                <StatusPill icon={Signal} label="Sinal GPS" value={`${vehicle.gpsSatellites ?? 0} sat`}
+                  status={(vehicle.gpsSatellites ?? 0) < 4 ? "warning" : "neutral"} />
+                <StatusPill icon={Zap} label="Backup" value={`${batteryBackup.toFixed(1)}V`}
+                  status={isBackupCritical ? "danger" : isBackupWarning ? "warning" : "ok"} />
+                <StatusPill icon={Wifi} label="Conexão" value={vehicle.trackerMode === "active" ? "Ativo" : "Repouso"} status="neutral" />
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Quick Actions - Refined grid */}
       <div className="mt-7">
         <div className="flex items-center justify-between mb-3.5">
@@ -222,47 +262,6 @@ export default function Home() {
 
       {/* Banner Carrossel - Publicidade e Oportunidades */}
       <PromoBannerCarousel />
-
-      {/* Vehicle Status - Compact and elegant */}
-      {vehicle && (
-        <div className="mt-7 go-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider">Status</h3>
-            <div className="flex items-center gap-1.5">
-              <div className={`w-2 h-2 rounded-full ${vehicle.trackerStatus === "online" ? "bg-green-500 pulse-online" : "bg-red-400"}`} />
-              <span className={`text-[11px] font-medium ${vehicle.trackerStatus === "online" ? "text-green-600" : "text-red-500"}`}>
-                {vehicle.trackerStatus === "online" ? "Online" : "Offline"}
-              </span>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <StatusPill
-              icon={Battery}
-              label="Bateria"
-              value={`${batteryMain.toFixed(1)}V`}
-              status={isBatteryCritical ? "danger" : isBatteryWarning ? "warning" : "ok"}
-            />
-            <StatusPill
-              icon={Zap}
-              label="Backup"
-              value={`${batteryBackup.toFixed(1)}V`}
-              status={isBackupCritical ? "danger" : isBackupWarning ? "warning" : "ok"}
-            />
-            <StatusPill
-              icon={Car}
-              label="Ignição"
-              value={vehicle.ignition ? "Ligada" : "Desligada"}
-              status={vehicle.ignition ? "ok" : "neutral"}
-            />
-            <StatusPill
-              icon={Lock}
-              label="Bloqueio"
-              value={vehicle.blocked ? "Bloqueado" : "Livre"}
-              status={vehicle.blocked ? "warning" : "ok"}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -521,11 +520,12 @@ function QuickAction({ icon: Icon, label, color, onClick }: { icon: any; label: 
 }
 
 function StatusPill({ icon: Icon, label, value, status }: { icon: any; label: string; value: string; status: "ok" | "warning" | "danger" | "neutral" }) {
+  // Calm by default: healthy/neutral states are quiet so problems stand out.
   const colors = {
-    ok: { bg: "bg-green-50", text: "text-green-700", icon: "text-green-500" },
+    ok: { bg: "bg-gray-50", text: "text-[#111111]", icon: "text-gray-400" },
+    neutral: { bg: "bg-gray-50", text: "text-[#111111]", icon: "text-gray-400" },
     warning: { bg: "bg-amber-50", text: "text-amber-700", icon: "text-amber-500" },
     danger: { bg: "bg-red-50", text: "text-red-700", icon: "text-red-500" },
-    neutral: { bg: "bg-gray-50", text: "text-gray-600", icon: "text-gray-400" },
   };
   const c = colors[status];
 
