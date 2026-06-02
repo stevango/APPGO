@@ -9,15 +9,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { AddressSearch } from "@/components/AddressSearch";
 import { Switch } from "@/components/ui/switch";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useLanguage, LANGUAGE_LABELS, type Language } from "@/contexts/LanguageContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
 import { isVehicleAsset } from "@/lib/assetIcons";
+
+type RetentionReason = {
+  key: string; label: string; offerTitle: string; offerDesc: string; accept: string; support?: boolean;
+};
+
+// Cancellation save flow — reason → tailored offer (retain) or proceed to delete.
+const RETENTION_REASONS: RetentionReason[] = [
+  { key: "caro", label: "Está caro pra mim", offerTitle: "30% de desconto por 3 meses", offerDesc: "Queremos manter você protegido. Que tal 30% OFF nos próximos 3 meses para continuar com a gente?", accept: "Quero o desconto" },
+  { key: "nao_uso", label: "Não estou usando", offerTitle: "Pause sua assinatura", offerDesc: "Você pode pausar por até 3 meses sem perder seus dados — e voltar quando quiser.", accept: "Quero pausar" },
+  { key: "tecnico", label: "Tive um problema técnico", offerTitle: "A gente resolve pra você", offerDesc: "A maioria dos problemas se resolve em minutos com o nosso time. Vamos tentar juntos?", accept: "Falar com suporte", support: true },
+  { key: "trocar", label: "Vou trocar de empresa", offerTitle: "Deixe a gente fazer uma proposta", offerDesc: "Temos condições especiais de fidelidade. Antes de decidir, que tal ouvir nossa proposta?", accept: "Ver proposta", support: true },
+  { key: "outro", label: "Outro motivo", offerTitle: "Queremos te entender", offerDesc: "Conte com a gente para encontrar a melhor solução pra você.", accept: "Falar com a gente", support: true },
+];
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -40,6 +49,34 @@ export default function Profile() {
 
   const [showAddress, setShowAddress] = useState(false);
   const userAddress = (user as Record<string, any>)?.address as string | undefined;
+
+  const [showRetention, setShowRetention] = useState(false);
+  const [retStep, setRetStep] = useState<"reason" | "offer" | "confirm">("reason");
+  const [retReason, setRetReason] = useState<RetentionReason | null>(null);
+  const retentionMutation = trpc.retention.logEvent.useMutation();
+
+  const openRetention = () => { setRetReason(null); setRetStep("reason"); setShowRetention(true); };
+  const chooseReason = (r: RetentionReason) => {
+    setRetReason(r);
+    setRetStep("offer");
+    retentionMutation.mutate({ reason: r.key, action: "offer_shown", offer: r.offerTitle });
+  };
+  const acceptOffer = () => {
+    if (!retReason) return;
+    if (retReason.support) {
+      retentionMutation.mutate({ reason: retReason.key, action: "support" });
+      setShowRetention(false);
+      setLocation("/help");
+      return;
+    }
+    retentionMutation.mutate({ reason: retReason.key, action: "offer_accepted", offer: retReason.offerTitle });
+    toast.success("Que bom que você fica! 💙 Nossa equipe vai cuidar disso.");
+    setShowRetention(false);
+  };
+  const confirmDelete = () => {
+    retentionMutation.mutate({ reason: retReason?.key, action: "cancelled" });
+    deleteAccountMutation.mutate();
+  };
 
   const [showFeedback, setShowFeedback] = useState(false);
   const [rating, setRating] = useState(0);
@@ -258,42 +295,90 @@ export default function Profile() {
         Sair da conta
       </Button>
 
-      {/* Delete account (LGPD / app store requirement) */}
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <button className="w-full mt-3 text-center text-xs text-gray-400 underline underline-offset-4 go-btn-active">
-            Excluir minha conta
-          </button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-              <Trash2 className="w-5 h-5" /> Excluir conta permanentemente
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação é irreversível. Todos os seus dados — veículos, trajetos,
-              cercas, contatos de emergência, faturas e notificações — serão
-              apagados definitivamente. Tem certeza?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteAccountMutation.isPending}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              disabled={deleteAccountMutation.isPending}
-              onClick={(e) => { e.preventDefault(); deleteAccountMutation.mutate(); }}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {deleteAccountMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                "Sim, excluir tudo"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete account → goes through the retention save flow first */}
+      <button
+        onClick={openRetention}
+        className="w-full mt-3 text-center text-xs text-gray-400 underline underline-offset-4 go-btn-active"
+      >
+        Cancelar / excluir minha conta
+      </button>
+
+      {showRetention && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowRetention(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-6 pb-8 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+
+            {retStep === "reason" && (
+              <>
+                <h3 className="text-lg font-bold text-[#111111]">Que pena que você quer ir 😢</h3>
+                <p className="text-sm text-gray-500 mt-1 mb-5">Antes de seguir, conte o que aconteceu — queremos cuidar disso pra você.</p>
+                <div className="space-y-2">
+                  {RETENTION_REASONS.map((r) => (
+                    <button
+                      key={r.key}
+                      onClick={() => chooseReason(r)}
+                      className="w-full flex items-center justify-between p-3.5 rounded-xl border border-gray-100 bg-gray-50 go-btn-active"
+                    >
+                      <span className="text-sm font-medium text-[#111111]">{r.label}</span>
+                      <ChevronRight className="w-4 h-4 text-gray-300" />
+                    </button>
+                  ))}
+                </div>
+                <button onClick={() => setShowRetention(false)} className="w-full mt-4 text-center text-sm font-semibold text-[#243FF7] go-btn-active py-2">
+                  Voltar — quero continuar no GO
+                </button>
+              </>
+            )}
+
+            {retStep === "offer" && retReason && (
+              <>
+                <div className="w-14 h-14 bg-[#E2FF04]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-7 h-7 text-[#243FF7]" />
+                </div>
+                <h3 className="text-xl font-bold text-[#111111] text-center">{retReason.offerTitle}</h3>
+                <p className="text-sm text-gray-500 mt-2 mb-6 text-center leading-relaxed">{retReason.offerDesc}</p>
+                <Button
+                  className="w-full h-12 bg-[#243FF7] text-white font-bold rounded-xl go-btn-active"
+                  onClick={acceptOffer}
+                  disabled={retentionMutation.isPending}
+                >
+                  {retReason.accept}
+                </Button>
+                <button
+                  onClick={() => setRetStep("confirm")}
+                  className="w-full mt-3 text-center text-xs text-gray-400 underline underline-offset-4 go-btn-active py-1"
+                >
+                  Não, quero continuar a exclusão
+                </button>
+              </>
+            )}
+
+            {retStep === "confirm" && (
+              <>
+                <div className="flex items-center gap-2 text-red-600 mb-2">
+                  <Trash2 className="w-5 h-5" />
+                  <h3 className="text-lg font-bold">Excluir conta permanentemente</h3>
+                </div>
+                <p className="text-sm text-gray-500 mb-5">
+                  Esta ação é irreversível. Todos os seus dados — equipamentos, trajetos,
+                  cercas, contatos de emergência, faturas e notificações — serão apagados definitivamente.
+                </p>
+                <Button
+                  className="w-full h-12 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl go-btn-active"
+                  onClick={confirmDelete}
+                  disabled={deleteAccountMutation.isPending}
+                >
+                  {deleteAccountMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Sim, excluir tudo"}
+                </Button>
+                <button onClick={() => setShowRetention(false)} className="w-full mt-3 text-center text-sm font-semibold text-[#243FF7] go-btn-active py-1">
+                  Voltar — mudei de ideia
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* App Version */}
       <p className="text-center text-xs text-gray-300 mt-6">

@@ -153,6 +153,38 @@ export const appRouter = router({
       }),
   }),
 
+  retention: router({
+    // Logs each step of the cancellation save flow. When the customer accepts a
+    // retention offer or asks for support, the ops team is notified to follow up.
+    logEvent: protectedProcedure
+      .input(z.object({
+        reason: z.string().max(60).optional(),
+        action: z.enum(["offer_shown", "offer_accepted", "support", "cancelled"]),
+        offer: z.string().max(160).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.createRetentionEvent({ userId: ctx.user.id, reason: input.reason ?? null, action: input.action, offer: input.offer ?? null });
+        if (input.action === "offer_accepted") {
+          notifyOwner({
+            title: "🟢 Retenção: oferta aceita",
+            content: `${ctx.user.name || "Cliente"} (${ctx.user.email || "sem e-mail"}) aceitou: ${input.offer || "(oferta)"}${input.reason ? `\nMotivo: ${input.reason}` : ""}. Aplicar/seguir contato.`,
+          }).catch(() => {});
+          await db.createNotification({
+            userId: ctx.user.id,
+            type: "sistema",
+            title: "Recebemos seu pedido 💙",
+            message: `Que bom que você fica com a gente! Nossa equipe vai aplicar "${input.offer}" e, se precisar, entrar em contato.`,
+          });
+        } else if (input.action === "cancelled") {
+          notifyOwner({
+            title: "🔴 Cliente cancelou",
+            content: `${ctx.user.name || "Cliente"} (${ctx.user.email || "sem e-mail"}) excluiu a conta.${input.reason ? `\nMotivo: ${input.reason}` : ""}`,
+          }).catch(() => {});
+        }
+        return { success: true } as const;
+      }),
+  }),
+
   help: router({
     // Logs questions asked to the in-app assistant so the knowledge base can be
     // improved over time (especially the ones that didn't match).

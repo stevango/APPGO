@@ -908,3 +908,22 @@ export async function markBillingReminderSent(userId: number) {
   if (!db) return;
   await db.update(users).set({ lastBillingReminderAt: new Date() }).where(eq(users.id, userId));
 }
+
+// --- Retention (cancellation save flow) ---
+import { retentionEvents } from "../drizzle/schema";
+
+export async function createRetentionEvent(data: {
+  userId: number;
+  reason?: string | null;
+  action: "offer_shown" | "offer_accepted" | "support" | "cancelled";
+  offer?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(retentionEvents).values({
+    userId: data.userId,
+    reason: data.reason ?? null,
+    action: data.action,
+    offer: data.offer ?? null,
+  });
+}

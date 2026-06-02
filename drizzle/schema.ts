@@ -370,3 +370,16 @@ export const consentLogs = mysqlTable("consentLogs", {
 
 export type ConsentLog = typeof consentLogs.$inferSelect;
 export type InsertConsentLog = typeof consentLogs.$inferInsert;
+
+// Fluxo de retenção (cancellation save flow): motivo + ação tomada
+export const retentionEvents = mysqlTable("retentionEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  reason: varchar("reason", { length: 60 }),
+  action: mysqlEnum("action", ["offer_shown", "offer_accepted", "support", "cancelled"]).notNull(),
+  offer: varchar("offer", { length: 160 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type RetentionEvent = typeof retentionEvents.$inferSelect;
+export type InsertRetentionEvent = typeof retentionEvents.$inferInsert;
