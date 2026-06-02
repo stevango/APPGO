@@ -126,6 +126,34 @@ export const appRouter = router({
     }),
   }),
 
+  feedback: router({
+    submit: protectedProcedure
+      .input(z.object({
+        rating: z.number().int().min(1).max(5),
+        message: z.string().trim().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.createAppFeedback({ userId: ctx.user.id, rating: input.rating, message: input.message });
+        // Let the ops team see suggestions as they arrive (best-effort).
+        notifyOwner({
+          title: `Avaliação do app: ${input.rating}★`,
+          content: `${ctx.user.name || "Cliente"} (${ctx.user.email || "sem e-mail"}) avaliou com ${input.rating}★.${input.message ? `\nSugestão: ${input.message}` : ""}`,
+        }).catch(() => {});
+        return { success: true } as const;
+      }),
+  }),
+
+  help: router({
+    // Logs questions asked to the in-app assistant so the knowledge base can be
+    // improved over time (especially the ones that didn't match).
+    logQuery: publicProcedure
+      .input(z.object({ query: z.string().trim().min(1).max(500), matched: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.createHelpQuery({ userId: ctx.user?.id ?? null, query: input.query, matched: input.matched });
+        return { success: true } as const;
+      }),
+  }),
+
   vehicles: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       return db.getUserVehicles(ctx.user.id);

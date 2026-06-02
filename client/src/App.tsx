@@ -28,6 +28,7 @@ const VehicleCare = lazy(() => import("./pages/VehicleCare"));
 const PaymentManagement = lazy(() => import("./pages/PaymentManagement"));
 const PaymentHistory = lazy(() => import("./pages/PaymentHistory"));
 const EmergencyContacts = lazy(() => import("./pages/EmergencyContacts"));
+const Help = lazy(() => import("./pages/Help"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function AuthenticatedApp() {
@@ -50,6 +51,7 @@ function AuthenticatedApp() {
           <Route path="/payment" component={PaymentManagement} />
           <Route path="/payment/history" component={PaymentHistory} />
           <Route path="/emergency-contacts" component={EmergencyContacts} />
+          <Route path="/help" component={Help} />
           <Route path="/404" component={NotFound} />
           <Route component={NotFound} />
         </Switch>

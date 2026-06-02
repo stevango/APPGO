@@ -311,3 +311,27 @@ export const emergencyContacts = mysqlTable("emergencyContacts", {
 
 export type EmergencyContact = typeof emergencyContacts.$inferSelect;
 export type InsertEmergencyContact = typeof emergencyContacts.$inferInsert;
+
+// Avaliação do app (nota + sugestão) feita pelo cliente
+export const appFeedback = mysqlTable("appFeedback", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  rating: int("rating").notNull(),
+  message: text("message"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AppFeedback = typeof appFeedback.$inferSelect;
+export type InsertAppFeedback = typeof appFeedback.$inferInsert;
+
+// Perguntas feitas ao assistente de ajuda (alimenta a melhoria da base de conhecimento)
+export const helpQueries = mysqlTable("helpQueries", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  query: varchar("query", { length: 500 }).notNull(),
+  matched: boolean("matched").default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type HelpQuery = typeof helpQueries.$inferSelect;
+export type InsertHelpQuery = typeof helpQueries.$inferInsert;

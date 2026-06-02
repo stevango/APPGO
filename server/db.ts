@@ -784,3 +784,18 @@ export async function getPrimaryEmergencyContact(userId: number): Promise<Emerge
     return null;
   }
 }
+
+// --- App feedback (rating + suggestion) & help queries ---
+import { appFeedback, helpQueries } from "../drizzle/schema";
+
+export async function createAppFeedback(data: { userId: number; rating: number; message?: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(appFeedback).values({ userId: data.userId, rating: data.rating, message: data.message ?? null });
+}
+
+export async function createHelpQuery(data: { userId?: number | null; query: string; matched: boolean }) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(helpQueries).values({ userId: data.userId ?? null, query: data.query.slice(0, 500), matched: data.matched });
+}

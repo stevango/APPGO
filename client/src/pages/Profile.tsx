@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import {
   ChevronLeft, User, Car, CreditCard, Shield, Bell,
-  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles
+  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -35,6 +35,15 @@ export default function Profile() {
       else toast.error("Nenhum dispositivo recebeu. Verifique as chaves VAPID no servidor.");
     },
     onError: () => toast.error("Falha ao enviar push de teste."),
+  });
+
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [feedbackMsg, setFeedbackMsg] = useState("");
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const feedbackMutation = trpc.feedback.submit.useMutation({
+    onSuccess: () => setFeedbackSent(true),
+    onError: () => toast.error("Não foi possível enviar. Tente novamente."),
   });
 
   // iPhone só permite Web Push quando o app é instalado na Tela de Início (PWA).
@@ -125,7 +134,8 @@ export default function Profile() {
     { icon: Receipt, label: "Faturas", sublabel: "Histórico e 2ª via de boleto", action: () => setLocation("/payment/history") },
     { icon: Shield, label: "Segurança", sublabel: "Senha, Face ID", action: () => {} },
     { icon: Bell, label: t("notifications"), sublabel: isSubscribed ? "Push ativo" : "Configurar alertas", action: () => setShowPushConfig(true) },
-    { icon: HelpCircle, label: "Central de atendimento", sublabel: "Fale conosco", action: () => {} },
+    { icon: Sparkles, label: "Central de Ajuda", sublabel: "Tire dúvidas com a assistente GO", action: () => setLocation("/help") },
+    { icon: Star, label: "Avaliar o app", sublabel: "Dê sua nota e sugestões", action: () => setShowFeedback(true) },
     { icon: FileText, label: "Termos e privacidade", sublabel: "Documentos legais", action: () => {} },
   ];
 
@@ -447,6 +457,67 @@ export default function Profile() {
                     {testPush.isPending ? "Enviando..." : "Enviar push de teste"}
                   </Button>
                 )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Feedback / rating sheet */}
+      {showFeedback && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowFeedback(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-6 pb-8 animate-in slide-in-from-bottom duration-300">
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+            {feedbackSent ? (
+              <div className="text-center py-6">
+                <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-8 h-8 text-green-500" />
+                </div>
+                <h3 className="text-lg font-bold text-[#111111]">Obrigado! 💙</h3>
+                <p className="text-sm text-gray-500 mt-1">Sua opinião ajuda o GO a melhorar cada vez mais.</p>
+                <Button
+                  className="w-full h-12 mt-6 bg-[#243FF7] text-white font-semibold rounded-xl go-btn-active"
+                  onClick={() => { setShowFeedback(false); setFeedbackSent(false); setRating(0); setFeedbackMsg(""); }}
+                >
+                  Fechar
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="w-11 h-11 bg-[#243FF7]/10 rounded-xl flex items-center justify-center">
+                    <Star className="w-5 h-5 text-[#243FF7]" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-[#111111]">Avaliar o app</h3>
+                    <p className="text-xs text-gray-500">Sua nota e sugestões nos ajudam a melhorar</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center gap-2 mb-5">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button key={n} onClick={() => setRating(n)} className="go-btn-active" aria-label={`${n} estrelas`}>
+                      <Star className={`w-9 h-9 ${n <= rating ? "text-[#E2FF04] fill-[#E2FF04]" : "text-gray-300"}`} />
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  value={feedbackMsg}
+                  onChange={(e) => setFeedbackMsg(e.target.value)}
+                  placeholder="Conte o que achou ou sugira uma melhoria (opcional)"
+                  rows={4}
+                  className="w-full rounded-xl border border-gray-200 p-3 text-sm outline-none focus:ring-2 focus:ring-[#243FF7]/30 resize-none"
+                />
+
+                <Button
+                  className="w-full h-12 mt-4 bg-[#243FF7] text-white font-semibold rounded-xl go-btn-active disabled:opacity-50"
+                  disabled={rating === 0 || feedbackMutation.isPending}
+                  onClick={() => feedbackMutation.mutate({ rating, message: feedbackMsg.trim() || undefined })}
+                >
+                  {feedbackMutation.isPending ? "Enviando..." : "Enviar avaliação"}
+                </Button>
               </>
             )}
           </div>
