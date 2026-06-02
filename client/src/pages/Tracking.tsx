@@ -4,8 +4,39 @@ import { useLocation } from "wouter";
 import { useState, useCallback, useEffect, useRef } from "react";
 import L from "leaflet";
 import { MapView, createAssetMarker, updateAssetMarker, createPolyline, fitToPoints } from "@/components/Map";
-import { getAssetIcon } from "@/lib/assetIcons";
-import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
+import { getAssetIcon, isVehicleAsset } from "@/lib/assetIcons";
+import { useActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
+
+const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] || c));
+
+/** Compact info card shown when a map marker is tapped (no leaving the map). */
+function assetPopupHtml(v: any): string {
+  const isVeh = isVehicleAsset(v.iconType);
+  const name = esc(`${v.brand ? v.brand + " " : ""}${v.model || "Equipamento"}`);
+  const online = v.trackerStatus === "online";
+  let headline = "Rastreando";
+  if (isVeh) {
+    if (v.blocked) headline = "Bloqueado";
+    else if (v.ignition && (v.speed ?? 0) > 0) headline = `Em movimento • ${v.speed} km/h`;
+    else if (v.ignition) headline = "Ligado, parado";
+    else headline = "Estacionado";
+  } else {
+    headline = v.trackerMode === "active" ? "Rastreador ativo" : "Em repouso";
+  }
+  const metrics = isVeh
+    ? `${v.speed ?? 0} km/h · Bateria ${Number(v.batteryMain ?? 0).toFixed(1)}V`
+    : `Bateria ${v.batteryLevel ?? 100}% · ${v.gpsSatellites ?? 0} sat`;
+  const addr = esc(v.lastAddress || "Localização não disponível");
+  return `<div style="min-width:190px;font-family:inherit">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-weight:700;font-size:14px;color:#111">${name}</span>
+      <span style="font-size:10px;font-weight:600;color:${online ? "#16a34a" : "#ef4444"}">● ${online ? "Online" : "Offline"}</span>
+    </div>
+    <div style="font-size:12px;color:#243FF7;font-weight:600;margin-top:3px">${esc(headline)}</div>
+    <div style="font-size:12px;color:#444;margin-top:6px">${esc(metrics)}</div>
+    <div style="font-size:11px;color:#999;margin-top:4px">${addr}</div>
+  </div>`;
+}
 
 export default function Tracking() {
   const [, setLocation] = useLocation();
@@ -63,9 +94,11 @@ export default function Tracking() {
       markerRef.current = createAssetMarker(map, { lat, lng }, getAssetIcon(vehicle.iconType), {
         title: `${vehicle.brand} ${vehicle.model}`,
       });
+      markerRef.current.bindPopup(assetPopupHtml(vehicle), { offset: [0, -42], closeButton: true });
       markerVehicleId.current = vehicle.id;
     } else {
       updateAssetMarker(markerRef.current, { lat, lng });
+      markerRef.current.setPopupContent(assetPopupHtml(vehicle));
       map.panTo([lat, lng], { animate: true, duration: 0.8 });
     }
   }, [mapReady, showAll, vehicle?.id, vehicle?.lastLatitude, vehicle?.lastLongitude, vehicle?.iconType, vehicle?.brand, vehicle?.model]);
@@ -91,11 +124,7 @@ export default function Tracking() {
       const m = createAssetMarker(map, { lat, lng }, getAssetIcon(v.iconType), {
         title: v.model || v.brand || "Equipamento",
       });
-      m.bindTooltip(v.model || v.brand || "Equipamento", { direction: "top", offset: [0, -44] });
-      m.on("click", () => {
-        setActiveVehicleId(v.id);
-        setShowAll(false);
-      });
+      m.bindPopup(assetPopupHtml(v), { offset: [0, -42], closeButton: true });
       allMarkersRef.current.push(m);
       pts.push({ lat, lng });
     });
