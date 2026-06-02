@@ -3,8 +3,9 @@ import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, Ch
 import { useLocation } from "wouter";
 import { useState, useCallback, useEffect, useRef } from "react";
 import L from "leaflet";
-import { MapView, createAssetMarker, updateAssetMarker, createCircle, createPolyline, fitToPoints } from "@/components/Map";
+import { MapView, createAssetMarker, updateAssetMarker, createPolyline, fitToPoints } from "@/components/Map";
 import { getAssetIcon } from "@/lib/assetIcons";
+import { useActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
 
 export default function Tracking() {
   const [, setLocation] = useLocation();
@@ -13,7 +14,8 @@ export default function Tracking() {
   const { data: vehicles } = trpc.vehicles.list.useQuery(undefined, {
     refetchInterval: 10000,
   });
-  const vehicle = vehicles?.[0];
+  const activeVehicleId = useActiveVehicleId();
+  const vehicle = pickActiveVehicle(vehicles, activeVehicleId);
 
   const { data: routePoints } = trpc.routeHistory.list.useQuery(
     { vehicleId: vehicle?.id || 0, limit: 50 },
@@ -22,6 +24,7 @@ export default function Tracking() {
 
   const mapRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
+  const markerVehicleId = useRef<number | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
@@ -30,8 +33,9 @@ export default function Tracking() {
     setMapReady(true);
   }, []);
 
-  // Create the marker once the map AND vehicle position are both available,
-  // then keep it moving as the position updates (real tracker or demo).
+  // Create the marker once the map AND asset position are both available, then
+  // keep it moving as the position updates. When the active asset changes, the
+  // marker is recreated with the new icon and the map recenters on it.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
@@ -39,17 +43,23 @@ export default function Tracking() {
     const lat = parseFloat(String(vehicle.lastLatitude));
     const lng = parseFloat(String(vehicle.lastLongitude));
 
+    // Asset switched → drop the old marker so a new one is built.
+    if (markerRef.current && markerVehicleId.current !== vehicle.id) {
+      markerRef.current.remove();
+      markerRef.current = null;
+    }
+
     if (!markerRef.current) {
       map.setView([lat, lng], 16);
       markerRef.current = createAssetMarker(map, { lat, lng }, getAssetIcon(vehicle.iconType), {
         title: `${vehicle.brand} ${vehicle.model}`,
       });
-      createCircle(map, { lat, lng }, 30, { fillOpacity: 0.08, strokeOpacity: 0.2, weight: 1 });
+      markerVehicleId.current = vehicle.id;
     } else {
       updateAssetMarker(markerRef.current, { lat, lng });
       map.panTo([lat, lng], { animate: true, duration: 0.8 });
     }
-  }, [mapReady, vehicle?.lastLatitude, vehicle?.lastLongitude, vehicle?.iconType, vehicle?.brand, vehicle?.model]);
+  }, [mapReady, vehicle?.id, vehicle?.lastLatitude, vehicle?.lastLongitude, vehicle?.iconType, vehicle?.brand, vehicle?.model]);
 
   // Draw route when routePoints change
   useEffect(() => {
@@ -94,11 +104,12 @@ export default function Tracking() {
     },
   });
   useEffect(() => {
-    if (!vehicle?.isDemo) return;
+    // Only the demo car moves; pets/items stay put.
+    if (!vehicle?.isDemo || vehicle?.iconType !== "car") return;
     const id = setInterval(() => tickMutation.mutate(), 4000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vehicle?.isDemo, showRoute]);
+  }, [vehicle?.isDemo, vehicle?.iconType, showRoute]);
 
   function getTrackerModeLabel(mode: string | null | undefined) {
     switch (mode) {

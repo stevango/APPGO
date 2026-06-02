@@ -8,14 +8,15 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
 import { ASSET_ICONS, ASSET_GROUPS, isVehicleAsset } from "@/lib/assetIcons";
+import { useActiveVehicleId, setActiveVehicleId } from "@/lib/activeVehicle";
 
 export default function VehicleSelector() {
   const [, setLocation] = useLocation();
   const { data: vehicles, isLoading } = trpc.vehicles.list.useQuery();
   const utils = trpc.useUtils();
-  const [selectedId, setSelectedId] = useState<number | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [iconPickerFor, setIconPickerFor] = useState<number | null>(null);
+  const activeId = useActiveVehicleId();
 
   const setIconType = trpc.vehicles.setIconType.useMutation({
     onSuccess: () => {
@@ -26,13 +27,9 @@ export default function VehicleSelector() {
     onError: () => toast.error("Não foi possível atualizar o ícone."),
   });
 
-  // Auto-select first vehicle
-  const activeVehicle = vehicles?.find(v => v.id === selectedId) || vehicles?.[0];
-
   const handleSelect = (id: number) => {
-    setSelectedId(id);
-    toast.success("Veículo selecionado!");
-    // Navegar de volta após seleção
+    setActiveVehicleId(id);
+    toast.success("Equipamento selecionado!");
     setTimeout(() => setLocation("/"), 300);
   };
 
@@ -43,7 +40,7 @@ export default function VehicleSelector() {
         <button onClick={() => setLocation("/")} className="go-btn-active p-1">
           <ChevronDown className="w-6 h-6 text-[#343C42]" />
         </button>
-        <h1 className="text-lg font-bold text-[#111111]">Veículos</h1>
+        <h1 className="text-lg font-bold text-[#111111]">Equipamentos</h1>
         <button
           onClick={() => setEditMode(!editMode)}
           className="text-sm font-semibold text-[#243FF7] go-btn-active px-2 py-1 rounded-lg"
@@ -71,7 +68,7 @@ export default function VehicleSelector() {
         ) : vehicles && vehicles.length > 0 ? (
           <div className="divide-y divide-gray-100">
             {vehicles.map((vehicle) => {
-              const isSelected = (selectedId ?? vehicles[0]?.id) === vehicle.id;
+              const isSelected = (activeId ?? vehicles[0]?.id) === vehicle.id;
 
               return (
                 <div
@@ -87,7 +84,7 @@ export default function VehicleSelector() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-                      {vehicle.model || "Veículo"}
+                      {vehicle.model || "Equipamento"}
                     </p>
                     <div className="mt-1.5">
                       {isVehicleAsset(vehicle.iconType) ? (
@@ -131,8 +128,8 @@ export default function VehicleSelector() {
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Car className="w-10 h-10 text-gray-400" />
             </div>
-            <p className="text-base font-semibold text-[#111111] mb-1">Nenhum veículo cadastrado</p>
-            <p className="text-sm text-gray-500 mb-6">Adicione seu primeiro veículo para começar</p>
+            <p className="text-base font-semibold text-[#111111] mb-1">Nenhum equipamento cadastrado</p>
+            <p className="text-sm text-gray-500 mb-6">Adicione seu primeiro equipamento para começar</p>
           </div>
         )}
       </div>

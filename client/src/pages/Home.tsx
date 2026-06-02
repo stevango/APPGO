@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
-import { isVehicleAsset } from "@/lib/assetIcons";
+import { isVehicleAsset, getAssetIcon } from "@/lib/assetIcons";
+import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -26,7 +27,8 @@ export default function Home() {
   });
   const [alertDismissed, setAlertDismissed] = useState(false);
 
-  const vehicle = vehicles?.[0];
+  const activeVehicleId = useActiveVehicleId();
+  const vehicle = pickActiveVehicle(vehicles, activeVehicleId);
   const firstName = user?.name?.split(" ")[0] || "Usuário";
 
   // Battery alert logic
@@ -118,7 +120,7 @@ export default function Home() {
             <div className="flex-1">
               <h4 className="font-semibold text-sm text-amber-900">Está tudo bem?</h4>
               <p className="text-xs text-amber-700 mt-0.5">
-                Seu veículo está sem comunicação há mais de 24h. Toque para nos contar.
+                Seu equipamento está sem comunicação há mais de 24h. Toque para nos contar.
               </p>
             </div>
             <ChevronRight className="w-4 h-4 text-amber-400" />
@@ -138,16 +140,45 @@ export default function Home() {
         />
       )}
 
-      {/* Vehicle Card */}
+      {/* Asset switcher — tap a chip to change the active equipment */}
       {!isLoading && vehicles && vehicles.length > 1 && (
-        <button
-          onClick={() => setLocation("/vehicles")}
-          className="flex items-center gap-1.5 text-xs text-[#243FF7] font-semibold mb-2.5 go-btn-active"
-        >
-          <Car className="w-3.5 h-3.5" />
-          <span>Trocar veículo ({vehicles.length})</span>
-          <ChevronRight className="w-3 h-3" />
-        </button>
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              Meus equipamentos ({vehicles.length})
+            </p>
+            <button
+              onClick={() => setLocation("/vehicles")}
+              className="text-[11px] font-semibold text-[#243FF7] go-btn-active"
+            >
+              Gerenciar
+            </button>
+          </div>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
+            {vehicles.map((v) => {
+              const Icon = getAssetIcon(v.iconType);
+              const active = v.id === vehicle?.id;
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => setActiveVehicleId(v.id)}
+                  className={`flex items-center gap-2 shrink-0 pl-2.5 pr-3.5 py-2 rounded-xl border-2 transition-all go-btn-active ${
+                    active
+                      ? "border-[#243FF7] bg-[#243FF7] text-white shadow-md shadow-[#243FF7]/20"
+                      : "border-gray-100 bg-white text-gray-600"
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${active ? "bg-white/20" : "bg-gray-100"}`}>
+                    <Icon className={`w-4 h-4 ${active ? "text-white" : "text-[#243FF7]"}`} />
+                  </div>
+                  <span className="text-[13px] font-semibold whitespace-nowrap max-w-[120px] truncate">
+                    {v.model || v.brand || "Equipamento"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       )}
       {isLoading ? (
         <VehicleCardSkeleton />
@@ -183,7 +214,7 @@ export default function Home() {
               const msg = encodeURIComponent(`📍 Localização: ${vehicle.lastAddress || "N/D"}\n🚗 ${vehicle.brand} ${vehicle.model} - ${vehicle.plate}\n\n🗺️ https://www.google.com/maps?q=${vehicle.lastLatitude},${vehicle.lastLongitude}\n\n_Enviado via GO Direction_`);
               window.open(`https://wa.me/?text=${msg}`, "_blank");
             } else {
-              toast.info("Cadastre um veículo primeiro");
+              toast.info("Cadastre um equipamento primeiro");
             }
           }} />
         </div>
@@ -426,9 +457,9 @@ function EmptyVehicleCard() {
       <div className="w-16 h-16 bg-gradient-to-br from-[#243FF7]/10 to-[#243FF7]/5 rounded-full flex items-center justify-center mx-auto mb-4">
         <Car className="w-8 h-8 text-[#243FF7]" />
       </div>
-      <h3 className="font-bold text-[#111111] text-[15px] mb-1">Nenhum veículo</h3>
+      <h3 className="font-bold text-[#111111] text-[15px] mb-1">Nenhum equipamento</h3>
       <p className="text-[13px] text-gray-400 leading-relaxed">
-        Seu veículo aparecerá aqui após a ativação do rastreador.
+        Seu equipamento aparecerá aqui após a ativação do rastreador.
       </p>
     </div>
   );
