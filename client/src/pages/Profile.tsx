@@ -15,6 +15,8 @@ import {
 import { toast } from "sonner";
 import { useLanguage, LANGUAGE_LABELS, type Language } from "@/contexts/LanguageContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
+import { isVehicleAsset } from "@/lib/assetIcons";
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -77,7 +79,11 @@ export default function Profile() {
   };
   const userPlan = planLabels[(user as Record<string, any>)?.plan || "basico"] || "Básico";
 
-  const vehicle = vehicles?.[0];
+  // Speed limit applies to the ACTIVE equipment (the one selected on Home),
+  // and only makes sense for vehicles.
+  const activeId = useActiveVehicleId();
+  const vehicle = pickActiveVehicle(vehicles, activeId);
+  const speedLimitApplies = isVehicleAsset(vehicle?.iconType);
 
   function handleOpenSpeedConfig() {
     if (vehicle) {
@@ -96,8 +102,10 @@ export default function Profile() {
   }
 
   const menuItems = [
-    { icon: Car, label: t("my_vehicles"), sublabel: `${vehicles?.length || 0} veículo(s)`, action: () => setLocation("/vehicles") },
-    { icon: Gauge, label: "Limite de velocidade", sublabel: `${vehicle?.speedLimit || 120} km/h`, action: handleOpenSpeedConfig },
+    { icon: Car, label: t("my_vehicles"), sublabel: `${vehicles?.length || 0} equipamento(s)`, action: () => setLocation("/vehicles") },
+    ...(speedLimitApplies
+      ? [{ icon: Gauge, label: "Limite de velocidade", sublabel: `${vehicle?.model || "Veículo"} • ${vehicle?.speedLimit || 120} km/h`, action: handleOpenSpeedConfig }]
+      : []),
     { icon: Globe, label: t("language"), sublabel: LANGUAGE_LABELS[language], action: () => setShowLanguageConfig(true) },
     { icon: CreditCard, label: "Pagamento", sublabel: "Alterar forma de pagamento", action: () => setLocation("/payment") },
     { icon: Receipt, label: "Faturas", sublabel: "Histórico e 2ª via de boleto", action: () => setLocation("/payment/history") },
@@ -425,7 +433,9 @@ export default function Profile() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-[#111111]">Limite de Velocidade</h3>
-                <p className="text-xs text-gray-500">Receba alertas ao ultrapassar o limite</p>
+                <p className="text-xs text-gray-500">
+                  {vehicle ? `${vehicle.brand ? vehicle.brand + " " : ""}${vehicle.model} • ${vehicle.plate}` : "Receba alertas ao ultrapassar o limite"}
+                </p>
               </div>
             </div>
 

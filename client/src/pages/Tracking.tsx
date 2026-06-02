@@ -1,15 +1,16 @@
 import { trpc } from "@/lib/trpc";
-import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, ChevronDown, Gauge, Compass, Battery, Satellite, Zap, Power, Activity, AlertTriangle } from "lucide-react";
+import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, ChevronDown, Gauge, Compass, Battery, Satellite, Zap, Power, Activity, AlertTriangle, Layers } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useCallback, useEffect, useRef } from "react";
 import L from "leaflet";
 import { MapView, createAssetMarker, updateAssetMarker, createPolyline, fitToPoints } from "@/components/Map";
 import { getAssetIcon } from "@/lib/assetIcons";
-import { useActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
+import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
 
 export default function Tracking() {
   const [, setLocation] = useLocation();
   const [showRoute, setShowRoute] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const [panelExpanded, setPanelExpanded] = useState(false);
   const { data: vehicles } = trpc.vehicles.list.useQuery(undefined, {
     refetchInterval: 10000,
@@ -26,6 +27,9 @@ export default function Tracking() {
   const markerRef = useRef<L.Marker | null>(null);
   const markerVehicleId = useRef<number | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
+  const allMarkersRef = useRef<L.Marker[]>([]);
+  const vehiclesRef = useRef(vehicles);
+  vehiclesRef.current = vehicles;
   const [mapReady, setMapReady] = useState(false);
 
   const handleMapReady = useCallback((map: L.Map) => {
@@ -39,6 +43,11 @@ export default function Tracking() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady) return;
+    // In "show all" mode the multi-marker effect owns the map.
+    if (showAll) {
+      if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; markerVehicleId.current = null; }
+      return;
+    }
     if (!vehicle?.lastLatitude || !vehicle?.lastLongitude) return;
     const lat = parseFloat(String(vehicle.lastLatitude));
     const lng = parseFloat(String(vehicle.lastLongitude));
@@ -59,11 +68,44 @@ export default function Tracking() {
       updateAssetMarker(markerRef.current, { lat, lng });
       map.panTo([lat, lng], { animate: true, duration: 0.8 });
     }
-  }, [mapReady, vehicle?.id, vehicle?.lastLatitude, vehicle?.lastLongitude, vehicle?.iconType, vehicle?.brand, vehicle?.model]);
+  }, [mapReady, showAll, vehicle?.id, vehicle?.lastLatitude, vehicle?.lastLongitude, vehicle?.iconType, vehicle?.brand, vehicle?.model]);
+
+  // "Ver todos" — render every asset on the map at once. Tap a marker to focus.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    const clearAll = () => {
+      allMarkersRef.current.forEach((m) => m.remove());
+      allMarkersRef.current = [];
+    };
+    if (!showAll) {
+      clearAll();
+      return;
+    }
+    clearAll();
+    const pts: { lat: number; lng: number }[] = [];
+    (vehiclesRef.current ?? []).forEach((v) => {
+      if (!v.lastLatitude || !v.lastLongitude) return;
+      const lat = parseFloat(String(v.lastLatitude));
+      const lng = parseFloat(String(v.lastLongitude));
+      const m = createAssetMarker(map, { lat, lng }, getAssetIcon(v.iconType), {
+        title: v.model || v.brand || "Equipamento",
+      });
+      m.bindTooltip(v.model || v.brand || "Equipamento", { direction: "top", offset: [0, -44] });
+      m.on("click", () => {
+        setActiveVehicleId(v.id);
+        setShowAll(false);
+      });
+      allMarkersRef.current.push(m);
+      pts.push({ lat, lng });
+    });
+    if (pts.length > 0) fitToPoints(map, pts, 60);
+    return () => clearAll();
+  }, [showAll, mapReady]);
 
   // Draw route when routePoints change
   useEffect(() => {
-    if (!mapRef.current || !routePoints || routePoints.length === 0) {
+    if (showAll || !mapRef.current || !routePoints || routePoints.length === 0) {
       if (polylineRef.current) {
         polylineRef.current.remove();
         polylineRef.current = null;
@@ -86,7 +128,7 @@ export default function Tracking() {
     }
 
     fitToPoints(mapRef.current, path, 40);
-  }, [routePoints]);
+  }, [routePoints, showAll]);
 
   useEffect(() => {
     if (!showRoute && polylineRef.current) {
@@ -104,12 +146,12 @@ export default function Tracking() {
     },
   });
   useEffect(() => {
-    // Only the demo car moves; pets/items stay put.
-    if (!vehicle?.isDemo || vehicle?.iconType !== "car") return;
+    // Only the demo car moves; pets/items stay put. Paused while viewing all.
+    if (showAll || !vehicle?.isDemo || vehicle?.iconType !== "car") return;
     const id = setInterval(() => tickMutation.mutate(), 4000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vehicle?.isDemo, vehicle?.iconType, showRoute]);
+  }, [vehicle?.isDemo, vehicle?.iconType, showRoute, showAll]);
 
   function getTrackerModeLabel(mode: string | null | undefined) {
     switch (mode) {
@@ -194,7 +236,18 @@ export default function Tracking() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {vehicle && (
+            {vehicles && vehicles.length > 1 && (
+              <button
+                onClick={() => setShowAll((s) => !s)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all go-btn-active ${
+                  showAll ? "bg-[#243FF7] text-white" : "bg-gray-100 text-[#343C42]"
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                Todos
+              </button>
+            )}
+            {vehicle && !showAll && (
               <button
                 onClick={() => setShowRoute(!showRoute)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all go-btn-active ${
@@ -260,8 +313,20 @@ export default function Tracking() {
         </div>
       )}
 
+      {/* "Ver todos" hint */}
+      {showAll && (
+        <div className="absolute bottom-24 left-4 right-4 z-20">
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-lg border border-gray-100 flex items-center gap-2.5">
+            <Layers className="w-4 h-4 text-[#243FF7] shrink-0" />
+            <span className="text-[13px] text-gray-600">
+              Mostrando seus {vehicles?.length ?? 0} equipamentos. Toque em um marcador para ver os detalhes.
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Telemetry Panel */}
-      {vehicle && (
+      {vehicle && !showAll && (
         <div className={`absolute bottom-20 left-0 right-0 z-20 transition-all duration-300 ease-out ${panelExpanded ? "bottom-0" : ""}`}>
           <div className="mx-3 bg-white rounded-t-2xl rounded-b-2xl shadow-xl border border-gray-100 overflow-hidden">
             {/* Panel handle */}
