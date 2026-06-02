@@ -5,7 +5,7 @@ import {
   MapPin, Lock, Shield, AlertTriangle, Wrench, Clock,
   Car, Signal, Battery, Wifi, ChevronRight, BatteryWarning, X, Gauge, Share2, Power,
   Home as HomeIcon, Heart, PawPrint, DollarSign, Building2, Users, MessageCircle, Phone,
-  Wallet, Headphones, Gift
+  Wallet, Headphones, Gift, Zap, Smartphone, Truck, Bike, Anchor, Music, Package, Caravan
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
@@ -591,9 +591,17 @@ const CAT_COLOR: Record<string, { bg: string; text: string }> = {
 
 const PRODUCTS: Array<{ id: string; cat: string; title: string; subtitle: string; icon: any; badge?: string }> = [
   // Rastreador
-  { id: "rastreador-pet", cat: "rastreador", title: "Rastreador PET", subtitle: "Localize seu pet em tempo real", icon: PawPrint, badge: "NOVO" },
-  { id: "rastreador-moto", cat: "rastreador", title: "Rastreador Moto", subtitle: "Proteção dedicada para sua moto", icon: Signal },
-  { id: "rastreador-frota", cat: "rastreador", title: "Rastreador Frota", subtitle: "Gestão de vários veículos", icon: Wifi },
+  { id: "rast-auto", cat: "rastreador", title: "Rastreador Auto", subtitle: "Rastreamento para seu carro", icon: Car },
+  { id: "rast-pet", cat: "rastreador", title: "Rastreador Pet", subtitle: "Localize seu pet em tempo real", icon: PawPrint, badge: "NOVO" },
+  { id: "rast-apps", cat: "rastreador", title: "Rastreador Aplicativos", subtitle: "Para motoristas de app (Uber/99)", icon: Smartphone },
+  { id: "rast-moto", cat: "rastreador", title: "Rastreador Moto", subtitle: "Sem consumir a bateria da moto", icon: Bike, badge: "SEM BATERIA" },
+  { id: "rast-frotas", cat: "rastreador", title: "Rastreador Frotas", subtitle: "Gestão de vários veículos", icon: Truck },
+  { id: "rast-bike", cat: "rastreador", title: "Rastreador Bike", subtitle: "Proteção para sua bicicleta", icon: Bike },
+  { id: "rast-eletricos", cat: "rastreador", title: "Rastreador Elétricos", subtitle: "Patinetes e veículos elétricos", icon: Zap },
+  { id: "rast-nautico", cat: "rastreador", title: "Rastreador Náutico", subtitle: "Barcos, lanchas e jet skis", icon: Anchor },
+  { id: "rast-musica", cat: "rastreador", title: "Rastreador Música", subtitle: "Proteja seus instrumentos", icon: Music },
+  { id: "rast-equipamentos", cat: "rastreador", title: "Rastreador Equipamentos", subtitle: "Máquinas e equipamentos", icon: Package },
+  { id: "rast-implementos", cat: "rastreador", title: "Rastreador Implementos", subtitle: "Carretinhas e implementos", icon: Caravan },
   // Finanças
   { id: "credito-clt", cat: "financas", title: "Crédito CLT", subtitle: "Antecipe seu salário com taxa baixa", icon: DollarSign },
   { id: "home-equity", cat: "financas", title: "Home Equity", subtitle: "Crédito com garantia de imóvel", icon: Building2 },
