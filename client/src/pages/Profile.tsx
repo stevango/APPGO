@@ -4,9 +4,10 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import {
   ChevronLeft, User, Car, CreditCard, Shield, Bell,
-  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature
+  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature, MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AddressSearch } from "@/components/AddressSearch";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -37,6 +38,9 @@ export default function Profile() {
     onError: () => toast.error("Falha ao enviar push de teste."),
   });
 
+  const [showAddress, setShowAddress] = useState(false);
+  const userAddress = (user as Record<string, any>)?.address as string | undefined;
+
   const [showFeedback, setShowFeedback] = useState(false);
   const [rating, setRating] = useState(0);
   const [feedbackMsg, setFeedbackMsg] = useState("");
@@ -54,6 +58,14 @@ export default function Profile() {
   const iosNeedsInstall = isIOS && !isStandalone;
 
   const utils = trpc.useUtils();
+  const setAddressMutation = trpc.account.setAddress.useMutation({
+    onSuccess: async () => {
+      toast.success("Endereço salvo!");
+      await utils.auth.me.invalidate();
+      setShowAddress(false);
+    },
+    onError: () => toast.error("Não foi possível salvar o endereço."),
+  });
   const deleteAccountMutation = trpc.account.deleteAccount.useMutation({
     onSuccess: async () => {
       toast.success("Sua conta foi excluída.");
@@ -134,6 +146,7 @@ export default function Profile() {
     { icon: Receipt, label: "Faturas", sublabel: "Histórico e 2ª via de boleto", action: () => setLocation("/payment/history") },
     { icon: Shield, label: "Segurança", sublabel: "Senha, Face ID", action: () => {} },
     { icon: Bell, label: t("notifications"), sublabel: isSubscribed ? "Push ativo" : "Configurar alertas", action: () => setShowPushConfig(true) },
+    { icon: MapPin, label: "Meu endereço", sublabel: userAddress ? userAddress : "Adicionar endereço", action: () => setShowAddress(true) },
     { icon: FileSignature, label: "Meu contrato", sublabel: "Visualizar e assinar (DocuSign)", action: () => setLocation("/contract") },
     { icon: Sparkles, label: "Central de Ajuda", sublabel: "Tire dúvidas com a assistente GO", action: () => setLocation("/help") },
     { icon: Star, label: "Avaliar o app", sublabel: "Dê sua nota e sugestões", action: () => setShowFeedback(true) },
@@ -459,6 +472,49 @@ export default function Profile() {
                   </Button>
                 )}
               </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Address sheet */}
+      {showAddress && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAddress(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-6 pb-8 min-h-[55vh] animate-in slide-in-from-bottom duration-300">
+            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-11 h-11 bg-[#243FF7]/10 rounded-xl flex items-center justify-center">
+                <MapPin className="w-5 h-5 text-[#243FF7]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#111111]">Meu endereço</h3>
+                <p className="text-xs text-gray-500">Busque por CEP ou endereço</p>
+              </div>
+            </div>
+
+            {userAddress && (
+              <div className="mb-4 bg-gray-50 rounded-xl p-3 flex items-start gap-2">
+                <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[11px] text-gray-400">Endereço atual</p>
+                  <p className="text-sm text-gray-700">{userAddress}</p>
+                </div>
+              </div>
+            )}
+
+            <AddressSearch
+              autoFocus
+              placeholder="Digite o CEP ou endereço..."
+              onSelect={(lat, lng, label) =>
+                setAddressMutation.mutate({ address: label, lat: String(lat), lng: String(lng) })
+              }
+            />
+
+            {setAddressMutation.isPending && (
+              <p className="text-xs text-gray-400 mt-3 flex items-center gap-1.5">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Salvando...
+              </p>
             )}
           </div>
         </div>

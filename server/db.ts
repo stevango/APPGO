@@ -108,6 +108,16 @@ export async function setUserPassword(openId: string, passwordHash: string) {
   await db.update(users).set({ passwordHash }).where(eq(users.openId, openId));
 }
 
+export async function setUserAddress(userId: number, data: { address: string; lat?: string | null; lng?: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({
+    address: data.address,
+    addressLat: data.lat ?? null,
+    addressLng: data.lng ?? null,
+  }).where(eq(users.id, userId));
+}
+
 /**
  * Permanently delete a user and all data linked to them (LGPD / app-store
  * "delete account" requirement). Removes vehicle-scoped data first, then

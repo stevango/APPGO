@@ -3,13 +3,14 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
   ChevronLeft, Plus, MapPin, Home, Briefcase, GraduationCap,
-  Wrench, Car, Building, Circle, Trash2, Shield, Crosshair, Search, Loader2, X
+  Wrench, Car, Building, Circle, Trash2, Shield, Crosshair
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import L from "leaflet";
 import { MapView, createDot, createCircle } from "@/components/Map";
+import { AddressSearch } from "@/components/AddressSearch";
 
 const geofenceTypes = [
   { value: "casa", icon: Home, label: "Casa" },
@@ -35,9 +36,6 @@ export default function Geofences() {
   const circleRef = useRef<L.Circle | null>(null);
   const radiusRef = useRef(radius);
   const mapRef = useRef<L.Map | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<{ label: string; lat: string; lng: string }[]>([]);
-  const [searching, setSearching] = useState(false);
 
   const { data: geofences } = trpc.geofences.list.useQuery();
   const { data: vehicles } = trpc.vehicles.list.useQuery();
@@ -48,21 +46,6 @@ export default function Geofences() {
     radiusRef.current = radius;
     if (circleRef.current) circleRef.current.setRadius(parseInt(radius) || 200);
   }, [radius]);
-
-  // Debounced address / CEP autocomplete.
-  useEffect(() => {
-    const q = searchQuery.trim();
-    if (q.length < 3) { setSuggestions([]); setSearching(false); return; }
-    setSearching(true);
-    const t = setTimeout(() => {
-      utils.geo.search
-        .fetch({ query: q })
-        .then((res) => setSuggestions(res))
-        .catch(() => setSuggestions([]))
-        .finally(() => setSearching(false));
-    }, 400);
-    return () => clearTimeout(t);
-  }, [searchQuery, utils]);
 
   const createMutation = trpc.geofences.create.useMutation({
     onSuccess: () => {
@@ -175,40 +158,8 @@ export default function Geofences() {
 
           {/* Address / CEP search */}
           <div className="absolute top-4 left-4 right-4 z-[1000]">
-            <div className="bg-white rounded-xl shadow-md flex items-center px-3 h-12">
-              <Search className="w-4 h-4 text-gray-400 shrink-0" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar CEP ou endereço..."
-                inputMode="search"
-                className="flex-1 px-2 text-sm outline-none bg-transparent"
-              />
-              {searching ? (
-                <Loader2 className="w-4 h-4 text-gray-400 animate-spin shrink-0" />
-              ) : searchQuery ? (
-                <button onClick={() => { setSearchQuery(""); setSuggestions([]); }} className="go-btn-active shrink-0">
-                  <X className="w-4 h-4 text-gray-400" />
-                </button>
-              ) : null}
-            </div>
-
-            {suggestions.length > 0 && (
-              <div className="mt-1 bg-white rounded-xl shadow-lg overflow-hidden max-h-64 overflow-y-auto">
-                {suggestions.map((s, i) => (
-                  <button
-                    key={i}
-                    onClick={() => { goToAddress(parseFloat(s.lat), parseFloat(s.lng), s.label); setSearchQuery(""); setSuggestions([]); }}
-                    className="w-full text-left px-3 py-2.5 hover:bg-gray-50 flex items-start gap-2 border-b border-gray-50 last:border-0 go-btn-active"
-                  >
-                    <MapPin className="w-4 h-4 text-[#243FF7] mt-0.5 shrink-0" />
-                    <span className="text-[13px] text-gray-700 leading-snug">{s.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {!selectedLat && suggestions.length === 0 && !searchQuery && (
+            <AddressSearch onSelect={(lat, lng, label) => goToAddress(lat, lng, label)} />
+            {!selectedLat && (
               <div className="mt-2 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 inline-flex items-center gap-1.5 shadow-sm">
                 <Crosshair className="w-3.5 h-3.5 text-[#243FF7]" />
                 <span className="text-[12px] text-gray-600">Busque ou toque no mapa para definir o centro</span>

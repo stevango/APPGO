@@ -95,6 +95,16 @@ export const appRouter = router({
   }),
 
   account: router({
+    setAddress: protectedProcedure
+      .input(z.object({
+        address: z.string().trim().min(3).max(300),
+        lat: z.string().optional(),
+        lng: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.setUserAddress(ctx.user.id, { address: input.address, lat: input.lat ?? null, lng: input.lng ?? null });
+        return { success: true } as const;
+      }),
     // LGPD / app-store requirement: lets the user permanently delete their
     // account and all associated data, then ends the session.
     deleteAccount: protectedProcedure.mutation(async ({ ctx }) => {
