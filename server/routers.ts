@@ -154,6 +154,35 @@ export const appRouter = router({
       }),
   }),
 
+  legal: router({
+    consents: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUserConsents(ctx.user.id);
+    }),
+    accept: protectedProcedure
+      .input(z.object({
+        docType: z.enum(["termos_uso", "privacidade_lgpd", "confidencialidade"]),
+        version: z.string().min(1).max(20),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await db.createConsentLog({
+          userId: ctx.user.id,
+          docType: input.docType,
+          version: input.version,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: (ctx.req.headers["user-agent"] as string) || null,
+        });
+        return { success: true } as const;
+      }),
+  }),
+
+  contract: router({
+    // Returns the user's contract (creates a pending one if none). DocuSign
+    // integration will later populate envelopeId/documentUrl/signedAt.
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return db.getOrCreateUserContract(ctx.user.id);
+    }),
+  }),
+
   vehicles: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       return db.getUserVehicles(ctx.user.id);

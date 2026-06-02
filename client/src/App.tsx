@@ -29,6 +29,8 @@ const PaymentManagement = lazy(() => import("./pages/PaymentManagement"));
 const PaymentHistory = lazy(() => import("./pages/PaymentHistory"));
 const EmergencyContacts = lazy(() => import("./pages/EmergencyContacts"));
 const Help = lazy(() => import("./pages/Help"));
+const Legal = lazy(() => import("./pages/Legal"));
+const Contract = lazy(() => import("./pages/Contract"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function AuthenticatedApp() {
@@ -52,6 +54,8 @@ function AuthenticatedApp() {
           <Route path="/payment/history" component={PaymentHistory} />
           <Route path="/emergency-contacts" component={EmergencyContacts} />
           <Route path="/help" component={Help} />
+          <Route path="/legal" component={Legal} />
+          <Route path="/contract" component={Contract} />
           <Route path="/404" component={NotFound} />
           <Route component={NotFound} />
         </Switch>

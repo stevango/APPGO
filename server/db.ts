@@ -799,3 +799,46 @@ export async function createHelpQuery(data: { userId?: number | null; query: str
   if (!db) return;
   await db.insert(helpQueries).values({ userId: data.userId ?? null, query: data.query.slice(0, 500), matched: data.matched });
 }
+
+// --- Contracts (DocuSign-ready) & legal consent logs ---
+import { contracts, consentLogs } from "../drizzle/schema";
+
+/** Returns the user's contract, creating a default (pending) one if none exists. */
+export async function getOrCreateUserContract(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const existing = await db.select().from(contracts).where(eq(contracts.userId, userId)).limit(1);
+  if (existing.length > 0) return existing[0];
+  await db.insert(contracts).values({
+    userId,
+    title: "Contrato de Adesão GO",
+    status: "pending",
+    provider: "docusign",
+  });
+  const created = await db.select().from(contracts).where(eq(contracts.userId, userId)).limit(1);
+  return created[0];
+}
+
+export async function createConsentLog(data: {
+  userId: number;
+  docType: "termos_uso" | "privacidade_lgpd" | "confidencialidade";
+  version: string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(consentLogs).values({
+    userId: data.userId,
+    docType: data.docType,
+    version: data.version,
+    ipAddress: data.ipAddress ?? null,
+    userAgent: data.userAgent ?? null,
+  });
+}
+
+export async function getUserConsents(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(consentLogs).where(eq(consentLogs.userId, userId)).orderBy(desc(consentLogs.acceptedAt));
+}

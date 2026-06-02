@@ -335,3 +335,34 @@ export const helpQueries = mysqlTable("helpQueries", {
 
 export type HelpQuery = typeof helpQueries.$inferSelect;
 export type InsertHelpQuery = typeof helpQueries.$inferInsert;
+
+// Contrato do cliente (integração futura com DocuSign)
+export const contracts = mysqlTable("contracts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  title: varchar("title", { length: 160 }).notNull(),
+  status: mysqlEnum("status", ["pending", "sent", "signed", "active", "cancelled"]).default("pending").notNull(),
+  provider: varchar("provider", { length: 40 }).default("docusign"),
+  envelopeId: varchar("envelopeId", { length: 120 }),
+  documentUrl: text("documentUrl"),
+  signedAt: timestamp("signedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Contract = typeof contracts.$inferSelect;
+export type InsertContract = typeof contracts.$inferInsert;
+
+// Registro de aceite dos documentos legais (LGPD/CX): quem, qual doc/versão, quando, IP
+export const consentLogs = mysqlTable("consentLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  docType: mysqlEnum("docType", ["termos_uso", "privacidade_lgpd", "confidencialidade"]).notNull(),
+  version: varchar("version", { length: 20 }).notNull(),
+  acceptedAt: timestamp("acceptedAt").defaultNow().notNull(),
+  ipAddress: varchar("ipAddress", { length: 45 }),
+  userAgent: text("userAgent"),
+});
+
+export type ConsentLog = typeof consentLogs.$inferSelect;
+export type InsertConsentLog = typeof consentLogs.$inferInsert;

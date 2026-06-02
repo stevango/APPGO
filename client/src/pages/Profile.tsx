@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import {
   ChevronLeft, User, Car, CreditCard, Shield, Bell,
-  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star
+  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -134,9 +134,10 @@ export default function Profile() {
     { icon: Receipt, label: "Faturas", sublabel: "Histórico e 2ª via de boleto", action: () => setLocation("/payment/history") },
     { icon: Shield, label: "Segurança", sublabel: "Senha, Face ID", action: () => {} },
     { icon: Bell, label: t("notifications"), sublabel: isSubscribed ? "Push ativo" : "Configurar alertas", action: () => setShowPushConfig(true) },
+    { icon: FileSignature, label: "Meu contrato", sublabel: "Visualizar e assinar (DocuSign)", action: () => setLocation("/contract") },
     { icon: Sparkles, label: "Central de Ajuda", sublabel: "Tire dúvidas com a assistente GO", action: () => setLocation("/help") },
     { icon: Star, label: "Avaliar o app", sublabel: "Dê sua nota e sugestões", action: () => setShowFeedback(true) },
-    { icon: FileText, label: "Termos e privacidade", sublabel: "Documentos legais", action: () => {} },
+    { icon: FileText, label: "Termos e privacidade", sublabel: "Documentos legais e histórico de aceite", action: () => setLocation("/legal") },
   ];
 
   const speedPresets = [60, 80, 100, 120, 140, 160];
