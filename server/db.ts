@@ -927,3 +927,11 @@ export async function createRetentionEvent(data: {
     offer: data.offer ?? null,
   });
 }
+
+/** Find a vehicle by its tracker serial (for external telemetry ingestion). */
+export async function getVehicleBySerial(serial: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(vehicles).where(eq(vehicles.trackerSerial, serial)).limit(1);
+  return result[0];
+}

@@ -10,6 +10,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { ENV } from "./env";
 import { sendOverdueReminders } from "../billing";
+import { ingestTelemetry } from "../telemetry";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -61,6 +62,25 @@ async function startServer() {
       res.json({ ok: true, ...result });
     } catch (error) {
       console.error("[Cron] billing-reminders failed", error);
+      res.status(500).json({ error: "failed" });
+    }
+  });
+
+  // Real tracker telemetry ingestion (Fase 3). The tracker platform/hardware
+  // POSTs position + telemetry here, authenticated by INGEST_API_KEY.
+  //   POST /api/ingest/telemetry   header: x-api-key: INGEST_API_KEY
+  //   body: { trackerSerial|imei, latitude, longitude, speed, batteryMain, ... }
+  app.post("/api/ingest/telemetry", async (req, res) => {
+    const key = (req.headers["x-api-key"] as string) || (req.query.key as string);
+    if (!ENV.ingestApiKey || key !== ENV.ingestApiKey) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    try {
+      const result = await ingestTelemetry(req.body ?? {});
+      res.status(result.ok ? 200 : 400).json(result);
+    } catch (error) {
+      console.error("[Ingest] telemetry failed", error);
       res.status(500).json({ error: "failed" });
     }
   });

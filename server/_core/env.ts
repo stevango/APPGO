@@ -14,6 +14,8 @@ export const ENV = {
   ownerWebhookUrl: process.env.OWNER_WEBHOOK_URL ?? "",
   // Secret to authorize scheduled jobs (e.g. daily billing reminders).
   cronSecret: process.env.CRON_SECRET ?? "",
+  // API key the tracker platform/hardware uses to POST real telemetry.
+  ingestApiKey: process.env.INGEST_API_KEY ?? "",
   vapidPublicKey: process.env.VITE_VAPID_PUBLIC_KEY ?? "",
   vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? "",
 };

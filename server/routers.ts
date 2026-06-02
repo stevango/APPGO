@@ -29,15 +29,7 @@ function enforceRateLimit(key: string, max: number, windowMs: number) {
 import { notifyOwner } from "./_core/notification";
 import { registerPushSubscription, unregisterPushSubscription, sendPushToUser } from "./pushService";
 import { reverseGeocode, searchAddress } from "./geocode";
-
-// Haversine distance in km
-function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+import { processTelemetry } from "./telemetry";
 
 export const appRouter = router({
   system: systemRouter,
@@ -301,126 +293,8 @@ export const appRouter = router({
       trackerModel: z.string().optional(),
       trackerSerial: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
-      await db.updateVehicleTelemetry(input.vehicleId, input);
-      // Record route point if position is included
-      if (input.latitude && input.longitude) {
-        await db.addRoutePoint({
-          vehicleId: input.vehicleId,
-          latitude: input.latitude,
-          longitude: input.longitude,
-          speed: input.speed,
-          heading: input.heading,
-          address: input.address,
-        });
-      }
-      // Auto-generate battery alert notification with deduplication (1h cooldown)
-      if (input.batteryMain) {
-        const voltage = parseFloat(input.batteryMain);
-        if (voltage > 0 && voltage < 11.0) {
-          const recentAlert = await db.getRecentBatteryNotification(ctx.user.id, input.vehicleId);
-          if (!recentAlert) {
-            const isCritical = voltage < 10.5;
-            const batteryTitle = isCritical ? "Bateria Crítica!" : "Bateria Baixa";
-            const batteryMsg = isCritical
-              ? `A bateria principal está em ${voltage.toFixed(1)}V. Verifique o veículo imediatamente.`
-              : `A bateria principal está em ${voltage.toFixed(1)}V. Recomendamos verificação.`;
-            await db.createNotification({
-              userId: ctx.user.id,
-              vehicleId: input.vehicleId,
-              type: "bateria_baixa",
-              title: batteryTitle,
-              message: batteryMsg,
-            });
-            // Enviar push notification
-            sendPushToUser(ctx.user.id, {
-              title: `🔋 ${batteryTitle}`,
-              body: batteryMsg,
-              tag: `battery-${input.vehicleId}`,
-              data: { url: "/" },
-            }).catch(() => {});
-          }
-        }
-      }
-      // Auto-generate geofence alert with push notification (30min cooldown per fence)
-      if (input.latitude && input.longitude) {
-        const geofences = await db.getUserGeofences(ctx.user.id);
-        for (const fence of geofences) {
-          if (fence.vehicleId !== input.vehicleId) continue;
-          const dist = getDistanceKm(
-            parseFloat(input.latitude), parseFloat(input.longitude),
-            parseFloat(fence.latitude), parseFloat(fence.longitude)
-          );
-          const isInside = dist * 1000 <= (fence.radius || 200);
-          // Alert on exit with deduplication (30min cooldown)
-          if (!isInside && fence.alertOnExit) {
-            const recentFenceAlert = await db.getRecentGeofenceNotification(ctx.user.id, input.vehicleId, fence.id, "saida");
-            if (!recentFenceAlert) {
-              const fenceMsg = `Veículo saiu da cerca "${fence.name}" (distância: ${(dist * 1000).toFixed(0)}m do centro).`;
-              await db.createNotification({
-                userId: ctx.user.id,
-                vehicleId: input.vehicleId,
-                type: "cerca_saida",
-                title: "Cerca Eletrônica - Saída",
-                message: fenceMsg,
-              });
-              sendPushToUser(ctx.user.id, {
-                title: "📍 Cerca Eletrônica",
-                body: fenceMsg,
-                tag: `geofence-${fence.id}-${input.vehicleId}`,
-                data: { url: "/geofences" },
-              }).catch(() => {});
-              break; // Only one geofence alert per telemetry update
-            }
-          }
-          // Alert on entry with deduplication
-          if (isInside && fence.alertOnEntry) {
-            // Entry alerts use same cooldown mechanism
-            const recentEntryAlert = await db.getRecentGeofenceNotification(ctx.user.id, input.vehicleId, fence.id, "entrada");
-            if (!recentEntryAlert) {
-              const entryMsg = `Veículo entrou na cerca "${fence.name}".`;
-              await db.createNotification({
-                userId: ctx.user.id,
-                vehicleId: input.vehicleId,
-                type: "cerca_entrada",
-                title: "Cerca Eletrônica - Entrada",
-                message: entryMsg,
-              });
-              sendPushToUser(ctx.user.id, {
-                title: "📍 Cerca Eletrônica",
-                body: entryMsg,
-                tag: `geofence-entry-${fence.id}-${input.vehicleId}`,
-                data: { url: "/geofences" },
-              }).catch(() => {});
-              break;
-            }
-          }
-        }
-      }
-      // Auto-generate speed alert with deduplication (5min cooldown)
-      if (input.speed && input.speed > 0) {
-        const vehicle = await db.getVehicleById(input.vehicleId);
-        const speedLimit = vehicle?.speedLimit || 120;
-        if (input.speed > speedLimit) {
-          const recentSpeedAlert = await db.getRecentSpeedNotification(ctx.user.id, input.vehicleId);
-          if (!recentSpeedAlert) {
-            const speedMsg = `Veículo a ${input.speed} km/h. Limite configurado: ${speedLimit} km/h.`;
-            await db.createNotification({
-              userId: ctx.user.id,
-              vehicleId: input.vehicleId,
-              type: "velocidade_excessiva",
-              title: "Velocidade Excessiva!",
-              message: speedMsg,
-            });
-            // Enviar push notification
-            sendPushToUser(ctx.user.id, {
-              title: "⚡ Velocidade Excessiva!",
-              body: speedMsg,
-              tag: `speed-${input.vehicleId}`,
-              data: { url: "/" },
-            }).catch(() => {});
-          }
-        }
-      }
+      const { vehicleId, ...data } = input;
+      await processTelemetry(ctx.user.id, vehicleId, data);
       return { success: true };
     }),
     setSpeedLimit: protectedProcedure.input(z.object({

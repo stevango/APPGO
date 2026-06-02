@@ -35,11 +35,11 @@ Substituído o login OAuth da Manus por **e-mail + senha** próprio, reaproveita
 - ⏳ LLM/assistente (AIChatBox) → ligar a provedor próprio ou desativar na v1
 - ⏳ Auth OAuth Manus (`server/_core/oauth.ts`) → já substituído pelo login e-mail/senha; rota OAuth pode ser removida
 
-### Fase 3 — Integração do rastreador (coração do produto)
-- Definir a API/protocolo do rastreador do cliente (REST da plataforma, ou protocolo GPS tipo GT06/Suntech via Traccar)
-- Criar camada de ingestão: endpoint/worker que recebe posição+telemetria e chama `updateTelemetry`
-- Mapear campos reais → schema (velocidade, bateria 12V/backup, GPS, ignição, odômetro)
-- Substituir dados simulados por dados reais; manter modo demo para testes
+### 🟢 Fase 3 — Integração do rastreador — CAMADA PRONTA
+- ✅ **Endpoint de ingestão** `POST /api/ingest/telemetry` (chave `INGEST_API_KEY`) recebe posição+telemetria reais
+- ✅ Pipeline de telemetria **extraído e compartilhado** (`server/telemetry.ts`): app e ingestão usam a mesma lógica (alertas de bateria/velocidade/cerca + push)
+- ✅ Resolve o veículo por `trackerSerial`/IMEI; aceita apelidos de campos; guia em `docs/INTEGRATION_TRACKER.md`
+- ⏳ Falta (você): apontar a plataforma/hardware para o endpoint (ou um middleware tipo Traccar p/ GT06/Suntech)
 
 ### 🟡 Fase 4 — Empacotamento Capacitor (iOS + Android) — EM ANDAMENTO
 Base configurada neste repositório (ver `docs/MOBILE.md`):
