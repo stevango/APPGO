@@ -85,6 +85,34 @@ export default function Home() {
         </button>
       </div>
 
+      {/* TOP banner: recurring-card discount for everyone NOT on recurring card */}
+      {(!openInvoices.data || openInvoices.data.count === 0) &&
+        (!currentMethod.data || currentMethod.data.type !== "recurring_card") && (
+          <button
+            onClick={() => setLocation("/payment")}
+            className="mb-5 w-full rounded-2xl bg-gradient-to-br from-[#243FF7] to-[#1a2fd4] p-4 text-left go-btn-active shadow-lg shadow-[#243FF7]/25 relative overflow-hidden"
+          >
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/5 rounded-full" />
+            <div className="flex items-center gap-3 relative">
+              <div className="w-12 h-12 bg-white/15 rounded-2xl flex items-center justify-center shrink-0">
+                <CreditCard className="w-6 h-6 text-[#E2FF04]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-white font-bold text-[15px]">Economize 15% todo mês</p>
+                  <span className="text-[10px] font-black text-[#111111] bg-[#E2FF04] rounded-full px-1.5 py-0.5">-15%</span>
+                </div>
+                <p className="text-white/80 text-xs leading-snug mt-0.5">
+                  Ative o cartão recorrente e nunca mais se preocupe com vencimento.
+                </p>
+              </div>
+            </div>
+            <div className="mt-3 bg-[#E2FF04] text-[#111111] text-center font-bold text-[13px] rounded-xl py-2.5 flex items-center justify-center gap-1 relative">
+              Ativar agora <ChevronRight className="w-4 h-4" />
+            </div>
+          </button>
+        )}
+
       {/* Speed Alert Banner */}
       {vehicle && isOverSpeed && (
         <div className="mb-5 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 p-4 shadow-lg shadow-red-500/20 overflow-hidden stagger-item">
@@ -283,28 +311,6 @@ export default function Home() {
           }} />
         </div>
       </div>
-
-      {/* Preventive nudge: on-time boleto payers → recurring card with discount */}
-      {(!openInvoices.data || openInvoices.data.count === 0) &&
-        (!currentMethod.data || currentMethod.data.type === "boleto") && (
-          <button
-            onClick={() => setLocation("/payment")}
-            className="mt-7 w-full rounded-2xl bg-gradient-to-r from-[#243FF7] to-[#1a2fd4] p-4 text-left go-btn-active shadow-md shadow-[#243FF7]/20"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-white/15 rounded-xl flex items-center justify-center shrink-0">
-                <CreditCard className="w-5 h-5 text-[#E2FF04]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-bold text-sm">Economize todo mês 💸</p>
-                <p className="text-white/80 text-xs leading-snug">
-                  Troque o boleto pelo cartão recorrente e ganhe <span className="font-bold text-[#E2FF04]">15% de desconto</span> — sem se preocupar com vencimento.
-                </p>
-              </div>
-              <ChevronRight className="w-4 h-4 text-white/70 shrink-0" />
-            </div>
-          </button>
-        )}
 
       {/* Banner Carrossel - Publicidade e Oportunidades */}
       <PromoBannerCarousel />
