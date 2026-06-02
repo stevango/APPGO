@@ -83,6 +83,16 @@ export function BrandMark({
   );
 }
 
+/** Identifier tag for non-vehicle assets (pets, gear, instruments). */
+export function AssetTag({ label, size = "md" }: { label: string; size?: "sm" | "md" }) {
+  const text = size === "sm" ? "text-xs px-2 py-0.5" : "text-sm px-2.5 py-1";
+  return (
+    <span className={`inline-flex items-center rounded-lg bg-gray-100 border border-gray-200 font-mono font-bold tracking-wide text-gray-700 ${text}`}>
+      {label.toUpperCase()}
+    </span>
+  );
+}
+
 /** Realistic Brazilian Mercosul license plate. */
 export function LicensePlate({ plate, size = "md" }: { plate: string; size?: "sm" | "md" | "lg" }) {
   const text = formatPlate(plate);

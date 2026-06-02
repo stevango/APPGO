@@ -7,7 +7,8 @@ import {
   Home as HomeIcon, Heart, PawPrint, DollarSign, Building2, Users, MessageCircle, Phone
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BrandMark, LicensePlate } from "@/lib/vehicle";
+import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
+import { isVehicleAsset } from "@/lib/assetIcons";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -354,7 +355,11 @@ function VehicleCard({
               {vehicle.brand} {vehicle.model}
             </h3>
             <div className="mt-1.5">
-              <LicensePlate plate={vehicle.plate} size="sm" />
+              {isVehicleAsset(vehicle.iconType) ? (
+                <LicensePlate plate={vehicle.plate} size="sm" />
+              ) : (
+                <AssetTag label={vehicle.plate} size="sm" />
+              )}
             </div>
           </div>
         </div>

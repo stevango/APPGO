@@ -6,8 +6,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { BrandMark, LicensePlate } from "@/lib/vehicle";
-import { ASSET_ICONS, ASSET_GROUPS } from "@/lib/assetIcons";
+import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
+import { ASSET_ICONS, ASSET_GROUPS, isVehicleAsset } from "@/lib/assetIcons";
 
 export default function VehicleSelector() {
   const [, setLocation] = useLocation();
@@ -90,7 +90,11 @@ export default function VehicleSelector() {
                       {vehicle.model || "Veículo"}
                     </p>
                     <div className="mt-1.5">
-                      <LicensePlate plate={vehicle.plate} size="md" />
+                      {isVehicleAsset(vehicle.iconType) ? (
+                        <LicensePlate plate={vehicle.plate} size="md" />
+                      ) : (
+                        <AssetTag label={vehicle.plate} size="md" />
+                      )}
                     </div>
                     {vehicle.color && (
                       <p className="text-xs text-gray-400 mt-1.5">{vehicle.color} {vehicle.year ? `• ${vehicle.year}` : ""}</p>

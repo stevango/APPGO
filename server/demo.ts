@@ -218,12 +218,35 @@ export async function seedDemoVehicle(userId: number): Promise<number> {
     email: "central@godirection.app", relationship: "Assistência", isPrimary: true,
   });
 
+  // Extra demo assets to show the GO tracks anything: a pet and an instrument.
+  await db.createVehicle({
+    userId, plate: "REX", model: "Golden Retriever", brand: "Pet", color: "Caramelo",
+    isDemo: true, iconType: "dog", trackerStatus: "online", ignition: false,
+    lastLatitude: "-23.587400", lastLongitude: "-46.657600",
+    lastAddress: "Parque Ibirapuera, São Paulo - SP",
+    speed: 0, heading: 0, batteryMain: "12.40", batteryBackup: "4.1", batteryLevel: 92,
+    gpsSatellites: 8, gpsSignal: 75, trackerMode: "active",
+    trackerModel: "GO-PET", trackerSerial: "PET-REX-01", simStatus: "active", simSignal: 80,
+    speedLimit: 80,
+  });
+  await db.createVehicle({
+    userId, plate: "GTR-001", model: "Stratocaster", brand: "Fender", color: "Sunburst",
+    isDemo: true, iconType: "guitarra", trackerStatus: "online", ignition: false,
+    lastLatitude: "-23.561100", lastLongitude: "-46.642000",
+    lastAddress: "Estúdio - Bela Vista, São Paulo - SP",
+    speed: 0, heading: 0, batteryMain: "12.60", batteryBackup: "4.1", batteryLevel: 100,
+    gpsSatellites: 7, gpsSignal: 70, trackerMode: "sleep",
+    trackerModel: "GO-TAG", trackerSerial: "TAG-GTR-01", simStatus: "active", simSignal: 72,
+    speedLimit: 80,
+  });
+
   return vehicleId;
 }
 
-/** Advance the demo vehicle to its current simulated position. */
+/** Advance the moving demo asset (the car) to its current simulated position. */
 export async function tickDemoVehicle(userId: number): Promise<LivePosition | null> {
-  const vehicle = await db.getUserDemoVehicle(userId);
+  const demos = await db.getUserDemoVehicles(userId);
+  const vehicle = demos.find((v) => v.iconType === "car") ?? demos[0];
   if (!vehicle) return null;
 
   const t = liveTelemetry(Date.now());

@@ -162,18 +162,24 @@ export async function getUserDemoVehicle(userId: number) {
   return result[0];
 }
 
-/** Remove a demo vehicle and all data attached to it (keeps the user account). */
+export async function getUserDemoVehicles(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(vehicles).where(and(eq(vehicles.userId, userId), eq(vehicles.isDemo, true)));
+}
+
+/** Remove all demo assets and the data attached to them (keeps the user account). */
 export async function deleteDemoVehicleData(userId: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const vehicle = await getUserDemoVehicle(userId);
-  if (!vehicle) return;
-  const vehicleId = vehicle.id;
-  await db.delete(routeHistory).where(eq(routeHistory.vehicleId, vehicleId));
-  await db.delete(trips).where(eq(trips.vehicleId, vehicleId));
-  await db.delete(geofences).where(eq(geofences.vehicleId, vehicleId));
-  await db.delete(notifications).where(eq(notifications.vehicleId, vehicleId));
-  await db.delete(vehicles).where(eq(vehicles.id, vehicleId));
+  const demos = await getUserDemoVehicles(userId);
+  if (demos.length === 0) return;
+  const ids = demos.map(v => v.id);
+  await db.delete(routeHistory).where(inArray(routeHistory.vehicleId, ids));
+  await db.delete(trips).where(inArray(trips.vehicleId, ids));
+  await db.delete(geofences).where(inArray(geofences.vehicleId, ids));
+  await db.delete(notifications).where(inArray(notifications.vehicleId, ids));
+  await db.delete(vehicles).where(inArray(vehicles.id, ids));
 }
 
 export async function getVehicleById(vehicleId: number) {
