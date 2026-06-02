@@ -59,7 +59,7 @@ const translations: Translations = {
   "logout": { pt: "Sair", en: "Logout", es: "Cerrar sesión" },
   "settings": { pt: "Configurações", en: "Settings", es: "Configuraciones" },
   "notifications": { pt: "Notificações", en: "Notifications", es: "Notificaciones" },
-  "my_vehicles": { pt: "Meus Veículos", en: "My Vehicles", es: "Mis Vehículos" },
+  "my_vehicles": { pt: "Meus Rastreadores", en: "My Trackers", es: "Mis Rastreadores" },
 
   // Geofences
   "geofences": { pt: "Cercas Virtuais", en: "Geofences", es: "Geocercas" },
