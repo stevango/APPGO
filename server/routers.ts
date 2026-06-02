@@ -910,6 +910,11 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         return db.getInvoiceById(input.id, ctx.user!.id);
       }),
+
+    // Resumo de faturas em aberto/atrasadas (aviso amigável de cobrança)
+    openSummary: protectedProcedure.query(async ({ ctx }) => {
+      return db.getOpenInvoicesSummary(ctx.user!.id);
+    }),
   }),
 
   // === CONTATOS DE EMERGÊNCIA ===

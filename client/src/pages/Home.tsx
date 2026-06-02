@@ -27,6 +27,7 @@ export default function Home() {
     refetchInterval: 15000,
   });
   const [alertDismissed, setAlertDismissed] = useState(false);
+  const openInvoices = trpc.payment.openSummary.useQuery();
 
   const activeVehicleId = useActiveVehicleId();
   const vehicle = pickActiveVehicle(vehicles, activeVehicleId);
@@ -139,6 +140,37 @@ export default function Home() {
           onDismiss={() => setAlertDismissed(true)}
           onPress={() => setLocation("/tracking")}
         />
+      )}
+
+      {/* Friendly overdue-invoice reminder (empathetic, resolutive — never punitive) */}
+      {openInvoices.data && openInvoices.data.count > 0 && (
+        <button
+          onClick={() => setLocation("/payment/history")}
+          className="mb-5 w-full rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 text-left go-btn-active stagger-item"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+              <DollarSign className="w-5 h-5 text-amber-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-bold text-sm text-amber-900">Ficou uma fatura em aberto 💛</h4>
+              <p className="text-xs text-amber-700 mt-0.5">
+                Acontece! Regularize {openInvoices.data.totalAmount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} em 1 toque e siga 100% protegido.
+              </p>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <span className="flex-1 text-center text-[13px] font-bold text-white bg-amber-500 rounded-xl py-2.5">
+              Resolver agora
+            </span>
+            <span
+              onClick={(e) => { e.stopPropagation(); setLocation("/help"); }}
+              className="text-[13px] font-semibold text-amber-700 px-3 py-2.5"
+            >
+              Preciso de ajuda
+            </span>
+          </div>
+        </button>
       )}
 
       {/* Asset switcher — tap a chip to change the active equipment */}

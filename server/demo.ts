@@ -218,6 +218,22 @@ export async function seedDemoVehicle(userId: number): Promise<number> {
     email: "central@godirection.app", relationship: "Assistência", isPrimary: true,
   });
 
+  // Invoices: one overdue (to showcase the friendly billing reminder) + one paid.
+  const existingInvoices = await db.getInvoices(userId, { limit: 1 });
+  if (existingInvoices.total === 0) {
+    await db.createInvoice({
+      userId, description: "Mensalidade GO", amount: "89.90",
+      dueDate: new Date(now - 8 * day), status: "overdue", method: "boleto",
+      boletoBarcode: "34191790010104351004791020150008995820000008990",
+      referenceMonth: "2026-05",
+    });
+    await db.createInvoice({
+      userId, description: "Mensalidade GO", amount: "89.90",
+      dueDate: new Date(now - 38 * day), paidAt: new Date(now - 36 * day),
+      status: "paid", method: "pix", referenceMonth: "2026-04",
+    });
+  }
+
   // Extra demo assets to show the GO tracks anything: a pet and an instrument.
   await db.createVehicle({
     userId, plate: "REX", model: "Golden Retriever", brand: "Pet", color: "Caramelo",

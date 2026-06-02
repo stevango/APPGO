@@ -852,3 +852,21 @@ export async function getUserConsents(userId: number) {
   if (!db) return [];
   return db.select().from(consentLogs).where(eq(consentLogs.userId, userId)).orderBy(desc(consentLogs.acceptedAt));
 }
+
+/** Summary of open/late invoices for the gentle overdue reminder. */
+export async function getOpenInvoicesSummary(userId: number) {
+  const db = await getDb();
+  if (!db) return { count: 0, totalAmount: 0, oldestDueDate: null as Date | null, invoiceId: null as number | null };
+  const now = new Date();
+  const open = await db.select().from(invoices)
+    .where(and(eq(invoices.userId, userId), inArray(invoices.status, ["overdue", "pending"])))
+    .orderBy(invoices.dueDate);
+  const late = open.filter((i) => i.status === "overdue" || (i.status === "pending" && new Date(i.dueDate) < now));
+  const totalAmount = late.reduce((s, i) => s + parseFloat(String(i.amount)), 0);
+  return {
+    count: late.length,
+    totalAmount,
+    oldestDueDate: late[0]?.dueDate ?? null,
+    invoiceId: late[0]?.id ?? null,
+  };
+}
