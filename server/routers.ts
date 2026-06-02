@@ -28,7 +28,7 @@ function enforceRateLimit(key: string, max: number, windowMs: number) {
 }
 import { notifyOwner } from "./_core/notification";
 import { registerPushSubscription, unregisterPushSubscription, sendPushToUser } from "./pushService";
-import { reverseGeocode } from "./geocode";
+import { reverseGeocode, searchAddress } from "./geocode";
 
 // Haversine distance in km
 function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -181,6 +181,15 @@ export const appRouter = router({
     get: protectedProcedure.query(async ({ ctx }) => {
       return db.getOrCreateUserContract(ctx.user.id);
     }),
+  }),
+
+  geo: router({
+    // Address / CEP autocomplete for the location picker (ViaCEP + Nominatim).
+    search: protectedProcedure
+      .input(z.object({ query: z.string().trim().min(3).max(160) }))
+      .query(async ({ input }) => {
+        return searchAddress(input.query);
+      }),
   }),
 
   vehicles: router({

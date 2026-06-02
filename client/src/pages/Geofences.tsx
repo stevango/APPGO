@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
   ChevronLeft, Plus, MapPin, Home, Briefcase, GraduationCap,
-  Wrench, Car, Building, Circle, Trash2, Shield, Crosshair
+  Wrench, Car, Building, Circle, Trash2, Shield, Crosshair, Search, Loader2, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,10 @@ export default function Geofences() {
   const markerRef = useRef<L.CircleMarker | null>(null);
   const circleRef = useRef<L.Circle | null>(null);
   const radiusRef = useRef(radius);
+  const mapRef = useRef<L.Map | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<{ label: string; lat: string; lng: string }[]>([]);
+  const [searching, setSearching] = useState(false);
 
   const { data: geofences } = trpc.geofences.list.useQuery();
   const { data: vehicles } = trpc.vehicles.list.useQuery();
@@ -44,6 +48,21 @@ export default function Geofences() {
     radiusRef.current = radius;
     if (circleRef.current) circleRef.current.setRadius(parseInt(radius) || 200);
   }, [radius]);
+
+  // Debounced address / CEP autocomplete.
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length < 3) { setSuggestions([]); setSearching(false); return; }
+    setSearching(true);
+    const t = setTimeout(() => {
+      utils.geo.search
+        .fetch({ query: q })
+        .then((res) => setSuggestions(res))
+        .catch(() => setSuggestions([]))
+        .finally(() => setSearching(false));
+    }, 400);
+    return () => clearTimeout(t);
+  }, [searchQuery, utils]);
 
   const createMutation = trpc.geofences.create.useMutation({
     onSuccess: () => {
@@ -70,43 +89,46 @@ export default function Geofences() {
     },
   });
 
-  const handleMapReady = useCallback((map: L.Map) => {
-    map.on("click", (e: L.LeafletMouseEvent) => {
-      const { lat, lng } = e.latlng;
+  // Places the geofence center marker + circle at a point (used by both map
+  // taps and address/CEP search).
+  const placeAt = useCallback((lat: number, lng: number, address?: string) => {
+    const map = mapRef.current;
+    if (!map) return;
+    setSelectedLat(lat.toString());
+    setSelectedLng(lng.toString());
 
-      setSelectedLat(lat.toString());
-      setSelectedLng(lng.toString());
+    if (markerRef.current) markerRef.current.setLatLng([lat, lng]);
+    else markerRef.current = createDot(map, { lat, lng }, { radius: 9 });
 
-      // Update marker
-      if (markerRef.current) {
-        markerRef.current.setLatLng([lat, lng]);
-      } else {
-        markerRef.current = createDot(map, { lat, lng }, { radius: 9 });
-      }
+    const radiusVal = parseInt(radiusRef.current) || 200;
+    if (circleRef.current) {
+      circleRef.current.setLatLng([lat, lng]);
+      circleRef.current.setRadius(radiusVal);
+    } else {
+      circleRef.current = createCircle(map, { lat, lng }, radiusVal, { fillOpacity: 0.15, strokeOpacity: 1, weight: 2 });
+    }
 
-      // Update circle
-      const radiusVal = parseInt(radiusRef.current) || 200;
-      if (circleRef.current) {
-        circleRef.current.setLatLng([lat, lng]);
-        circleRef.current.setRadius(radiusVal);
-      } else {
-        circleRef.current = createCircle(map, { lat, lng }, radiusVal, {
-          fillOpacity: 0.15,
-          strokeOpacity: 1,
-          weight: 2,
-        });
-      }
-
-      // Reverse geocode via our own backend (OpenStreetMap / Nominatim)
+    if (address) {
+      setSelectedAddress(address);
+    } else {
       setSelectedAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
       utils.sos.reverseGeocode
         .fetch({ latitude: lat.toString(), longitude: lng.toString() })
-        .then((res) => {
-          if (res?.success && res.address) setSelectedAddress(res.address);
-        })
+        .then((res) => { if (res?.success && res.address) setSelectedAddress(res.address); })
         .catch(() => {});
-    });
+    }
   }, [utils]);
+
+  const handleMapReady = useCallback((map: L.Map) => {
+    mapRef.current = map;
+    map.on("click", (e: L.LeafletMouseEvent) => placeAt(e.latlng.lat, e.latlng.lng));
+  }, [placeAt]);
+
+  // Fly to a searched address and drop the geofence center there.
+  const goToAddress = useCallback((lat: number, lng: number, label: string) => {
+    mapRef.current?.setView([lat, lng], 16);
+    placeAt(lat, lng, label);
+  }, [placeAt]);
 
   const handleCreate = () => {
     if (!name.trim()) {
@@ -151,15 +173,48 @@ export default function Geofences() {
             onMapReady={handleMapReady}
           />
 
-          {/* Instruction overlay */}
-          {!selectedLat && (
-            <div className="absolute top-4 left-4 right-4 bg-white/95 backdrop-blur-sm rounded-xl p-3 shadow-md">
-              <div className="flex items-center gap-2">
-                <Crosshair className="w-4 h-4 text-[#243FF7]" />
-                <span className="text-sm text-gray-700">Toque no mapa para definir o centro da cerca</span>
-              </div>
+          {/* Address / CEP search */}
+          <div className="absolute top-4 left-4 right-4 z-[1000]">
+            <div className="bg-white rounded-xl shadow-md flex items-center px-3 h-12">
+              <Search className="w-4 h-4 text-gray-400 shrink-0" />
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar CEP ou endereço..."
+                inputMode="search"
+                className="flex-1 px-2 text-sm outline-none bg-transparent"
+              />
+              {searching ? (
+                <Loader2 className="w-4 h-4 text-gray-400 animate-spin shrink-0" />
+              ) : searchQuery ? (
+                <button onClick={() => { setSearchQuery(""); setSuggestions([]); }} className="go-btn-active shrink-0">
+                  <X className="w-4 h-4 text-gray-400" />
+                </button>
+              ) : null}
             </div>
-          )}
+
+            {suggestions.length > 0 && (
+              <div className="mt-1 bg-white rounded-xl shadow-lg overflow-hidden max-h-64 overflow-y-auto">
+                {suggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { goToAddress(parseFloat(s.lat), parseFloat(s.lng), s.label); setSearchQuery(""); setSuggestions([]); }}
+                    className="w-full text-left px-3 py-2.5 hover:bg-gray-50 flex items-start gap-2 border-b border-gray-50 last:border-0 go-btn-active"
+                  >
+                    <MapPin className="w-4 h-4 text-[#243FF7] mt-0.5 shrink-0" />
+                    <span className="text-[13px] text-gray-700 leading-snug">{s.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {!selectedLat && suggestions.length === 0 && !searchQuery && (
+              <div className="mt-2 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-1.5 inline-flex items-center gap-1.5 shadow-sm">
+                <Crosshair className="w-3.5 h-3.5 text-[#243FF7]" />
+                <span className="text-[12px] text-gray-600">Busque ou toque no mapa para definir o centro</span>
+              </div>
+            )}
+          </div>
 
           {/* Selected location info */}
           {selectedLat && (
