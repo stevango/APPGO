@@ -11,6 +11,7 @@ import { serveStatic, setupVite } from "./vite";
 import { ENV } from "./env";
 import { sendOverdueReminders } from "../billing";
 import { sendMaintenanceReminders } from "../maintenance";
+import { startScheduler } from "../scheduler";
 import { ingestTelemetry } from "../telemetry";
 import { go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada } from "../integrations/go360";
 
@@ -160,6 +161,8 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
+    // Daily reminders (cobrança + manutenção) run in-process in production.
+    if (process.env.NODE_ENV === "production") startScheduler();
   });
 }
 

@@ -75,27 +75,33 @@ VITE_API_URL=https://goapp-production.up.railway.app
 
 ---
 
-## Lembretes de cobrança (cron diário)
+## Lembretes automáticos (já vêm ligados)
 
-Para enviar o push/aviso de fatura em aberto a quem não abre o app:
-1. Defina a variável `CRON_SECRET` (uma string aleatória) no serviço do app.
-2. Crie um **Cron Job** no Railway (ou um agendador externo) que faça uma vez ao dia:
-   ```
-   GET https://SEU-DOMINIO/api/cron/billing-reminders?token=SEU_CRON_SECRET
-   ```
-   O endpoint envia o lembrete (deduplicado para 1x/dia por cliente) e responde `{ sent, skipped, total }`.
+Em produção o app roda um **agendador interno** que dispara, sozinho, a cada 6h:
+- **Lembrete de cobrança** (fatura em aberto)
+- **Alerta de manutenção** (rastreador sem posicionar)
+
+Não é preciso configurar nada no Railway — basta o serviço estar no ar. Ambos
+são deduplicados (cobrança ~1x/dia, manutenção ~1x a cada 3 dias por veículo),
+então rodar a cada 6h nunca gera spam. Para desligar: `SCHEDULER_DISABLED=1`.
+
+### Disparo manual / agendador externo (opcional)
+Os endpoints HTTP continuam disponíveis (protegidos por `CRON_SECRET`) caso queira
+disparar na hora ou usar um Cron Job externo:
+```
+GET https://SEU-DOMINIO/api/cron/billing-reminders?token=SEU_CRON_SECRET
+```
+Responde `{ sent, skipped, total }`.
 
 ## Alerta de manutenção (rastreador sem posicionar)
 
-Avisa o cliente quando o rastreador fica vários dias sem enviar posição
-(provável problema de energia, sinal ou instalação — sugere manutenção):
-1. Reaproveita a mesma `CRON_SECRET`.
-2. Crie outro **Cron Job** diário:
-   ```
-   GET https://SEU-DOMINIO/api/cron/maintenance-reminders?token=SEU_CRON_SECRET
-   ```
-   Avisa veículos com mais de **3 dias** sem posição (ajustável com `&days=N`),
-   deduplicado para no máx. 1x a cada 3 dias por veículo. Responde `{ sent, skipped, total }`.
+Já roda automático pelo agendador interno (acima). Para disparar na hora,
+reaproveite a mesma `CRON_SECRET`:
+```
+GET https://SEU-DOMINIO/api/cron/maintenance-reminders?token=SEU_CRON_SECRET
+```
+Avisa veículos com mais de **3 dias** sem posição (ajustável com `&days=N`),
+deduplicado para no máx. 1x a cada 3 dias por veículo. Responde `{ sent, skipped, total }`.
 
 ## Custos (estimativa)
 - Plano **Hobby** da Railway (US$ 5/mês de crédito incluído) costuma cobrir app + MySQL para começar
