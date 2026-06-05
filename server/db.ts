@@ -165,7 +165,7 @@ export async function upsertGo360Vehicle(userId: number, data: {
   if (existing[0]) {
     await db.update(vehicles).set(fields).where(eq(vehicles.id, existing[0].id));
   } else {
-    await db.insert(vehicles).values({ userId, plate: data.plate, iconType: "car", ...fields });
+    await db.insert(vehicles).values({ userId, plate: data.plate, iconType: "car", ...fields } as any);
   }
 }
 
