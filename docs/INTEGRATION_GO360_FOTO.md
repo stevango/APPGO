@@ -1,5 +1,10 @@
 # Integração GO360 — foto do veículo no app
 
+> **Status: ✅ ATIVO.** A GO360 confirmou que o campo `imagem` já está no
+> `/api/app/equipamento`. O app importa automaticamente; a foto aparece no card
+> no próximo acesso/sincronização. Prioridade: **link da GO360 → biblioteca
+> interna → logo da marca** (fallback).
+
 O app GO mostra o **render/foto do veículo** no card principal (estilo app de
 montadora). A forma mais simples e sem custo de trazer a imagem certa é a GO360
 **enviar o link da foto** na resposta do equipamento. O app importa

@@ -127,9 +127,12 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
     const lastSignalAt = posAt ? new Date(String(posAt)) : null;
 
     // Imagem do veículo: a GO360 manda? senão, busca/reusa da biblioteca própria.
+    // A GO360 normaliza tudo para `imagem`; aceitamos os demais nomes por garantia.
     const go360Img =
       pick(v, "imagem", "foto", "url_imagem", "urlImagem", "imagem_url", "imagemUrl",
-        "foto_url", "fotoUrl", "image", "image_url", "imageUrl", "thumbnail", "thumb") ??
+        "foto_url", "fotoUrl", "foto_veiculo", "fotoVeiculo", "url_foto", "urlFoto",
+        "image", "image_url", "imageUrl", "thumbnail", "thumb",
+        "Imagem", "Foto", "Foto do Veículo", "URL da Imagem") ??
       pick(eq, "imagem", "foto", "image", "imageUrl") ?? null;
     const go360ImgUrl = go360Img && String(go360Img).startsWith("http") ? String(go360Img) : null;
     let imageUrl: string | null = go360ImgUrl;
