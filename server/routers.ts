@@ -363,6 +363,25 @@ export const appRouter = router({
         });
         return { ok: true };
       }),
+    // Cliente fechou o banner do aviso — registra na auditoria (foi informado).
+    dismiss: protectedProcedure
+      .input(z.object({ vehicleId: z.number(), type: z.string().default("manutencao"), daysStale: z.number().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const vehicle = await db.getVehicleById(input.vehicleId);
+        if (!vehicle || vehicle.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Veículo não pertence ao usuário." });
+        }
+        const ip = getClientIp(ctx.req) || null;
+        const userAgent = String(ctx.req.headers?.["user-agent"] ?? "").slice(0, 255) || null;
+        await db.logNotificationDispatch({
+          userId: ctx.user.id, vehicleId: input.vehicleId, type: `${input.type}_fechado`,
+          channel: "inapp", severity: "info",
+          title: "Cliente fechou o aviso",
+          message: `Aviso de manutenção fechado pelo cliente${input.daysStale != null ? ` (${input.daysStale} dias sem posicionar)` : ""}.`,
+          meta: { ip, userAgent, daysStale: input.daysStale ?? null },
+        });
+        return { ok: true };
+      }),
   }),
 
   // Biblioteca de imagens de modelos (curadoria — admin).

@@ -329,10 +329,6 @@ function MaintenanceAlert({ vehicle }: { vehicle: any }) {
   const [dismissedDays, setDismissedDays] = useState<number>(() => {
     try { return Number(localStorage.getItem(dismissKey) ?? -1); } catch { return -1; }
   });
-  const dismiss = () => {
-    try { localStorage.setItem(dismissKey, String(staleDays)); } catch { /* ignore */ }
-    setDismissedDays(staleDays);
-  };
 
   const lastAck = trpc.alerts.lastAck.useQuery(
     { vehicleId: vehicle.id, type: "manutencao" },
@@ -345,6 +341,14 @@ function MaintenanceAlert({ vehicle }: { vehicle: any }) {
       toast.success("Ciência registrada. Obrigado!");
     },
   });
+  const dismissLog = trpc.alerts.dismiss.useMutation({
+    onSuccess: () => utils.alerts.history.invalidate(),
+  });
+  const dismiss = () => {
+    try { localStorage.setItem(dismissKey, String(staleDays)); } catch { /* ignore */ }
+    setDismissedDays(staleDays);
+    dismissLog.mutate({ vehicleId: vehicle.id, type: "manutencao", daysStale: staleDays });
+  };
 
   if (staleDays < 3 || staleDays <= dismissedDays) return null;
 
