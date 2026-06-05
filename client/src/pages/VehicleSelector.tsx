@@ -266,14 +266,14 @@ function VehicleHeroImage({ v }: { v: any }) {
   const [ok, setOk] = useState(true);
   if (!url || !ok) return null;
   return (
-    <div className="relative mb-4 rounded-2xl bg-gradient-to-br from-white via-slate-50 to-slate-200 h-32 overflow-hidden">
-      <div className="absolute -right-6 bottom-0 w-56 h-28 bg-white/50 blur-2xl rounded-full pointer-events-none" />
+    <div className="relative mb-4 rounded-2xl bg-gradient-to-br from-white via-slate-50 to-slate-200 h-44 overflow-hidden flex items-center justify-center">
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-36 bg-white/60 blur-2xl rounded-full pointer-events-none" />
       <img
         src={url}
         alt={`${v.brand} ${v.model}`}
         onError={() => setOk(false)}
         loading="lazy"
-        className="absolute right-0 bottom-0 h-[124px] w-auto max-w-[78%] object-contain pointer-events-none drop-shadow-[0_14px_18px_rgba(15,23,42,0.22)]"
+        className="relative h-[170px] w-auto max-w-[92%] object-contain pointer-events-none drop-shadow-[0_18px_22px_rgba(15,23,42,0.25)]"
       />
     </div>
   );
