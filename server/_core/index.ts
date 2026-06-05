@@ -11,6 +11,7 @@ import { serveStatic, setupVite } from "./vite";
 import { ENV } from "./env";
 import { sendOverdueReminders } from "../billing";
 import { ingestTelemetry } from "../telemetry";
+import { syncGo360 } from "../integrations/go360";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -63,6 +64,25 @@ async function startServer() {
     } catch (error) {
       console.error("[Cron] billing-reminders failed", error);
       res.status(500).json({ error: "failed" });
+    }
+  });
+
+  // GO360 sync (pull): fetch positions from the GO360 API and feed the app.
+  //   GET /api/cron/go360-sync?token=CRON_SECRET[&debug=1]
+  // Schedule it (e.g. every 1-2 min). debug=1 returns the raw first record so we
+  // can confirm the field mapping against the real API response.
+  app.get("/api/cron/go360-sync", async (req, res) => {
+    const token = (req.query.token as string) || (req.headers["x-cron-secret"] as string);
+    if (!ENV.cronSecret || token !== ENV.cronSecret) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    try {
+      const result = await syncGo360({ debug: req.query.debug === "1" });
+      res.status(result.ok ? 200 : 400).json(result);
+    } catch (error) {
+      console.error("[GO360] sync failed", error);
+      res.status(500).json({ error: String(error) });
     }
   });
 
