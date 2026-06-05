@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import {
   ChevronLeft, User, Car, CreditCard, Shield, Bell,
-  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature, MapPin
+  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature, MapPin, Route
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddressSearch } from "@/components/AddressSearch";
@@ -113,6 +113,7 @@ export default function Profile() {
     },
   });
 
+  const go360Status = trpc.go360.status.useQuery();
   const demoStatus = trpc.demo.status.useQuery();
   const enableDemo = trpc.demo.enable.useMutation({
     onSuccess: async () => {
@@ -183,6 +184,9 @@ export default function Profile() {
     { icon: Receipt, label: "Faturas", sublabel: "Histórico e 2ª via de boleto", action: () => setLocation("/payment/history") },
     { icon: Shield, label: "Segurança", sublabel: "Senha, Face ID", action: () => {} },
     { icon: Bell, label: t("notifications"), sublabel: isSubscribed ? "Push ativo" : "Configurar alertas", action: () => setShowPushConfig(true) },
+    ...(go360Status.data?.enabled
+      ? [{ icon: Route, label: "Minha jornada", sublabel: "Acompanhe sua implantação", action: () => setLocation("/jornada") }]
+      : []),
     { icon: MapPin, label: "Meu endereço", sublabel: userAddress ? userAddress : "Adicionar endereço", action: () => setShowAddress(true) },
     { icon: FileSignature, label: "Meu contrato", sublabel: "Visualizar e assinar (DocuSign)", action: () => setLocation("/contract") },
     { icon: Sparkles, label: "Central de Ajuda", sublabel: "Tire dúvidas com a assistente GO", action: () => setLocation("/help") },

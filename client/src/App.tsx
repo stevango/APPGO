@@ -31,6 +31,7 @@ const EmergencyContacts = lazy(() => import("./pages/EmergencyContacts"));
 const Help = lazy(() => import("./pages/Help"));
 const Legal = lazy(() => import("./pages/Legal"));
 const Contract = lazy(() => import("./pages/Contract"));
+const Jornada = lazy(() => import("./pages/Jornada"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function AuthenticatedApp() {
@@ -56,6 +57,7 @@ function AuthenticatedApp() {
           <Route path="/help" component={Help} />
           <Route path="/legal" component={Legal} />
           <Route path="/contract" component={Contract} />
+          <Route path="/jornada" component={Jornada} />
           <Route path="/404" component={NotFound} />
           <Route component={NotFound} />
         </Switch>
