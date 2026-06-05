@@ -144,7 +144,7 @@ export async function setUserGo360Token(userId: number, token: string) {
 export async function upsertGo360Vehicle(userId: number, data: {
   plate: string; brand?: string | null; model: string; color?: string | null; year?: number | null;
   trackerSerial?: string | null; trackerModel?: string | null; trackerStatus?: "online" | "offline" | "alert";
-  go360AtivoId?: string | null;
+  go360AtivoId?: string | null; imageUrl?: string | null;
   latitude?: string | null; longitude?: string | null; lastAddress?: string | null; speed?: number | null; ignition?: boolean | null;
   lastSignalAt?: Date | null;
 }) {
@@ -163,6 +163,8 @@ export async function upsertGo360Vehicle(userId: number, data: {
     go360AtivoId: data.go360AtivoId ?? null,
     isDemo: false,
   };
+  // Só sobrescreve a imagem quando a GO360 manda uma (não apaga a existente).
+  if (data.imageUrl) fields.imageUrl = data.imageUrl;
   // Only set position when GO360 actually provided it (don't wipe GPS from ingestion).
   if (data.latitude && data.longitude) {
     fields.lastLatitude = data.latitude;

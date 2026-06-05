@@ -134,6 +134,7 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
       trackerSerial: serial ? String(serial) : null,
       trackerModel: pick(eq, "modelo", "fabricante", "model") ?? null,
       go360AtivoId: pick(eq, "id", "ativo_id", "ativoId") ? String(pick(eq, "id", "ativo_id", "ativoId")) : null,
+      imageUrl: pick(v, "imagem", "foto", "url_imagem", "urlImagem", "image", "image_url", "imageUrl") ?? pick(eq, "imagem", "foto") ?? null,
       trackerStatus,
       latitude: lat != null ? String(lat) : null,
       longitude: lng != null ? String(lng) : null,

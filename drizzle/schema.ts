@@ -56,6 +56,7 @@ export const vehicles = mysqlTable("vehicles", {
   trackerModel: varchar("trackerModel", { length: 50 }),
   trackerSerial: varchar("trackerSerial", { length: 50 }),
   go360AtivoId: varchar("go360AtivoId", { length: 64 }),
+  imageUrl: varchar("imageUrl", { length: 500 }),  // render do modelo (estilo app de montadora)
   simStatus: mysqlEnum("simStatus", ["active", "inactive", "no_signal"]).default("active"),
   simSignal: int("simSignal").default(0),
   lastGpsAt: timestamp("lastGpsAt").defaultNow(),

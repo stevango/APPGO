@@ -11,6 +11,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
 import { isVehicleAsset, getAssetIcon } from "@/lib/assetIcons";
+import { getVehicleImageUrl } from "@/lib/vehicleImage";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -510,6 +511,11 @@ function VehicleCard({
 
   const isVeh = isVehicleAsset(vehicle.iconType);
 
+  // Render do modelo (estilo BYD). Some out gracefully se a imagem falhar.
+  const [imgOk, setImgOk] = useState(true);
+  const imgUrl = getVehicleImageUrl(vehicle);
+  const showHero = !!imgUrl && imgOk;
+
   // Human-readable status headline (communicative, not just raw fields).
   let headline = "Rastreando";
   let dot = "bg-gray-400";
@@ -537,41 +543,84 @@ function VehicleCard({
           : ""
       }`}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="w-[58px] h-[58px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl flex items-center justify-center border border-gray-100 shrink-0 overflow-hidden">
-            <BrandMark brand={vehicle.brand} iconType={vehicle.iconType} className="w-full h-full" />
-          </div>
-          <div className="min-w-0">
-            <h3 className="font-bold text-[#111111] text-[15px] tracking-tight truncate">
-              {vehicle.brand} {vehicle.model}
-            </h3>
-            <div className="mt-1.5">
-              {isVeh ? (
-                <LicensePlate plate={vehicle.plate} size="sm" />
-              ) : (
-                <AssetTag label={vehicle.plate} size="sm" />
+      {showHero ? (
+        /* Hero estilo app de montadora: render do modelo + dados sobrepostos */
+        <div className="relative mb-3 rounded-2xl bg-gradient-to-br from-slate-100 via-slate-100 to-slate-200 px-4 pt-4 pb-3 overflow-hidden min-h-[118px]">
+          <div className="relative z-10 flex items-start justify-between gap-2">
+            <div className="min-w-0 max-w-[62%]">
+              <h3 className="font-bold text-[#111111] text-[16px] tracking-tight truncate">
+                {vehicle.brand} {vehicle.model}
+              </h3>
+              <div className="mt-2">
+                {isVeh ? (
+                  <LicensePlate plate={vehicle.plate} size="sm" />
+                ) : (
+                  <AssetTag label={vehicle.plate} size="sm" />
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${sig.bg}`}>
+                <div className={`w-2 h-2 rounded-full ${sig.dot}`} />
+                <span className={`text-[11px] font-semibold ${sig.text}`}>{sig.label}</span>
+              </div>
+              {(isBatteryCritical || isBatteryWarning) && (
+                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
+                  isBatteryCritical ? "bg-red-50" : "bg-amber-50"
+                }`}>
+                  <BatteryWarning className={`w-3 h-3 ${isBatteryCritical ? "text-red-500" : "text-amber-500"}`} />
+                  <span className={`text-[10px] font-semibold ${isBatteryCritical ? "text-red-600" : "text-amber-600"}`}>
+                    {batteryMain.toFixed(1)}V
+                  </span>
+                </div>
               )}
             </div>
           </div>
+          <img
+            src={imgUrl!}
+            alt={`${vehicle.brand} ${vehicle.model}`}
+            onError={() => setImgOk(false)}
+            loading="lazy"
+            className="absolute right-[-12px] bottom-[-8px] w-[58%] max-w-[220px] object-contain pointer-events-none drop-shadow-xl"
+          />
         </div>
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
-          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${sig.bg}`}>
-            <div className={`w-2 h-2 rounded-full ${sig.dot}`} />
-            <span className={`text-[11px] font-semibold ${sig.text}`}>{sig.label}</span>
-          </div>
-          {(isBatteryCritical || isBatteryWarning) && (
-            <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
-              isBatteryCritical ? "bg-red-50" : "bg-amber-50"
-            }`}>
-              <BatteryWarning className={`w-3 h-3 ${isBatteryCritical ? "text-red-500" : "text-amber-500"}`} />
-              <span className={`text-[10px] font-semibold ${isBatteryCritical ? "text-red-600" : "text-amber-600"}`}>
-                {batteryMain.toFixed(1)}V
-              </span>
+      ) : (
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-[58px] h-[58px] bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl flex items-center justify-center border border-gray-100 shrink-0 overflow-hidden">
+              <BrandMark brand={vehicle.brand} iconType={vehicle.iconType} className="w-full h-full" />
             </div>
-          )}
+            <div className="min-w-0">
+              <h3 className="font-bold text-[#111111] text-[15px] tracking-tight truncate">
+                {vehicle.brand} {vehicle.model}
+              </h3>
+              <div className="mt-1.5">
+                {isVeh ? (
+                  <LicensePlate plate={vehicle.plate} size="sm" />
+                ) : (
+                  <AssetTag label={vehicle.plate} size="sm" />
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${sig.bg}`}>
+              <div className={`w-2 h-2 rounded-full ${sig.dot}`} />
+              <span className={`text-[11px] font-semibold ${sig.text}`}>{sig.label}</span>
+            </div>
+            {(isBatteryCritical || isBatteryWarning) && (
+              <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
+                isBatteryCritical ? "bg-red-50" : "bg-amber-50"
+              }`}>
+                <BatteryWarning className={`w-3 h-3 ${isBatteryCritical ? "text-red-500" : "text-amber-500"}`} />
+                <span className={`text-[10px] font-semibold ${isBatteryCritical ? "text-red-600" : "text-amber-600"}`}>
+                  {batteryMain.toFixed(1)}V
+                </span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Status headline — communicative, human-readable */}
       <div className="mt-3.5 flex items-center gap-2">
