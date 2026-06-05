@@ -139,6 +139,7 @@ export async function upsertGo360Vehicle(userId: number, data: {
   trackerSerial?: string | null; trackerModel?: string | null; trackerStatus?: "online" | "offline" | "alert";
   go360AtivoId?: string | null;
   latitude?: string | null; longitude?: string | null; lastAddress?: string | null; speed?: number | null; ignition?: boolean | null;
+  lastSignalAt?: Date | null;
 }) {
   const db = await getDb();
   if (!db) return;
@@ -159,7 +160,7 @@ export async function upsertGo360Vehicle(userId: number, data: {
   if (data.latitude && data.longitude) {
     fields.lastLatitude = data.latitude;
     fields.lastLongitude = data.longitude;
-    fields.lastSignalAt = new Date();
+    fields.lastSignalAt = data.lastSignalAt ?? new Date();
     if (data.lastAddress != null) fields.lastAddress = data.lastAddress;
     if (data.speed != null) fields.speed = data.speed;
     if (data.ignition != null) fields.ignition = data.ignition;

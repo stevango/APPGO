@@ -430,6 +430,18 @@ function VehicleCard({
     ? getTimeSince(new Date(vehicle.lastSignalAt))
     : "Sem dados";
 
+  // Tracker freshness — never show "Online" for a stale fix (safety/CS).
+  const lastSignalMs = vehicle.lastSignalAt ? new Date(vehicle.lastSignalAt).getTime() : 0;
+  const ageMin = lastSignalMs ? (Date.now() - lastSignalMs) / 60000 : Infinity;
+  const sig =
+    vehicle.trackerStatus !== "online"
+      ? { label: "Offline", bg: "bg-red-50", dot: "bg-red-400", text: "text-red-500", stale: true }
+      : ageMin > 60 * 24
+      ? { label: "Desatualizado", bg: "bg-red-50", dot: "bg-red-400", text: "text-red-500", stale: true }
+      : ageMin > 60
+      ? { label: "Desatualizado", bg: "bg-amber-50", dot: "bg-amber-500", text: "text-amber-600", stale: true }
+      : { label: "Online", bg: "bg-green-50", dot: "bg-green-500 pulse-online", text: "text-green-600", stale: false };
+
   const isVeh = isVehicleAsset(vehicle.iconType);
 
   // Human-readable status headline (communicative, not just raw fields).
@@ -478,11 +490,9 @@ function VehicleCard({
           </div>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
-          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${vehicle.trackerStatus === "online" ? "bg-green-50" : "bg-red-50"}`}>
-            <div className={`w-2 h-2 rounded-full ${vehicle.trackerStatus === "online" ? "bg-green-500 pulse-online" : "bg-red-400"}`} />
-            <span className={`text-[11px] font-semibold ${vehicle.trackerStatus === "online" ? "text-green-600" : "text-red-500"}`}>
-              {vehicle.trackerStatus === "online" ? "Online" : "Offline"}
-            </span>
+          <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${sig.bg}`}>
+            <div className={`w-2 h-2 rounded-full ${sig.dot}`} />
+            <span className={`text-[11px] font-semibold ${sig.text}`}>{sig.label}</span>
           </div>
           {(isBatteryCritical || isBatteryWarning) && (
             <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
@@ -535,8 +545,8 @@ function VehicleCard({
 
       {/* Clear call-to-action */}
       <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
-        <span className="text-[11px] text-gray-400 font-medium">
-          Atualizado {timeSinceSignal}
+        <span className={`text-[11px] font-medium ${sig.stale ? sig.text : "text-gray-400"}`}>
+          {sig.stale ? `Sem atualização ${timeSinceSignal}` : `Atualizado ${timeSinceSignal}`}
         </span>
         <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[#243FF7] bg-[#243FF7]/8 rounded-full pl-3.5 pr-3 py-1.5">
           Ver no mapa

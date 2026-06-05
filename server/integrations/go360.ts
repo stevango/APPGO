@@ -122,6 +122,8 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
     const lat = pick(pos, "latitude", "lat", "lng_lat");
     const lng = pick(pos, "longitude", "lng", "lon", "long");
     const posSpeed = pick(pos, "velocidade", "speed");
+    const posAt = pick(pos, "data", "evento_em", "eventoEm", "capturado_em", "capturadoEm", "ultima_comunicacao", "ultimaComunicacao");
+    const lastSignalAt = posAt ? new Date(String(posAt)) : null;
 
     await db.upsertGo360Vehicle(userId, {
       plate: String(pick(v, "placa", "plate") ?? serial ?? "SEM-PLACA").toUpperCase(),
@@ -137,6 +139,8 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
       longitude: lng != null ? String(lng) : null,
       lastAddress: pick(pos, "endereco", "address") ?? null,
       speed: posSpeed != null ? Number(posSpeed) : null,
+      ignition: pick(pos, "ignicao", "ignition") != null ? Boolean(pick(pos, "ignicao", "ignition")) : null,
+      lastSignalAt: lastSignalAt && !isNaN(lastSignalAt.getTime()) ? lastSignalAt : null,
     });
     synced++;
   }
