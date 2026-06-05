@@ -10,6 +10,7 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { ENV } from "./env";
 import { sendOverdueReminders } from "../billing";
+import { sendMaintenanceReminders } from "../maintenance";
 import { ingestTelemetry } from "../telemetry";
 import { go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada } from "../integrations/go360";
 
@@ -63,6 +64,24 @@ async function startServer() {
       res.json({ ok: true, ...result });
     } catch (error) {
       console.error("[Cron] billing-reminders failed", error);
+      res.status(500).json({ error: "failed" });
+    }
+  });
+
+  // Daily job: warn customers whose tracker stopped positioning (needs service).
+  //   GET /api/cron/maintenance-reminders?token=CRON_SECRET[&days=3]
+  app.get("/api/cron/maintenance-reminders", async (req, res) => {
+    const token = (req.query.token as string) || (req.headers["x-cron-secret"] as string);
+    if (!ENV.cronSecret || token !== ENV.cronSecret) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    try {
+      const days = req.query.days ? Math.max(1, parseInt(String(req.query.days), 10)) : undefined;
+      const result = await sendMaintenanceReminders(days);
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      console.error("[Cron] maintenance-reminders failed", error);
       res.status(500).json({ error: "failed" });
     }
   });

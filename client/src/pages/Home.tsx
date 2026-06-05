@@ -145,30 +145,55 @@ export default function Home() {
         </div>
       )}
 
-      {/* Offline Vehicle Care Alert */}
-      {vehicle && vehicle.trackerStatus === "offline" && vehicle.lastSignalAt && (() => {
-        const lastSignal = new Date(vehicle.lastSignalAt!).getTime();
-        const hoursOffline = (Date.now() - lastSignal) / (1000 * 60 * 60);
-        return hoursOffline > 24;
-      })() && (
-        <button
-          onClick={() => setLocation("/vehicle-care")}
-          className="mb-5 w-full rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 shadow-sm text-left go-btn-active stagger-item"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center">
-              <Heart className="w-5 h-5 text-amber-600" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-semibold text-sm text-amber-900">Está tudo bem?</h4>
-              <p className="text-xs text-amber-700 mt-0.5">
-                Seu equipamento está sem comunicação há mais de 24h. Toque para nos contar.
-              </p>
-            </div>
-            <ChevronRight className="w-4 h-4 text-amber-400" />
+      {/* Tracker sem posicionar → alerta de manutenção (independe do status "online"
+          que a GO360 reporta: o que importa é há quanto tempo não há posição). */}
+      {vehicle && !vehicle.isDemo && vehicle.lastSignalAt && (() => {
+        const staleDays = Math.floor((Date.now() - new Date(vehicle.lastSignalAt!).getTime()) / (1000 * 60 * 60 * 24));
+        if (staleDays < 3) return null;
+        const severe = staleDays > 7;
+        const box = severe
+          ? "from-red-50 to-orange-50 border-red-200"
+          : "from-amber-50 to-orange-50 border-amber-200";
+        const iconBox = severe ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600";
+        const h = severe ? "text-red-900" : "text-amber-900";
+        const p = severe ? "text-red-700" : "text-amber-700";
+        const btn = severe ? "bg-red-500" : "bg-amber-500";
+        return (
+          <div className="mb-5 stagger-item">
+            <button
+              onClick={() => setLocation("/vehicle-care")}
+              className={`w-full rounded-2xl bg-gradient-to-r ${box} border p-4 text-left go-btn-active`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-11 h-11 ${iconBox} rounded-xl flex items-center justify-center shrink-0`}>
+                  <Wrench className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className={`font-bold text-sm ${h}`}>
+                    Rastreador há {staleDays} dias sem posicionar
+                  </h4>
+                  <p className={`text-xs ${p} mt-0.5`}>
+                    {severe
+                      ? "Pode haver um problema de energia, sinal ou instalação. Recomendamos uma manutenção para voltar a proteger seu bem."
+                      : "Faz alguns dias que não recebemos a posição. Pode ser sinal ou energia — vamos verificar juntos?"}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className={`flex-1 text-center text-[13px] font-bold text-white ${btn} rounded-xl py-2.5`}>
+                  Agendar manutenção
+                </span>
+                <span
+                  onClick={(e) => { e.stopPropagation(); setLocation("/help"); }}
+                  className="px-4 text-center text-[13px] font-semibold text-gray-600 bg-white/70 rounded-xl py-2.5"
+                >
+                  Falar com a gente
+                </span>
+              </div>
+            </button>
           </div>
-        </button>
-      )}
+        );
+      })()}
 
       {/* Battery Alert Banner */}
       {vehicle && hasAnyBatteryAlert && !alertDismissed && (

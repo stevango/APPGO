@@ -85,6 +85,18 @@ Para enviar o push/aviso de fatura em aberto a quem não abre o app:
    ```
    O endpoint envia o lembrete (deduplicado para 1x/dia por cliente) e responde `{ sent, skipped, total }`.
 
+## Alerta de manutenção (rastreador sem posicionar)
+
+Avisa o cliente quando o rastreador fica vários dias sem enviar posição
+(provável problema de energia, sinal ou instalação — sugere manutenção):
+1. Reaproveita a mesma `CRON_SECRET`.
+2. Crie outro **Cron Job** diário:
+   ```
+   GET https://SEU-DOMINIO/api/cron/maintenance-reminders?token=SEU_CRON_SECRET
+   ```
+   Avisa veículos com mais de **3 dias** sem posição (ajustável com `&days=N`),
+   deduplicado para no máx. 1x a cada 3 dias por veículo. Responde `{ sent, skipped, total }`.
+
 ## Custos (estimativa)
 - Plano **Hobby** da Railway (US$ 5/mês de crédito incluído) costuma cobrir app + MySQL para começar
 - Escala conforme uso (CPU/RAM/banco)

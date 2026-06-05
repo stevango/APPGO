@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, lte, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, gte, lte, lt, sql, inArray, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, vehicles, geofences, notifications, occurrences, blockLogs, sosAlerts, routeHistory, trips, shareLinks, emergencyContacts, pushSubscriptions } from "../drizzle/schema";
 import type { InsertTrip, InsertShareLink, InsertEmergencyContact, EmergencyContact } from "../drizzle/schema";
@@ -971,6 +971,45 @@ export async function markBillingReminderSent(userId: number) {
   const db = await getDb();
   if (!db) return;
   await db.update(users).set({ lastBillingReminderAt: new Date() }).where(eq(users.id, userId));
+}
+
+// --- Manutenção: rastreadores sem posicionar há muitos dias ---
+export type StaleVehicle = {
+  userId: number; vehicleId: number; plate: string; model: string;
+  lastSignalAt: Date | null; lastStaleAlertAt: Date | null; daysStale: number;
+};
+
+/**
+ * Real trackers (com serial) cuja última posição é mais antiga que `thresholdDays`.
+ * Ignora veículos demo. Usado para avisar o cliente que pode precisar de manutenção.
+ */
+export async function getStaleTrackedVehicles(thresholdDays = 3): Promise<StaleVehicle[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const cutoff = new Date(Date.now() - thresholdDays * 86400000);
+  const rows = await db.select().from(vehicles).where(and(
+    isNotNull(vehicles.trackerSerial),
+    eq(vehicles.isDemo, false),
+    isNotNull(vehicles.lastSignalAt),
+    lt(vehicles.lastSignalAt, cutoff),
+  ));
+  return rows.map((v) => ({
+    userId: v.userId,
+    vehicleId: v.id,
+    plate: v.plate,
+    model: v.model,
+    lastSignalAt: v.lastSignalAt ?? null,
+    lastStaleAlertAt: v.lastStaleAlertAt ?? null,
+    daysStale: v.lastSignalAt
+      ? Math.max(0, Math.floor((Date.now() - new Date(v.lastSignalAt).getTime()) / 86400000))
+      : 0,
+  }));
+}
+
+export async function markStaleAlertSent(vehicleId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(vehicles).set({ lastStaleAlertAt: new Date() }).where(eq(vehicles.id, vehicleId));
 }
 
 // --- Retention (cancellation save flow) ---

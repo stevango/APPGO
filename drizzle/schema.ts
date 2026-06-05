@@ -40,6 +40,9 @@ export const vehicles = mysqlTable("vehicles", {
   lastLongitude: decimal("lastLongitude", { precision: 10, scale: 7 }),
   lastAddress: text("lastAddress"),
   lastSignalAt: timestamp("lastSignalAt").defaultNow(),
+  // Última vez que avisamos o cliente que o rastreador está sem posicionar
+  // (manutenção) — evita repetir o alerta todo dia.
+  lastStaleAlertAt: timestamp("lastStaleAlertAt"),
   // Telemetria do rastreador
   speed: int("speed").default(0),
   heading: int("heading").default(0),
@@ -98,7 +101,7 @@ export const notifications = mysqlTable("notifications", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   vehicleId: int("vehicleId"),
-  type: mysqlEnum("type", ["cerca_entrada", "cerca_saida", "bloqueio", "desbloqueio", "sos", "bateria_baixa", "velocidade_excessiva", "ignição_ligada", "ignição_desligada", "offline", "furto_roubo", "sistema"]).default("sistema"),
+  type: mysqlEnum("type", ["cerca_entrada", "cerca_saida", "bloqueio", "desbloqueio", "sos", "bateria_baixa", "velocidade_excessiva", "ignição_ligada", "ignição_desligada", "offline", "manutencao", "furto_roubo", "sistema"]).default("sistema"),
   title: varchar("title", { length: 200 }).notNull(),
   message: text("message"),
   read: boolean("read").default(false),
