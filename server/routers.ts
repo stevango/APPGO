@@ -16,17 +16,24 @@ const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 min
 const REGISTER_MAX = 5;
 const REGISTER_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
-async function withGo360Token<T>(ctx: any, fn: (token: string) => Promise<T>): Promise<T> {
+type Go360Result<T> = { ok: true; data: T } | { ok: false; reason: "no_token" | "unavailable" };
+
+/**
+ * Calls a GO360 endpoint tolerantly: real auth failures (401/403) force a
+ * re-login, but anything else (endpoint not ready yet, 404, 5xx, network) is
+ * returned as { ok:false } so the app degrades gracefully instead of breaking.
+ */
+async function withGo360Token<T>(ctx: any, fn: (token: string) => Promise<T>): Promise<Go360Result<T>> {
   const token = ctx?.user?.go360Token as string | undefined;
-  if (!token) throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão GO360 expirada. Entre novamente." });
+  if (!token) return { ok: false, reason: "no_token" };
   try {
-    return await fn(token);
+    return { ok: true, data: await fn(token) };
   } catch (err: any) {
     if (err?.status === 401 || err?.status === 403) {
       throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão GO360 expirada. Entre novamente." });
     }
-    console.error("[GO360] request error", err?.status, err?.body);
-    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "GO360 indisponível no momento." });
+    console.warn("[GO360] endpoint indisponível", err?.status, err?.body);
+    return { ok: false, reason: "unavailable" };
   }
 }
 
