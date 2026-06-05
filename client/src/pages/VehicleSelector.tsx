@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
+import { getVehicleImageUrl } from "@/lib/vehicleImage";
 import { ASSET_ICONS, ASSET_GROUPS, isVehicleAsset } from "@/lib/assetIcons";
 import { useActiveVehicleId, setActiveVehicleId } from "@/lib/activeVehicle";
 
@@ -216,6 +217,7 @@ export default function VehicleSelector() {
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDetailsFor(null)} />
             <div className="relative w-full max-w-md bg-white rounded-t-3xl p-5 pb-8 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
               <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+              <VehicleHeroImage v={v} />
               <div className="flex items-center gap-3 mb-4">
                 <BrandMark brand={v.brand} iconType={v.iconType} className="w-12 h-12 flex-shrink-0" />
                 <div className="min-w-0">
@@ -254,6 +256,25 @@ export default function VehicleSelector() {
           </div>
         );
       })()}
+    </div>
+  );
+}
+
+/** Render do veículo no topo da folha de detalhes (some se faltar imagem). */
+function VehicleHeroImage({ v }: { v: any }) {
+  const url = getVehicleImageUrl(v);
+  const [ok, setOk] = useState(true);
+  if (!url || !ok) return null;
+  return (
+    <div className="relative mb-4 rounded-2xl bg-gradient-to-br from-white via-slate-50 to-slate-200 h-32 overflow-hidden">
+      <div className="absolute -right-6 bottom-0 w-56 h-28 bg-white/50 blur-2xl rounded-full pointer-events-none" />
+      <img
+        src={url}
+        alt={`${v.brand} ${v.model}`}
+        onError={() => setOk(false)}
+        loading="lazy"
+        className="absolute right-0 bottom-0 h-[124px] w-auto max-w-[78%] object-contain pointer-events-none drop-shadow-[0_14px_18px_rgba(15,23,42,0.22)]"
+      />
     </div>
   );
 }
