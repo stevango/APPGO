@@ -32,10 +32,10 @@ export function getBrandLogo(brand: string | null | undefined): string | null {
   return BRAND_LOGOS[brand.toLowerCase().trim()] || null;
 }
 
-/** ABC1D23 / ABC1234 → "ABC 1D23" (display with a space). */
+/** ABC1D23 / ABC1234 → "ABC-1D23" (display with a dash, padrão brasileiro). */
 export function formatPlate(plate: string): string {
   const clean = plate.toUpperCase().replace(/[^A-Z0-9]/g, "");
-  if (clean.length === 7) return `${clean.slice(0, 3)} ${clean.slice(3)}`;
+  if (clean.length === 7) return `${clean.slice(0, 3)}-${clean.slice(3)}`;
   return clean;
 }
 
