@@ -76,19 +76,40 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
     for (const k of keys) { const val = o?.[k]; if (val !== undefined && val !== null && val !== "") return val; }
     return undefined;
   };
+  const trackerOf = (v: any) => v?.equipamento || v?.tracker || null;
+  const hasTracker = (v: any) => {
+    const eq = trackerOf(v);
+    return !!(eq && (eq.imei || eq.id_tracker || eq.idTracker || eq.serie || eq.serial));
+  };
 
+  // GO360 can return duplicate rows for the same plate (one with tracker, one
+  // without). Keep one per plate, preferring the entry that has the tracker.
+  const byPlate = new Map<string, any>();
   for (const v of veiculos) {
-    const eq = v.equipamento || v.tracker || {};
-    const serial = pick(eq, "imei", "id_tracker", "idTracker", "serial", "iccid") ?? pick(v, "imei", "id_tracker");
-    const productActive = String(pick(v, "status_produto", "statusProduto") ?? "").toUpperCase() === "ATIVO";
+    const plate = String(pick(v, "placa", "plate") ?? "").toUpperCase();
+    const key = plate || pick(trackerOf(v), "id_tracker", "imei") || String(byPlate.size);
+    const prev = byPlate.get(key);
+    if (!prev || (hasTracker(v) && !hasTracker(prev))) byPlate.set(key, v);
+  }
+
+  for (const v of byPlate.values()) {
+    const eq = trackerOf(v) || {};
+    const serial = pick(eq, "imei", "id_tracker", "idTracker", "serie", "serial") ?? pick(v, "imei", "id_tracker");
+    const productActive = String(pick(v, "status_produto", "statusProduto", "situacao") ?? "").toUpperCase().includes("ATIV");
     const trackerOp = ["em_operacao", "operando", "ativo", "online"].includes(String(pick(eq, "status") ?? "").toLowerCase());
     const trackerStatus: "online" | "offline" = productActive && trackerOp ? "online" : "offline";
     const year = parseInt(String(pick(v, "ano_modelo", "anoModelo", "ano_fabricacao", "anoFabricacao", "ano") ?? ""), 10);
 
+    // GO360 often has marca/modelo empty → fall back to the product label.
+    const brand = pick(v, "marca", "fabricante", "montadora", "marca_veiculo", "marcaVeiculo") ?? null;
+    const model =
+      pick(v, "modelo", "modelo_veiculo", "modeloVeiculo", "versao", "descricao", "nome") ??
+      (brand ? "Veículo" : (pick(v, "produto") ?? "Veículo"));
+
     await db.upsertGo360Vehicle(userId, {
       plate: String(pick(v, "placa", "plate") ?? serial ?? "SEM-PLACA").toUpperCase(),
-      brand: pick(v, "marca", "fabricante", "montadora", "marca_veiculo", "marcaVeiculo") ?? null,
-      model: pick(v, "modelo", "modelo_veiculo", "modeloVeiculo", "versao", "descricao", "nome") ?? "Veículo",
+      brand,
+      model,
       color: pick(v, "cor", "cor_veiculo") ?? null,
       year: Number.isFinite(year) ? year : null,
       trackerSerial: serial ? String(serial) : null,
