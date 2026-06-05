@@ -137,6 +137,7 @@ export async function setUserGo360Token(userId: number, token: string) {
 export async function upsertGo360Vehicle(userId: number, data: {
   plate: string; brand?: string | null; model: string; color?: string | null; year?: number | null;
   trackerSerial?: string | null; trackerModel?: string | null; trackerStatus?: "online" | "offline" | "alert";
+  go360AtivoId?: string | null;
   latitude?: string | null; longitude?: string | null; lastAddress?: string | null; speed?: number | null; ignition?: boolean | null;
 }) {
   const db = await getDb();
@@ -151,6 +152,7 @@ export async function upsertGo360Vehicle(userId: number, data: {
     trackerSerial: data.trackerSerial ?? null,
     trackerModel: data.trackerModel ?? null,
     trackerStatus: data.trackerStatus ?? "online",
+    go360AtivoId: data.go360AtivoId ?? null,
     isDemo: false,
   };
   // Only set position when GO360 actually provided it (don't wipe GPS from ingestion).

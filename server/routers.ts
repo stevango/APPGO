@@ -51,7 +51,7 @@ import { notifyOwner } from "./_core/notification";
 import { registerPushSubscription, unregisterPushSubscription, sendPushToUser } from "./pushService";
 import { reverseGeocode, searchAddress } from "./geocode";
 import { processTelemetry } from "./telemetry";
-import { go360Enabled, go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada, go360FirstAccess, syncGo360Equipment } from "./integrations/go360";
+import { go360Enabled, go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada, go360FirstAccess, syncGo360Equipment, go360Historico } from "./integrations/go360";
 
 export const appRouter = router({
   system: systemRouter,
@@ -298,6 +298,34 @@ export const appRouter = router({
     contrato: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Contrato)),
     cobranca: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Cobranca)),
     jornada: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Jornada)),
+    // Position history (route) for a vehicle, from GO360.
+    historico: protectedProcedure
+      .input(z.object({ vehicleId: z.number(), desde: z.string().optional(), ate: z.string().optional(), limit: z.number().min(1).max(500).optional() }))
+      .query(async ({ ctx, input }) => {
+        const token = (ctx.user as any)?.go360Token as string | undefined;
+        const vehicle = await db.getVehicleById(input.vehicleId);
+        const ativoId = (vehicle as any)?.go360AtivoId as string | undefined;
+        if (!token || !ativoId || vehicle?.userId !== ctx.user.id) return { ok: false as const, points: [] };
+        try {
+          const resp: any = await go360Historico(token, ativoId, { desde: input.desde, ate: input.ate, limit: input.limit });
+          const arr: any[] = Array.isArray(resp?.posicoes) ? resp.posicoes : Array.isArray(resp) ? resp : [];
+          const points = arr
+            .map((p) => ({
+              latitude: Number(p.latitude ?? p.lat),
+              longitude: Number(p.longitude ?? p.lng ?? p.lon),
+              speed: Number(p.velocidade ?? p.speed ?? 0),
+              heading: Number(p.direcao_graus ?? p.heading ?? 0),
+              ignition: Boolean(p.ignicao ?? p.ignition),
+              address: p.endereco ?? p.address ?? null,
+              at: p.data ?? p.evento_em ?? p.capturado_em ?? null,
+            }))
+            .filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
+          return { ok: true as const, points, total: resp?.total ?? points.length };
+        } catch (e: any) {
+          if (e?.status === 401 || e?.status === 403) throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão GO360 expirada." });
+          return { ok: false as const, points: [] };
+        }
+      }),
   }),
 
   vehicles: router({

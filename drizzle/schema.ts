@@ -52,6 +52,7 @@ export const vehicles = mysqlTable("vehicles", {
   trackerMode: mysqlEnum("trackerMode", ["active", "sleep", "deep_sleep", "emergency"]).default("active"),
   trackerModel: varchar("trackerModel", { length: 50 }),
   trackerSerial: varchar("trackerSerial", { length: 50 }),
+  go360AtivoId: varchar("go360AtivoId", { length: 64 }),
   simStatus: mysqlEnum("simStatus", ["active", "inactive", "no_signal"]).default("active"),
   simSignal: int("simSignal").default(0),
   lastGpsAt: timestamp("lastGpsAt").defaultNow(),

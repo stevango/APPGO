@@ -62,6 +62,15 @@ export const go360Contrato = (token: string) => go360Request("/contrato", { toke
 export const go360Cobranca = (token: string) => go360Request("/cobranca", { token });
 export const go360Jornada = (token: string) => go360Request("/minha-jornada", { token });
 
+/** Position history for a tracker (ativoId). Returns the GO360 payload as-is. */
+export function go360Historico(token: string, ativoId: string, opts: { desde?: string; ate?: string; limit?: number } = {}) {
+  const qs = new URLSearchParams({ ativoId });
+  if (opts.desde) qs.set("desde", opts.desde);
+  if (opts.ate) qs.set("ate", opts.ate);
+  qs.set("limit", String(opts.limit ?? 500));
+  return go360Request(`/equipamento/posicoes-historico?${qs.toString()}`, { token });
+}
+
 /**
  * Syncs the customer's GO360 vehicles/equipment into our local `vehicles` table
  * so the app screens (Home, Tracking) show them. Real-time GPS still arrives via
@@ -122,6 +131,7 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
       year: Number.isFinite(year) ? year : null,
       trackerSerial: serial ? String(serial) : null,
       trackerModel: pick(eq, "modelo", "fabricante", "model") ?? null,
+      go360AtivoId: pick(eq, "id", "ativo_id", "ativoId") ? String(pick(eq, "id", "ativo_id", "ativoId")) : null,
       trackerStatus,
       latitude: lat != null ? String(lat) : null,
       longitude: lng != null ? String(lng) : null,

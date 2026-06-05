@@ -1,11 +1,106 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import { MapPin, Clock, Gauge, ArrowLeft, Route, Calendar, ChevronRight } from "lucide-react";
+import { MapPin, Clock, Gauge, ArrowLeft, Route, Calendar, ChevronRight, Loader2 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { MapView, createDot, createPolyline, fitToPoints } from "@/components/Map";
+import { useActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
 
 export default function TripHistory() {
+  const go360 = trpc.go360.status.useQuery();
+  if (go360.isLoading) {
+    return <div className="min-h-screen bg-[#0a0f1c] flex items-center justify-center"><Loader2 className="w-6 h-6 text-white/50 animate-spin" /></div>;
+  }
+  return go360.data?.enabled ? <Go360RouteHistory /> : <LocalTripHistory />;
+}
+
+const RANGES = [
+  { key: "hoje", label: "Hoje", hours: 0 },
+  { key: "24h", label: "24h", hours: 24 },
+  { key: "7d", label: "7 dias", hours: 24 * 7 },
+  { key: "30d", label: "30 dias", hours: 24 * 30 },
+] as const;
+
+function Go360RouteHistory() {
+  const [, navigate] = useLocation();
+  const activeId = useActiveVehicleId();
+  const vehiclesQuery = trpc.vehicles.list.useQuery();
+  const vehicle = pickActiveVehicle(vehiclesQuery.data, activeId);
+  const [range, setRange] = useState<(typeof RANGES)[number]["key"]>("hoje");
+
+  const { desde, ate } = useMemo(() => {
+    const r = RANGES.find((x) => x.key === range)!;
+    if (r.key === "hoje") {
+      const d = new Date(); d.setHours(0, 0, 0, 0);
+      return { desde: d.toISOString(), ate: undefined as string | undefined };
+    }
+    return { desde: new Date(Date.now() - r.hours * 3600_000).toISOString(), ate: undefined };
+  }, [range]);
+
+  const histQuery = trpc.go360.historico.useQuery(
+    { vehicleId: vehicle?.id || 0, desde, ate, limit: 500 },
+    { enabled: !!vehicle?.id },
+  );
+  const points = (histQuery.data?.ok ? histQuery.data.points : []) ?? [];
+
+  return (
+    <div className="flex flex-col h-screen bg-[#0a0f1c]">
+      <div className="flex items-center gap-3 px-4 py-3 bg-[#111827] border-b border-white/10 shrink-0">
+        <button onClick={() => navigate("/")} className="p-2 rounded-full hover:bg-white/10 transition">
+          <ArrowLeft className="w-5 h-5 text-white" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-white font-semibold text-sm">Histórico de Trajetos</h1>
+          <p className="text-white/60 text-xs truncate">{vehicle ? `${vehicle.brand ?? ""} ${vehicle.model}`.trim() : ""} • {vehicle?.plate}</p>
+        </div>
+      </div>
+
+      {/* Quick ranges */}
+      <div className="flex gap-2 px-4 py-3 bg-[#111827] border-b border-white/10 shrink-0 overflow-x-auto no-scrollbar">
+        {RANGES.map((r) => (
+          <button
+            key={r.key}
+            onClick={() => setRange(r.key)}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold shrink-0 transition ${range === r.key ? "bg-[#243FF7] text-white" : "bg-white/10 text-white/70"}`}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 relative">
+        {histQuery.isLoading ? (
+          <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="w-6 h-6 text-white/50 animate-spin" /></div>
+        ) : points.length === 0 ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center">
+            <Route className="w-10 h-10 text-white/20 mb-3" />
+            <p className="text-white/70 text-sm">Nenhum trajeto neste período</p>
+            <p className="text-white/40 text-xs mt-1">Os trajetos aparecem conforme o rastreador envia posições.</p>
+          </div>
+        ) : (
+          <>
+            <MapView
+              key={`${vehicle?.id}-${range}-${points.length}`}
+              onMapReady={(map) => {
+                const path = points.map((p) => ({ lat: p.latitude, lng: p.longitude }));
+                createPolyline(map, path, { opacity: 1 });
+                createDot(map, path[0], { fill: "#E2FF04", color: "#111", radius: 9, stroke: 2 });
+                createDot(map, path[path.length - 1], { fill: "#243FF7", radius: 9, stroke: 2 });
+                fitToPoints(map, path, 50);
+              }}
+            />
+            <div className="absolute bottom-4 left-4 right-4 bg-white rounded-xl px-4 py-3 shadow-lg flex items-center gap-3">
+              <Route className="w-5 h-5 text-[#243FF7]" />
+              <span className="text-sm text-gray-700">{points.length} pontos registrados no período</span>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LocalTripHistory() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const [selectedTrip, setSelectedTrip] = useState<number | null>(null);
