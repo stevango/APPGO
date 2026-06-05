@@ -100,9 +100,11 @@ reaproveite a mesma `CRON_SECRET`:
 ```
 GET https://SEU-DOMINIO/api/cron/maintenance-reminders?token=SEU_CRON_SECRET
 ```
-Avisa veículos com mais de **3 dias** sem posição (ajustável com `&days=N`).
-O alerta no app é atualizado **todo dia** (1 card por veículo, contagem subindo:
-49, 50, 51...); o **push** vai só na 1ª vez e depois **semanalmente** (sem fadiga).
+Nível **crítico** (rastreador sem posicionar = veículo sem proteção). Avisa
+veículos com mais de **3 dias** sem posição (ajustável com `&days=N`), **todo dia**
+enquanto persistir, por **push + card no app** (1 card por veículo, contagem
+subindo: 49, 50, 51...). Cada disparo é gravado na **trilha de auditoria imutável**
+(`notificationLog`, com data/hora e canal) — prova de que informamos o cliente.
 Responde `{ sent, pushed, skipped, total }`.
 
 ## Custos (estimativa)

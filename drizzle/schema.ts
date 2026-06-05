@@ -389,3 +389,23 @@ export const retentionEvents = mysqlTable("retentionEvents", {
 
 export type RetentionEvent = typeof retentionEvents.$inferSelect;
 export type InsertRetentionEvent = typeof retentionEvents.$inferInsert;
+
+// Trilha de auditoria imutável de avisos enviados ao cliente. Cada disparo
+// (por canal) vira uma linha que NUNCA é sobrescrita — é a prova, com data/hora,
+// de que informamos (ex.: rastreador sem posicionar / nível crítico).
+export const notificationLog = mysqlTable("notificationLog", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  vehicleId: int("vehicleId"),
+  type: varchar("type", { length: 40 }).notNull(),       // ex.: "manutencao"
+  channel: mysqlEnum("channel", ["push", "inapp", "email", "sms", "whatsapp"]).notNull(),
+  severity: mysqlEnum("severity", ["info", "warning", "critical"]).default("info").notNull(),
+  title: varchar("title", { length: 200 }),
+  message: text("message"),
+  meta: json("meta"),                                     // ex.: { daysStale, plate }
+  delivered: boolean("delivered").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type NotificationLog = typeof notificationLog.$inferSelect;
+export type InsertNotificationLog = typeof notificationLog.$inferInsert;

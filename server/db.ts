@@ -1001,6 +1001,8 @@ export async function markBillingReminderSent(userId: number) {
 }
 
 // --- Manutenção: rastreadores sem posicionar há muitos dias ---
+import { notificationLog } from "../drizzle/schema";
+
 export type StaleVehicle = {
   userId: number; vehicleId: number; plate: string; model: string;
   lastSignalAt: Date | null; lastStaleAlertAt: Date | null; daysStale: number;
@@ -1037,6 +1039,41 @@ export async function markStaleAlertSent(vehicleId: number) {
   const db = await getDb();
   if (!db) return;
   await db.update(vehicles).set({ lastStaleAlertAt: new Date() }).where(eq(vehicles.id, vehicleId));
+}
+
+/**
+ * Registra um disparo de aviso na trilha de auditoria imutável (prova legal de
+ * que informamos o cliente, com data/hora e canal). Nunca sobrescreve.
+ */
+export async function logNotificationDispatch(entry: {
+  userId: number; vehicleId?: number | null; type: string;
+  channel: "push" | "inapp" | "email" | "sms" | "whatsapp";
+  severity?: "info" | "warning" | "critical";
+  title?: string; message?: string; meta?: unknown; delivered?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(notificationLog).values({
+    userId: entry.userId,
+    vehicleId: entry.vehicleId ?? null,
+    type: entry.type,
+    channel: entry.channel,
+    severity: entry.severity ?? "info",
+    title: entry.title ?? null,
+    message: entry.message ?? null,
+    meta: (entry.meta ?? null) as any,
+    delivered: entry.delivered ?? true,
+  });
+}
+
+/** Histórico de avisos enviados a um usuário (para CS/auditoria). */
+export async function getNotificationLog(userId: number, limit = 200) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(notificationLog)
+    .where(eq(notificationLog.userId, userId))
+    .orderBy(desc(notificationLog.createdAt))
+    .limit(limit);
 }
 
 // --- Retention (cancellation save flow) ---
