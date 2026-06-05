@@ -1,4 +1,4 @@
-import { eq, desc, and, gte, lte, lt, sql, inArray, isNotNull } from "drizzle-orm";
+import { eq, desc, and, gte, lte, lt, sql, inArray, isNotNull, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, vehicles, geofences, notifications, occurrences, blockLogs, sosAlerts, routeHistory, trips, shareLinks, emergencyContacts, pushSubscriptions } from "../drizzle/schema";
 import type { InsertTrip, InsertShareLink, InsertEmergencyContact, EmergencyContact } from "../drizzle/schema";
@@ -1029,6 +1029,30 @@ export async function getModelImage(make: string, model: string, year: number | 
     .where(and(eq(vehicleModelImages.make, make), eq(vehicleModelImages.model, model)));
   if (rows.length === 0) return undefined;
   return rows.find((r) => r.year === year) ?? rows.find((r) => r.year == null) ?? rows[0];
+}
+
+/** Lista a biblioteca de imagens, com filtro opcional por marca/modelo (admin). */
+export async function getModelImages(filter?: { make?: string; model?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conds = [] as any[];
+  if (filter?.make) conds.push(like(vehicleModelImages.make, `%${filter.make.trim().toLowerCase()}%`));
+  if (filter?.model) conds.push(like(vehicleModelImages.model, `%${filter.model.trim().toLowerCase()}%`));
+  const base = db.select().from(vehicleModelImages);
+  const q = conds.length ? base.where(and(...conds)) : base;
+  return q.orderBy(desc(vehicleModelImages.updatedAt)).limit(500);
+}
+
+export async function updateModelImageById(id: number, imageUrl: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(vehicleModelImages).set({ imageUrl, source: "manual" }).where(eq(vehicleModelImages.id, id));
+}
+
+export async function deleteModelImage(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(vehicleModelImages).where(eq(vehicleModelImages.id, id));
 }
 
 export async function upsertModelImage(data: {

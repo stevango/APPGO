@@ -395,6 +395,12 @@ export const appRouter = router({
 
   // Biblioteca de imagens de modelos (curadoria — admin).
   vehicleImages: router({
+    list: protectedProcedure
+      .input(z.object({ make: z.string().optional(), model: z.string().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas admin." });
+        return db.getModelImages({ make: input?.make, model: input?.model });
+      }),
     setModel: protectedProcedure
       .input(z.object({ make: z.string().min(1), model: z.string().min(1), year: z.number().optional(), imageUrl: z.string().url() }))
       .mutation(async ({ ctx, input }) => {
@@ -406,6 +412,20 @@ export const appRouter = router({
           imageUrl: input.imageUrl,
           source: "manual",
         });
+        return { ok: true };
+      }),
+    update: protectedProcedure
+      .input(z.object({ id: z.number(), imageUrl: z.string().url() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas admin." });
+        await db.updateModelImageById(input.id, input.imageUrl);
+        return { ok: true };
+      }),
+    remove: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas admin." });
+        await db.deleteModelImage(input.id);
         return { ok: true };
       }),
   }),

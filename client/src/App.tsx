@@ -33,6 +33,7 @@ const Help = lazy(() => import("./pages/Help"));
 const Legal = lazy(() => import("./pages/Legal"));
 const Contract = lazy(() => import("./pages/Contract"));
 const Jornada = lazy(() => import("./pages/Jornada"));
+const AdminVehicleImages = lazy(() => import("./pages/AdminVehicleImages"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function AuthenticatedApp() {
@@ -60,6 +61,7 @@ function AuthenticatedApp() {
           <Route path="/legal" component={Legal} />
           <Route path="/contract" component={Contract} />
           <Route path="/jornada" component={Jornada} />
+          <Route path="/admin/vehicle-images" component={AdminVehicleImages} />
           <Route path="/404" component={NotFound} />
           <Route component={NotFound} />
         </Switch>

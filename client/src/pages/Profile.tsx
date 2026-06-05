@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import {
   ChevronLeft, User, Car, CreditCard, Shield, Bell,
-  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature, MapPin, Route
+  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature, MapPin, Route, Images
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddressSearch } from "@/components/AddressSearch";
@@ -192,6 +192,9 @@ export default function Profile() {
     { icon: Sparkles, label: "Central de Ajuda", sublabel: "Tire dúvidas com a assistente GO", action: () => setLocation("/help") },
     { icon: Star, label: "Avaliar o app", sublabel: "Dê sua nota e sugestões", action: () => setShowFeedback(true) },
     { icon: FileText, label: "Termos e privacidade", sublabel: "Documentos legais e histórico de aceite", action: () => setLocation("/legal") },
+    ...((user as Record<string, any>)?.role === "admin"
+      ? [{ icon: Images, label: "Biblioteca de imagens", sublabel: "Curadoria de fotos por montadora/modelo", action: () => setLocation("/admin/vehicle-images") }]
+      : []),
   ];
 
   const speedPresets = [60, 80, 100, 120, 140, 160];

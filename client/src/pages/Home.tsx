@@ -568,44 +568,45 @@ function VehicleCard({
     >
       {showHero ? (
         /* Hero estilo app de montadora: render do modelo + dados sobrepostos */
-        <div className="relative mb-3 rounded-2xl bg-gradient-to-br from-slate-100 via-slate-100 to-slate-200 px-4 pt-4 pb-3 overflow-hidden min-h-[118px]">
-          <div className="relative z-10 flex items-start justify-between gap-2">
-            <div className="min-w-0 max-w-[62%]">
-              <h3 className="font-bold text-[#111111] text-[16px] tracking-tight truncate">
-                {vehicle.brand} {vehicle.model}
-              </h3>
-              <div className="mt-2">
-                {isVeh ? (
-                  <LicensePlate plate={vehicle.plate} size="sm" />
-                ) : (
-                  <AssetTag label={vehicle.plate} size="sm" />
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-1.5 shrink-0">
-              <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${sig.bg}`}>
-                <div className={`w-2 h-2 rounded-full ${sig.dot}`} />
-                <span className={`text-[11px] font-semibold ${sig.text}`}>{sig.label}</span>
-              </div>
-              {(isBatteryCritical || isBatteryWarning) && (
-                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full ${
-                  isBatteryCritical ? "bg-red-50" : "bg-amber-50"
-                }`}>
-                  <BatteryWarning className={`w-3 h-3 ${isBatteryCritical ? "text-red-500" : "text-amber-500"}`} />
-                  <span className={`text-[10px] font-semibold ${isBatteryCritical ? "text-red-600" : "text-amber-600"}`}>
-                    {batteryMain.toFixed(1)}V
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
+        <div className="relative mb-3 rounded-2xl bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 px-4 py-4 overflow-hidden min-h-[130px]">
+          {/* Render do veículo (ao fundo, à direita) */}
           <img
             src={imgUrl!}
             alt={`${vehicle.brand} ${vehicle.model}`}
             onError={() => setImgOk(false)}
             loading="lazy"
-            className="absolute right-[-12px] bottom-[-8px] w-[58%] max-w-[220px] object-contain pointer-events-none drop-shadow-xl"
+            className="absolute right-1 bottom-2 h-[76px] w-auto max-w-[48%] object-contain pointer-events-none drop-shadow-xl z-0"
           />
+          <div className="relative z-10 flex flex-col justify-between gap-3 min-h-[98px]">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-bold text-[#111111] text-[15px] leading-snug tracking-tight max-w-[56%] line-clamp-2">
+                {vehicle.brand} {vehicle.model}
+              </h3>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${sig.bg} shadow-sm`}>
+                  <div className={`w-2 h-2 rounded-full ${sig.dot}`} />
+                  <span className={`text-[11px] font-semibold ${sig.text}`}>{sig.label}</span>
+                </div>
+                {(isBatteryCritical || isBatteryWarning) && (
+                  <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full shadow-sm ${
+                    isBatteryCritical ? "bg-red-50" : "bg-amber-50"
+                  }`}>
+                    <BatteryWarning className={`w-3 h-3 ${isBatteryCritical ? "text-red-500" : "text-amber-500"}`} />
+                    <span className={`text-[10px] font-semibold ${isBatteryCritical ? "text-red-600" : "text-amber-600"}`}>
+                      {batteryMain.toFixed(1)}V
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div>
+              {isVeh ? (
+                <LicensePlate plate={vehicle.plate} size="sm" />
+              ) : (
+                <AssetTag label={vehicle.plate} size="sm" />
+              )}
+            </div>
+          </div>
         </div>
       ) : (
         <div className="flex items-start justify-between">
