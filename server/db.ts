@@ -1111,6 +1111,57 @@ export async function getNotificationLog(userId: number, limit = 200) {
     .limit(limit);
 }
 
+export type AlertHistoryEntry = {
+  id: string; createdAt: Date; channel: string; severity: string;
+  type: string; title: string | null; message: string | null; delivered: boolean;
+};
+
+/**
+ * Histórico de avisos para o cliente: une a trilha de auditoria multi-canal
+ * (notificationLog) com a caixa de avisos do app (notifications), sem duplicar.
+ * Assim a tela mostra os avisos recebidos mesmo antes da auditoria diária encher.
+ */
+export async function getAlertHistory(userId: number, limit = 200): Promise<AlertHistoryEntry[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const [logs, notifs] = await Promise.all([
+    db.select().from(notificationLog).where(eq(notificationLog.userId, userId))
+      .orderBy(desc(notificationLog.createdAt)).limit(limit),
+    db.select().from(notifications).where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt)).limit(limit),
+  ]);
+
+  const dayKey = (d: Date, type: string) => `${new Date(d).toISOString().slice(0, 10)}|${type}`;
+  const inappLoggedDays = new Set<string>();
+  const entries: AlertHistoryEntry[] = [];
+
+  for (const l of logs) {
+    entries.push({
+      id: `log-${l.id}`, createdAt: l.createdAt, channel: l.channel, severity: l.severity,
+      type: l.type, title: l.title, message: l.message, delivered: l.delivered,
+    });
+    if (l.channel === "inapp") inappLoggedDays.add(dayKey(l.createdAt, l.type));
+  }
+
+  for (const n of notifs) {
+    const ntype = n.type ?? "sistema";
+    // Evita duplicar o card "no app" já representado na auditoria do mesmo dia.
+    if (inappLoggedDays.has(dayKey(n.createdAt, ntype))) continue;
+    const severity = ["sos", "furto_roubo"].includes(ntype)
+      ? "critical"
+      : ["manutencao", "offline", "bateria_baixa", "velocidade_excessiva"].includes(ntype)
+      ? "warning"
+      : "info";
+    entries.push({
+      id: `ntf-${n.id}`, createdAt: n.createdAt, channel: "inapp", severity,
+      type: ntype, title: n.title, message: n.message ?? null, delivered: true,
+    });
+  }
+
+  entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return entries.slice(0, limit);
+}
+
 // --- Retention (cancellation save flow) ---
 import { retentionEvents } from "../drizzle/schema";
 

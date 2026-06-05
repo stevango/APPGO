@@ -332,7 +332,7 @@ export const appRouter = router({
   alerts: router({
     // Histórico de avisos enviados ao cliente (transparência + prova de envio).
     history: protectedProcedure.query(async ({ ctx }) => {
-      return db.getNotificationLog(ctx.user.id);
+      return db.getAlertHistory(ctx.user.id);
     }),
     // Estado do botão "Estou ciente" para um veículo/tipo.
     lastAck: protectedProcedure
