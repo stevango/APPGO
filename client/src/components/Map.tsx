@@ -26,6 +26,16 @@ export type LatLngLiteral = { lat: number; lng: number };
 const OSM_TILES = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const OSM_ATTRIB = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
+// Tipos de mapa (todos gratuitos, sem chave de API).
+type BaseMap = { id: string; label: string; url: string; attribution: string; maxZoom?: number; subdomains?: string };
+const BASEMAPS: BaseMap[] = [
+  { id: "padrao", label: "Padrão", url: OSM_TILES, attribution: OSM_ATTRIB, maxZoom: 19 },
+  { id: "satelite", label: "Satélite", url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", attribution: "Tiles &copy; Esri", maxZoom: 19 },
+  { id: "claro", label: "Claro", url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png", attribution: "&copy; OpenStreetMap &copy; CARTO", maxZoom: 20, subdomains: "abcd" },
+  { id: "escuro", label: "Escuro", url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", attribution: "&copy; OpenStreetMap &copy; CARTO", maxZoom: 20, subdomains: "abcd" },
+];
+const MAP_TYPE_KEY = "go-map-type";
+
 // -----------------------------------------------------------------------------
 // Map helpers
 // -----------------------------------------------------------------------------
@@ -179,7 +189,50 @@ export function MapView({
       attributionControl: true,
     });
 
-    L.tileLayer(OSM_TILES, { maxZoom: 19, attribution: OSM_ATTRIB }).addTo(map);
+    const makeLayer = (b: BaseMap) =>
+      L.tileLayer(b.url, { maxZoom: b.maxZoom ?? 19, attribution: b.attribution, subdomains: b.subdomains ?? "abc" });
+
+    let savedId = "padrao";
+    try { savedId = localStorage.getItem(MAP_TYPE_KEY) || "padrao"; } catch { /* ignore */ }
+    let current = BASEMAPS.find((b) => b.id === savedId) ?? BASEMAPS[0];
+    let layer = makeLayer(current).addTo(map);
+
+    // Controle para o usuário escolher o tipo de mapa (canto superior direito).
+    const SwitcherControl = L.Control.extend({
+      options: { position: "topright" as L.ControlPosition },
+      onAdd: function () {
+        const wrap = L.DomUtil.create("div");
+        wrap.style.cssText =
+          "display:flex;flex-wrap:wrap;gap:4px;padding:4px;margin:8px;background:rgba(255,255,255,.95);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.18);max-width:220px;";
+        const buttons: HTMLButtonElement[] = [];
+        const restyle = () => buttons.forEach((btn, i) => {
+          const active = BASEMAPS[i].id === current.id;
+          btn.style.cssText =
+            `border:0;cursor:pointer;font-size:11px;font-weight:700;padding:6px 9px;border-radius:8px;transition:.15s;${
+              active ? "background:#243FF7;color:#fff;" : "background:#f1f3f5;color:#444;"}`;
+        });
+        BASEMAPS.forEach((b) => {
+          const btn = L.DomUtil.create("button", "", wrap) as HTMLButtonElement;
+          btn.type = "button";
+          btn.textContent = b.label;
+          btn.onclick = () => {
+            if (b.id === current.id) return;
+            map.removeLayer(layer);
+            current = b;
+            layer = makeLayer(b).addTo(map);
+            try { localStorage.setItem(MAP_TYPE_KEY, b.id); } catch { /* ignore */ }
+            restyle();
+          };
+          buttons.push(btn);
+        });
+        restyle();
+        L.DomEvent.disableClickPropagation(wrap);
+        L.DomEvent.disableScrollPropagation(wrap);
+        return wrap;
+      },
+    });
+    map.addControl(new SwitcherControl());
+
     mapRef.current = map;
 
     onMapReady?.(map);
