@@ -92,7 +92,7 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
     if (!prev || (hasTracker(v) && !hasTracker(prev))) byPlate.set(key, v);
   }
 
-  for (const v of byPlate.values()) {
+  for (const v of Array.from(byPlate.values())) {
     const eq = trackerOf(v) || {};
     const serial = pick(eq, "imei", "id_tracker", "idTracker", "serie", "serial") ?? pick(v, "imei", "id_tracker");
     const productActive = String(pick(v, "status_produto", "statusProduto", "situacao") ?? "").toUpperCase().includes("ATIV");
