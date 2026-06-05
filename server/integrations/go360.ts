@@ -106,6 +106,14 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
       pick(v, "modelo", "modelo_veiculo", "modeloVeiculo", "versao", "descricao", "nome") ??
       (brand ? "Veículo" : (pick(v, "produto") ?? "Veículo"));
 
+    // Last known position — IF GO360 ever includes it (it currently does not).
+    // We read it from several likely locations so the map "just works" the day
+    // GO360 adds it, without a deploy on our side.
+    const pos = pick(v, "ultima_posicao", "ultimaPosicao", "posicao", "localizacao", "last_position") || pick(eq, "ultima_posicao", "posicao") || v;
+    const lat = pick(pos, "latitude", "lat", "lng_lat");
+    const lng = pick(pos, "longitude", "lng", "lon", "long");
+    const posSpeed = pick(pos, "velocidade", "speed");
+
     await db.upsertGo360Vehicle(userId, {
       plate: String(pick(v, "placa", "plate") ?? serial ?? "SEM-PLACA").toUpperCase(),
       brand,
@@ -115,6 +123,10 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
       trackerSerial: serial ? String(serial) : null,
       trackerModel: pick(eq, "modelo", "fabricante", "model") ?? null,
       trackerStatus,
+      latitude: lat != null ? String(lat) : null,
+      longitude: lng != null ? String(lng) : null,
+      lastAddress: pick(pos, "endereco", "address") ?? null,
+      speed: posSpeed != null ? Number(posSpeed) : null,
     });
     synced++;
   }

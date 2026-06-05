@@ -137,12 +137,13 @@ export async function setUserGo360Token(userId: number, token: string) {
 export async function upsertGo360Vehicle(userId: number, data: {
   plate: string; brand?: string | null; model: string; color?: string | null; year?: number | null;
   trackerSerial?: string | null; trackerModel?: string | null; trackerStatus?: "online" | "offline" | "alert";
+  latitude?: string | null; longitude?: string | null; lastAddress?: string | null; speed?: number | null; ignition?: boolean | null;
 }) {
   const db = await getDb();
   if (!db) return;
   const existing = await db.select().from(vehicles)
     .where(and(eq(vehicles.userId, userId), eq(vehicles.plate, data.plate))).limit(1);
-  const fields = {
+  const fields: Record<string, unknown> = {
     brand: data.brand ?? null,
     model: data.model || "Veículo",
     color: data.color ?? null,
@@ -152,6 +153,15 @@ export async function upsertGo360Vehicle(userId: number, data: {
     trackerStatus: data.trackerStatus ?? "online",
     isDemo: false,
   };
+  // Only set position when GO360 actually provided it (don't wipe GPS from ingestion).
+  if (data.latitude && data.longitude) {
+    fields.lastLatitude = data.latitude;
+    fields.lastLongitude = data.longitude;
+    fields.lastSignalAt = new Date();
+    if (data.lastAddress != null) fields.lastAddress = data.lastAddress;
+    if (data.speed != null) fields.speed = data.speed;
+    if (data.ignition != null) fields.ignition = data.ignition;
+  }
   if (existing[0]) {
     await db.update(vehicles).set(fields).where(eq(vehicles.id, existing[0].id));
   } else {
