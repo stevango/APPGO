@@ -426,3 +426,20 @@ export const alertAcks = mysqlTable("alertAcks", {
 
 export type AlertAck = typeof alertAcks.$inferSelect;
 export type InsertAlertAck = typeof alertAcks.$inferInsert;
+
+// Biblioteca de imagens de modelos (auto-construída + curadoria). Indexada por
+// marca|modelo|ano: o 1º veículo de um modelo busca/cadastra a imagem; os
+// próximos do mesmo modelo/ano reusam do cache (custo zero, instantâneo).
+export const vehicleModelImages = mysqlTable("vehicleModelImages", {
+  id: int("id").autoincrement().primaryKey(),
+  make: varchar("make", { length: 60 }).notNull(),   // normalizado em minúsculas
+  model: varchar("model", { length: 80 }).notNull(), // normalizado em minúsculas
+  year: int("year"),                                  // null = serve qualquer ano
+  imageUrl: varchar("imageUrl", { length: 600 }).notNull(),
+  source: varchar("source", { length: 20 }).default("manual"), // manual | google | cdn | go360
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type VehicleModelImage = typeof vehicleModelImages.$inferSelect;
+export type InsertVehicleModelImage = typeof vehicleModelImages.$inferInsert;

@@ -13,6 +13,7 @@
 const BASE = () => (process.env.GO360_BASE_URL || "https://go360id-production.up.railway.app/api/app").replace(/\/+$/, "");
 
 import * as db from "../db";
+import { resolveModelImage } from "../vehicleImageLibrary";
 
 export function go360Enabled(): boolean {
   return process.env.GO360_ENABLED === "1";
@@ -125,6 +126,13 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
     const posAt = pick(pos, "data", "evento_em", "eventoEm", "capturado_em", "capturadoEm", "ultima_comunicacao", "ultimaComunicacao");
     const lastSignalAt = posAt ? new Date(String(posAt)) : null;
 
+    // Imagem do veículo: a GO360 manda? senão, busca/reusa da biblioteca própria.
+    const go360Img = pick(v, "imagem", "foto", "url_imagem", "urlImagem", "image", "image_url", "imageUrl") ?? pick(eq, "imagem", "foto") ?? null;
+    let imageUrl: string | null = go360Img ? String(go360Img) : null;
+    if (!imageUrl && brand && model && model !== "Veículo") {
+      imageUrl = await resolveModelImage(brand, model, Number.isFinite(year) ? year : null);
+    }
+
     await db.upsertGo360Vehicle(userId, {
       plate: String(pick(v, "placa", "plate") ?? serial ?? "SEM-PLACA").toUpperCase(),
       brand,
@@ -134,7 +142,7 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
       trackerSerial: serial ? String(serial) : null,
       trackerModel: pick(eq, "modelo", "fabricante", "model") ?? null,
       go360AtivoId: pick(eq, "id", "ativo_id", "ativoId") ? String(pick(eq, "id", "ativo_id", "ativoId")) : null,
-      imageUrl: pick(v, "imagem", "foto", "url_imagem", "urlImagem", "image", "image_url", "imageUrl") ?? pick(eq, "imagem", "foto") ?? null,
+      imageUrl,
       trackerStatus,
       latitude: lat != null ? String(lat) : null,
       longitude: lng != null ? String(lng) : null,

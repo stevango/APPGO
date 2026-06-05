@@ -365,6 +365,23 @@ export const appRouter = router({
       }),
   }),
 
+  // Biblioteca de imagens de modelos (curadoria — admin).
+  vehicleImages: router({
+    setModel: protectedProcedure
+      .input(z.object({ make: z.string().min(1), model: z.string().min(1), year: z.number().optional(), imageUrl: z.string().url() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Apenas admin." });
+        await db.upsertModelImage({
+          make: input.make.trim().toLowerCase(),
+          model: input.model.trim().toLowerCase().split(/\s+/)[0],
+          year: input.year ?? null,
+          imageUrl: input.imageUrl,
+          source: "manual",
+        });
+        return { ok: true };
+      }),
+  }),
+
   vehicles: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       return db.getUserVehicles(ctx.user.id);

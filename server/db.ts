@@ -1010,7 +1010,38 @@ export async function markBillingReminderSent(userId: number) {
 }
 
 // --- Manutenção: rastreadores sem posicionar há muitos dias ---
-import { notificationLog, alertAcks } from "../drizzle/schema";
+import { notificationLog, alertAcks, vehicleModelImages } from "../drizzle/schema";
+
+// --- Biblioteca de imagens de modelos (cache por marca|modelo|ano) ---
+/** Busca a imagem de um modelo: ano exato > sem ano (genérico) > qualquer. */
+export async function getModelImage(make: string, model: string, year: number | null) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(vehicleModelImages)
+    .where(and(eq(vehicleModelImages.make, make), eq(vehicleModelImages.model, model)));
+  if (rows.length === 0) return undefined;
+  return rows.find((r) => r.year === year) ?? rows.find((r) => r.year == null) ?? rows[0];
+}
+
+export async function upsertModelImage(data: {
+  make: string; model: string; year: number | null; imageUrl: string; source?: string;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select().from(vehicleModelImages)
+    .where(and(eq(vehicleModelImages.make, data.make), eq(vehicleModelImages.model, data.model)));
+  const match = existing.find((r) => r.year === data.year);
+  if (match) {
+    await db.update(vehicleModelImages)
+      .set({ imageUrl: data.imageUrl, source: data.source ?? "manual" })
+      .where(eq(vehicleModelImages.id, match.id));
+  } else {
+    await db.insert(vehicleModelImages).values({
+      make: data.make, model: data.model, year: data.year,
+      imageUrl: data.imageUrl, source: data.source ?? "manual",
+    });
+  }
+}
 
 /** Registra a ciência do cliente ("Estou ciente") sobre um alerta crítico. */
 export async function createAlertAck(entry: {
