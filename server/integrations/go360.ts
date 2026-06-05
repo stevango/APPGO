@@ -110,6 +110,17 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
     const trackerStatus: "online" | "offline" = productActive && trackerOp ? "online" : "offline";
     const year = parseInt(String(pick(v, "ano_modelo", "anoModelo", "ano_fabricacao", "anoFabricacao", "ano") ?? ""), 10);
 
+    // Dados completos do veículo (quando o parceiro envia)
+    const toYear = (val: any) => { const n = parseInt(String(val ?? ""), 10); return Number.isFinite(n) ? n : null; };
+    const chassi = pick(v, "chassi", "chassis", "vin", "Chassi", "numero_chassi", "numeroChassi") ?? null;
+    const renavam = pick(v, "renavam", "Renavam", "renavan", "numero_renavam", "numeroRenavam") ?? null;
+    const anoFabricacao = toYear(pick(v, "ano_fabricacao", "anoFabricacao", "ano_fab", "anoFab"));
+    const anoModelo = toYear(pick(v, "ano_modelo", "anoModelo", "ano_mod", "anoMod", "ano"));
+    const fuel = pick(v, "combustivel", "combustível", "tipo_combustivel", "tipoCombustivel", "fuel") ?? null;
+    const cidade = pick(v, "cidade", "municipio", "município", "city") ?? null;
+    const uf = pick(v, "uf", "estado", "state") ?? null;
+    const cityState = cidade ? `${cidade}${uf ? ` - ${uf}` : ""}` : (uf ?? null);
+
     // GO360 often has marca/modelo empty → fall back to the product label.
     const brand = pick(v, "marca", "fabricante", "montadora", "marca_veiculo", "marcaVeiculo") ?? null;
     const model =
@@ -144,8 +155,14 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
       plate: String(pick(v, "placa", "plate") ?? serial ?? "SEM-PLACA").toUpperCase(),
       brand,
       model,
-      color: pick(v, "cor", "cor_veiculo") ?? null,
+      color: pick(v, "cor", "cor_veiculo", "Cor") ?? null,
       year: Number.isFinite(year) ? year : null,
+      chassi: chassi ? String(chassi) : null,
+      renavam: renavam ? String(renavam) : null,
+      anoFabricacao,
+      anoModelo,
+      fuel: fuel ? String(fuel) : null,
+      cityState: cityState ? String(cityState) : null,
       trackerSerial: serial ? String(serial) : null,
       trackerModel: pick(eq, "modelo", "fabricante", "model") ?? null,
       go360AtivoId: pick(eq, "id", "ativo_id", "ativoId") ? String(pick(eq, "id", "ativo_id", "ativoId")) : null,

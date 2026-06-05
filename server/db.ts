@@ -143,6 +143,8 @@ export async function setUserGo360Token(userId: number, token: string) {
 /** Upsert a vehicle synced from GO360 (matched by user + plate). */
 export async function upsertGo360Vehicle(userId: number, data: {
   plate: string; brand?: string | null; model: string; color?: string | null; year?: number | null;
+  chassi?: string | null; renavam?: string | null; anoFabricacao?: number | null; anoModelo?: number | null;
+  fuel?: string | null; cityState?: string | null;
   trackerSerial?: string | null; trackerModel?: string | null; trackerStatus?: "online" | "offline" | "alert";
   go360AtivoId?: string | null; imageUrl?: string | null;
   latitude?: string | null; longitude?: string | null; lastAddress?: string | null; speed?: number | null; ignition?: boolean | null;
@@ -157,6 +159,12 @@ export async function upsertGo360Vehicle(userId: number, data: {
     model: data.model || "Veículo",
     color: data.color ?? null,
     year: data.year ?? null,
+    chassi: data.chassi ?? null,
+    renavam: data.renavam ?? null,
+    anoFabricacao: data.anoFabricacao ?? null,
+    anoModelo: data.anoModelo ?? null,
+    fuel: data.fuel ?? null,
+    cityState: data.cityState ?? null,
     trackerSerial: data.trackerSerial ?? null,
     trackerModel: data.trackerModel ?? null,
     trackerStatus: data.trackerStatus ?? "online",

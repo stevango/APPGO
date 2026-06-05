@@ -30,6 +30,13 @@ export const vehicles = mysqlTable("vehicles", {
   brand: varchar("brand", { length: 100 }),
   color: varchar("color", { length: 50 }),
   year: int("year"),
+  // Dados completos do veículo (quando disponíveis, ex.: via GO360)
+  chassi: varchar("chassi", { length: 30 }),
+  renavam: varchar("renavam", { length: 20 }),
+  anoFabricacao: int("anoFabricacao"),
+  anoModelo: int("anoModelo"),
+  fuel: varchar("fuel", { length: 30 }),
+  cityState: varchar("cityState", { length: 120 }),
   trackerStatus: mysqlEnum("trackerStatus", ["online", "offline", "alert"]).default("online"),
   ignition: boolean("ignition").default(false),
   blocked: boolean("blocked").default(false),

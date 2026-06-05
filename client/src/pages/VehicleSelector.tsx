@@ -2,7 +2,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
-  ChevronDown, Plus, Check, Pencil, Car, ChevronLeft
+  ChevronDown, Plus, Check, Pencil, Car, ChevronLeft, Info, Copy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ export default function VehicleSelector() {
   const utils = trpc.useUtils();
   const [editMode, setEditMode] = useState(false);
   const [iconPickerFor, setIconPickerFor] = useState<number | null>(null);
+  const [detailsFor, setDetailsFor] = useState<number | null>(null);
   const activeId = useActiveVehicleId();
 
   const setIconType = trpc.vehicles.setIconType.useMutation({
@@ -95,6 +96,14 @@ export default function VehicleSelector() {
                     </div>
                     {vehicle.color && (
                       <p className="text-xs text-gray-400 mt-1.5">{vehicle.color} {vehicle.year ? `• ${vehicle.year}` : ""}</p>
+                    )}
+                    {isVehicleAsset(vehicle.iconType) && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDetailsFor(vehicle.id); }}
+                        className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[#243FF7] bg-[#243FF7]/8 rounded-full px-2.5 py-1 go-btn-active"
+                      >
+                        <Info className="w-3 h-3" /> Ver todos os dados
+                      </button>
                     )}
                   </div>
 
@@ -178,6 +187,69 @@ export default function VehicleSelector() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Detalhes completos do veículo */}
+      {detailsFor !== null && (() => {
+        const v = vehicles?.find(x => x.id === detailsFor);
+        if (!v) return null;
+        const rows: Array<{ label: string; value: any; copy?: boolean }> = [
+          { label: "Marca", value: v.brand },
+          { label: "Modelo", value: v.model },
+          { label: "Placa", value: v.plate },
+          { label: "Cor", value: v.color },
+          { label: "Ano de fabricação", value: v.anoFabricacao },
+          { label: "Ano do modelo", value: v.anoModelo ?? v.year },
+          { label: "Chassi", value: v.chassi, copy: true },
+          { label: "Renavam", value: v.renavam, copy: true },
+          { label: "Combustível", value: v.fuel },
+          { label: "Município/UF", value: v.cityState },
+          { label: "Rastreador", value: v.trackerModel },
+          { label: "Série / IMEI", value: v.trackerSerial, copy: true },
+        ].filter(r => r.value !== null && r.value !== undefined && r.value !== "");
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-end justify-center">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDetailsFor(null)} />
+            <div className="relative w-full max-w-md bg-white rounded-t-3xl p-5 pb-8 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+              <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
+              <div className="flex items-center gap-3 mb-4">
+                <BrandMark brand={v.brand} iconType={v.iconType} className="w-12 h-12 flex-shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="text-lg font-bold text-[#111111] leading-tight truncate">{v.brand} {v.model}</h3>
+                  <p className="text-xs text-gray-400">Dados do veículo</p>
+                </div>
+              </div>
+
+              <div className="divide-y divide-gray-100">
+                {rows.map((r) => (
+                  <div key={r.label} className="flex items-center justify-between gap-3 py-2.5">
+                    <span className="text-[13px] text-gray-500">{r.label}</span>
+                    <span className="text-[13px] font-semibold text-[#111111] text-right flex items-center gap-1.5 min-w-0">
+                      <span className="truncate">{String(r.value)}</span>
+                      {r.copy && (
+                        <button
+                          onClick={() => { navigator.clipboard?.writeText(String(r.value)); toast.success("Copiado!"); }}
+                          className="go-btn-active text-gray-400 shrink-0"
+                          aria-label={`Copiar ${r.label}`}
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-[11px] text-gray-400 mt-4 leading-relaxed">
+                Dados fornecidos pelo cadastro do veículo. Encontrou algo errado? Fale com a gente pelo suporte.
+              </p>
+              <Button onClick={() => setDetailsFor(null)} className="w-full mt-4 bg-[#243FF7] hover:bg-[#1e35d6]">
+                Fechar
+              </Button>
             </div>
           </div>
         );
