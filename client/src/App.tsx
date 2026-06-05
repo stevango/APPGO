@@ -16,6 +16,7 @@ const Home = lazy(() => import("./pages/Home"));
 const Tracking = lazy(() => import("./pages/Tracking"));
 const SOS = lazy(() => import("./pages/SOS"));
 const Notifications = lazy(() => import("./pages/Notifications"));
+const AlertsHistory = lazy(() => import("./pages/AlertsHistory"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Geofences = lazy(() => import("./pages/Geofences"));
 const BlockVehicle = lazy(() => import("./pages/BlockVehicle"));
@@ -43,6 +44,7 @@ function AuthenticatedApp() {
           <Route path="/tracking" component={Tracking} />
           <Route path="/sos" component={SOS} />
           <Route path="/notifications" component={Notifications} />
+          <Route path="/alerts-history" component={AlertsHistory} />
           <Route path="/profile" component={Profile} />
           <Route path="/geofences" component={Geofences} />
           <Route path="/block" component={BlockVehicle} />

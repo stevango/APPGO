@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
   ChevronLeft, Bell, Shield, Lock, AlertTriangle,
-  Battery, Zap, Wifi, CheckCheck, Gauge
+  Battery, Zap, Wifi, CheckCheck, Gauge, Wrench, History
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +18,7 @@ const typeIcons: Record<string, any> = {
   "ignição_ligada": Zap,
   "ignição_desligada": Zap,
   offline: Wifi,
+  manutencao: Wrench,
   furto_roubo: AlertTriangle,
   sistema: Bell,
 };
@@ -33,6 +34,7 @@ const typeColors: Record<string, string> = {
   "ignição_ligada": "#10B981",
   "ignição_desligada": "#6B7280",
   offline: "#EF4444",
+  manutencao: "#EF4444",
   furto_roubo: "#DC2626",
   sistema: "#243FF7",
 };
@@ -59,17 +61,28 @@ export default function Notifications() {
           </button>
           <h1 className="text-lg font-bold text-[#111111]">Notificações</h1>
         </div>
-        {unreadCount > 0 && (
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
-            className="text-[#243FF7] text-xs font-medium"
-            onClick={() => markAllRead.mutate()}
+            className="text-gray-500 text-xs font-medium"
+            onClick={() => setLocation("/alerts-history")}
           >
-            <CheckCheck className="w-4 h-4 mr-1" />
-            Marcar todas
+            <History className="w-4 h-4 mr-1" />
+            Histórico
           </Button>
-        )}
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-[#243FF7] text-xs font-medium"
+              onClick={() => markAllRead.mutate()}
+            >
+              <CheckCheck className="w-4 h-4 mr-1" />
+              Marcar todas
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Notifications List */}

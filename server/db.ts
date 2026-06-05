@@ -80,6 +80,13 @@ export async function getUserByEmail(email: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result[0];
+}
+
 export async function createUserWithPassword(input: {
   openId: string;
   name: string | null;
@@ -1001,7 +1008,35 @@ export async function markBillingReminderSent(userId: number) {
 }
 
 // --- Manutenção: rastreadores sem posicionar há muitos dias ---
-import { notificationLog } from "../drizzle/schema";
+import { notificationLog, alertAcks } from "../drizzle/schema";
+
+/** Registra a ciência do cliente ("Estou ciente") sobre um alerta crítico. */
+export async function createAlertAck(entry: {
+  userId: number; vehicleId?: number | null; type: string;
+  daysAtAck?: number | null; ip?: string | null; userAgent?: string | null;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(alertAcks).values({
+    userId: entry.userId,
+    vehicleId: entry.vehicleId ?? null,
+    type: entry.type,
+    daysAtAck: entry.daysAtAck ?? null,
+    ip: entry.ip ?? null,
+    userAgent: entry.userAgent ?? null,
+  });
+}
+
+/** Última ciência registrada para um veículo/tipo (estado do botão "Estou ciente"). */
+export async function getLatestAlertAck(userId: number, vehicleId: number, type: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db.select().from(alertAcks)
+    .where(and(eq(alertAcks.userId, userId), eq(alertAcks.vehicleId, vehicleId), eq(alertAcks.type, type)))
+    .orderBy(desc(alertAcks.createdAt))
+    .limit(1);
+  return rows[0];
+}
 
 export type StaleVehicle = {
   userId: number; vehicleId: number; plate: string; model: string;

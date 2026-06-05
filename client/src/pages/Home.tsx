@@ -5,7 +5,8 @@ import {
   MapPin, Lock, Shield, AlertTriangle, Wrench, Clock,
   Car, Signal, Battery, Wifi, ChevronRight, BatteryWarning, X, Gauge, Share2, Power,
   Home as HomeIcon, Heart, PawPrint, DollarSign, Building2, Users, MessageCircle, Phone,
-  Wallet, Headphones, Gift, Zap, Smartphone, Truck, Bike, Anchor, Music, Package, Caravan, CreditCard
+  Wallet, Headphones, Gift, Zap, Smartphone, Truck, Bike, Anchor, Music, Package, Caravan, CreditCard,
+  ShieldCheck, History
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
@@ -145,55 +146,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* Tracker sem posicionar → alerta de manutenção (independe do status "online"
-          que a GO360 reporta: o que importa é há quanto tempo não há posição). */}
-      {vehicle && !vehicle.isDemo && vehicle.lastSignalAt && (() => {
-        const staleDays = Math.floor((Date.now() - new Date(vehicle.lastSignalAt!).getTime()) / (1000 * 60 * 60 * 24));
-        if (staleDays < 3) return null;
-        const severe = staleDays > 7;
-        const box = severe
-          ? "from-red-50 to-orange-50 border-red-200"
-          : "from-amber-50 to-orange-50 border-amber-200";
-        const iconBox = severe ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600";
-        const h = severe ? "text-red-900" : "text-amber-900";
-        const p = severe ? "text-red-700" : "text-amber-700";
-        const btn = severe ? "bg-red-500" : "bg-amber-500";
-        return (
-          <div className="mb-5 stagger-item">
-            <button
-              onClick={() => setLocation("/vehicle-care")}
-              className={`w-full rounded-2xl bg-gradient-to-r ${box} border p-4 text-left go-btn-active`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-11 h-11 ${iconBox} rounded-xl flex items-center justify-center shrink-0`}>
-                  <Wrench className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className={`font-bold text-sm ${h}`}>
-                    Rastreador há {staleDays} dias sem posicionar
-                  </h4>
-                  <p className={`text-xs ${p} mt-0.5`}>
-                    {severe
-                      ? "Pode haver um problema de energia, sinal ou instalação. Recomendamos uma manutenção para voltar a proteger seu bem."
-                      : "Faz alguns dias que não recebemos a posição. Pode ser sinal ou energia — vamos verificar juntos?"}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <span className={`flex-1 text-center text-[13px] font-bold text-white ${btn} rounded-xl py-2.5`}>
-                  Agendar manutenção
-                </span>
-                <span
-                  onClick={(e) => { e.stopPropagation(); setLocation("/help"); }}
-                  className="px-4 text-center text-[13px] font-semibold text-gray-600 bg-white/70 rounded-xl py-2.5"
-                >
-                  Falar com a gente
-                </span>
-              </div>
-            </button>
-          </div>
-        );
-      })()}
+      {/* Tracker sem posicionar → alerta de manutenção (nível crítico). Independe
+          do status "online" que a GO360 reporta: o que importa é há quanto tempo
+          não há posição. */}
+      {vehicle && !vehicle.isDemo && <MaintenanceAlert vehicle={vehicle} />}
 
       {/* Battery Alert Banner */}
       {vehicle && hasAnyBatteryAlert && !alertDismissed && (
@@ -353,6 +309,91 @@ export default function Home() {
 
       {/* Produtos para você */}
       <ProductsSection />
+    </div>
+  );
+}
+
+// Alerta crítico: rastreador sem posicionar há X dias. Informa todo dia,
+// permite registrar ciência ("Estou ciente") e ver o histórico de avisos.
+function MaintenanceAlert({ vehicle }: { vehicle: any }) {
+  const [, setLocation] = useLocation();
+  const utils = trpc.useUtils();
+  const lastSignalMs = vehicle?.lastSignalAt ? new Date(vehicle.lastSignalAt).getTime() : 0;
+  const staleDays = lastSignalMs ? Math.floor((Date.now() - lastSignalMs) / (1000 * 60 * 60 * 24)) : 0;
+
+  const lastAck = trpc.alerts.lastAck.useQuery(
+    { vehicleId: vehicle.id, type: "manutencao" },
+    { enabled: staleDays >= 3 },
+  );
+  const acknowledge = trpc.alerts.acknowledge.useMutation({
+    onSuccess: () => {
+      utils.alerts.lastAck.invalidate({ vehicleId: vehicle.id, type: "manutencao" });
+      utils.alerts.history.invalidate();
+      toast.success("Ciência registrada. Obrigado!");
+    },
+  });
+
+  if (staleDays < 3) return null;
+
+  const severe = staleDays > 7;
+  const box = severe ? "from-red-50 to-orange-50 border-red-200" : "from-amber-50 to-orange-50 border-amber-200";
+  const iconBox = severe ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600";
+  const h = severe ? "text-red-900" : "text-amber-900";
+  const p = severe ? "text-red-700" : "text-amber-700";
+  const btn = severe ? "bg-red-500" : "bg-amber-500";
+
+  // Ciência ainda válida se foi dada com o mesmo nº de dias (ou mais recente).
+  const ackedAt = lastAck.data?.createdAt ? new Date(lastAck.data.createdAt) : null;
+  const ackedRecently = ackedAt && (Date.now() - ackedAt.getTime()) < 36 * 60 * 60 * 1000;
+
+  return (
+    <div className="mb-5 stagger-item">
+      <div className={`w-full rounded-2xl bg-gradient-to-r ${box} border p-4`}>
+        <button onClick={() => setLocation("/vehicle-care")} className="w-full text-left go-btn-active">
+          <div className="flex items-center gap-3">
+            <div className={`w-11 h-11 ${iconBox} rounded-xl flex items-center justify-center shrink-0`}>
+              <Wrench className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className={`font-bold text-sm ${h}`}>Rastreador há {staleDays} dias sem posicionar</h4>
+              <p className={`text-xs ${p} mt-0.5`}>
+                {severe
+                  ? "Seu veículo pode estar SEM PROTEÇÃO. Recomendamos uma manutenção o quanto antes para voltar a rastrear."
+                  : "Faz alguns dias que não recebemos a posição. Pode ser sinal ou energia — vamos verificar juntos?"}
+              </p>
+            </div>
+          </div>
+        </button>
+
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            onClick={() => setLocation("/vehicle-care")}
+            className={`flex-1 text-center text-[13px] font-bold text-white ${btn} rounded-xl py-2.5 go-btn-active`}
+          >
+            Agendar manutenção
+          </button>
+          {ackedRecently ? (
+            <span className="px-3 flex items-center gap-1 text-[12px] font-semibold text-green-700 bg-green-100 rounded-xl py-2.5">
+              <ShieldCheck className="w-4 h-4" /> Ciente
+            </span>
+          ) : (
+            <button
+              onClick={() => acknowledge.mutate({ vehicleId: vehicle.id, type: "manutencao", daysStale: staleDays })}
+              disabled={acknowledge.isPending}
+              className="px-3 text-center text-[12px] font-semibold text-gray-700 bg-white/80 rounded-xl py-2.5 go-btn-active disabled:opacity-60"
+            >
+              Estou ciente
+            </button>
+          )}
+        </div>
+
+        <button
+          onClick={() => setLocation("/alerts-history")}
+          className="mt-2 w-full flex items-center justify-center gap-1 text-[11px] font-medium text-gray-500 go-btn-active"
+        >
+          <History className="w-3.5 h-3.5" /> Ver histórico de avisos
+        </button>
+      </div>
     </div>
   );
 }

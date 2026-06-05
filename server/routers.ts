@@ -328,6 +328,43 @@ export const appRouter = router({
       }),
   }),
 
+  // Avisos críticos: ciência do cliente ("Estou ciente") e histórico/auditoria.
+  alerts: router({
+    // Histórico de avisos enviados ao cliente (transparência + prova de envio).
+    history: protectedProcedure.query(async ({ ctx }) => {
+      return db.getNotificationLog(ctx.user.id);
+    }),
+    // Estado do botão "Estou ciente" para um veículo/tipo.
+    lastAck: protectedProcedure
+      .input(z.object({ vehicleId: z.number(), type: z.string().default("manutencao") }))
+      .query(async ({ ctx, input }) => {
+        const ack = await db.getLatestAlertAck(ctx.user.id, input.vehicleId, input.type);
+        return ack ?? null;
+      }),
+    // Registra a ciência do cliente sobre o alerta crítico.
+    acknowledge: protectedProcedure
+      .input(z.object({ vehicleId: z.number(), type: z.string().default("manutencao"), daysStale: z.number().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const vehicle = await db.getVehicleById(input.vehicleId);
+        if (!vehicle || vehicle.userId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Veículo não pertence ao usuário." });
+        }
+        const ip = getClientIp(ctx.req) || null;
+        const userAgent = String(ctx.req.headers?.["user-agent"] ?? "").slice(0, 255) || null;
+        await db.createAlertAck({
+          userId: ctx.user.id, vehicleId: input.vehicleId, type: input.type,
+          daysAtAck: input.daysStale ?? null, ip, userAgent,
+        });
+        await db.logNotificationDispatch({
+          userId: ctx.user.id, vehicleId: input.vehicleId, type: `${input.type}_ciente`,
+          channel: "inapp", severity: "info",
+          title: "Cliente marcou ciência", message: `Ciência registrada${input.daysStale != null ? ` (${input.daysStale} dias sem posicionar)` : ""}.`,
+          meta: { ip, userAgent },
+        });
+        return { ok: true };
+      }),
+  }),
+
   vehicles: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       return db.getUserVehicles(ctx.user.id);

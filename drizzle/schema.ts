@@ -409,3 +409,19 @@ export const notificationLog = mysqlTable("notificationLog", {
 
 export type NotificationLog = typeof notificationLog.$inferSelect;
 export type InsertNotificationLog = typeof notificationLog.$inferInsert;
+
+// Ciência do cliente ("Estou ciente") sobre um alerta crítico. Prova mais forte:
+// registra que ele VIU e reconheceu o risco, com data/hora e contexto.
+export const alertAcks = mysqlTable("alertAcks", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  vehicleId: int("vehicleId"),
+  type: varchar("type", { length: 40 }).notNull(),  // ex.: "manutencao"
+  daysAtAck: int("daysAtAck"),                       // dias parado no momento da ciência
+  ip: varchar("ip", { length: 64 }),
+  userAgent: varchar("userAgent", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AlertAck = typeof alertAcks.$inferSelect;
+export type InsertAlertAck = typeof alertAcks.$inferInsert;

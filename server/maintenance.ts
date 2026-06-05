@@ -1,5 +1,6 @@
 import * as db from "./db";
 import { sendPushToUser } from "./pushService";
+import { sendEmail, sendSms, sendWhatsapp } from "./notifyChannels";
 
 // Alerta de manutenção: rastreador parou de posicionar.
 //
@@ -65,6 +66,35 @@ export async function sendMaintenanceReminders(
       channel: "push", severity, title, message: body, meta,
     });
     pushed++;
+
+    // Canais com entrega comprovável (ativados por env). Mesmo cinza/sem
+    // credencial, o disparo é registrado na auditoria como tentado/não entregue.
+    const user = await db.getUserById(v.userId);
+    if (user?.email) {
+      const r = await sendEmail(user.email, `GO • ${title} (${v.plate})`, body);
+      if (!r.skipped) {
+        await db.logNotificationDispatch({
+          userId: v.userId, vehicleId: v.vehicleId, type: "manutencao",
+          channel: "email", severity, title, message: body, meta, delivered: r.delivered,
+        });
+      }
+    }
+    if (user?.phone) {
+      const sms = await sendSms(user.phone, `GO: ${body}`);
+      if (!sms.skipped) {
+        await db.logNotificationDispatch({
+          userId: v.userId, vehicleId: v.vehicleId, type: "manutencao",
+          channel: "sms", severity, title, message: body, meta, delivered: sms.delivered,
+        });
+      }
+      const wa = await sendWhatsapp(user.phone, `GO: ${body}`);
+      if (!wa.skipped) {
+        await db.logNotificationDispatch({
+          userId: v.userId, vehicleId: v.vehicleId, type: "manutencao",
+          channel: "whatsapp", severity, title, message: body, meta, delivered: wa.delivered,
+        });
+      }
+    }
 
     await db.markStaleAlertSent(v.vehicleId);
   }
