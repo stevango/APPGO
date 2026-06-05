@@ -373,12 +373,21 @@ export const appRouter = router({
         }
         const ip = getClientIp(ctx.req) || null;
         const userAgent = String(ctx.req.headers?.["user-agent"] ?? "").slice(0, 255) || null;
+        const diasTxt = input.daysStale != null ? ` (${input.daysStale} dias sem posicionar)` : "";
+        // Auditoria imutável (prova de que foi informado e optou por fechar).
         await db.logNotificationDispatch({
           userId: ctx.user.id, vehicleId: input.vehicleId, type: `${input.type}_fechado`,
           channel: "inapp", severity: "info",
           title: "Cliente fechou o aviso",
-          message: `Aviso de manutenção fechado pelo cliente${input.daysStale != null ? ` (${input.daysStale} dias sem posicionar)` : ""}.`,
+          message: `Aviso de manutenção fechado pelo cliente${diasTxt}.`,
           meta: { ip, userAgent, daysStale: input.daysStale ?? null },
+        });
+        // Notificação visível em "Alertas": registra a ocorrência para o cliente.
+        // Tipo "sistema" (não "manutencao") para não conflitar com o card diário.
+        await db.createNotification({
+          userId: ctx.user.id, vehicleId: input.vehicleId, type: "sistema",
+          title: "Aviso de manutenção ignorado",
+          message: `Você fechou o aviso de que o rastreador está sem posicionar${diasTxt} e registramos essa ocorrência. O alerta continua ativo até a posição voltar — você pode reabri-lo na tela Início quando quiser.`,
         });
         return { ok: true };
       }),
