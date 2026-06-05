@@ -567,23 +567,25 @@ function VehicleCard({
       }`}
     >
       {showHero ? (
-        /* Hero estilo app de montadora: render do modelo + dados sobrepostos */
-        <div className="relative mb-3 rounded-2xl bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 px-4 py-4 overflow-hidden min-h-[130px]">
-          {/* Render do veículo (ao fundo, à direita) */}
+        /* Hero estilo app de montadora: render do modelo em destaque */
+        <div className="relative mb-3 rounded-2xl bg-gradient-to-br from-white via-slate-50 to-slate-200 px-4 py-4 overflow-hidden min-h-[162px]">
+          {/* brilho suave atrás do carro */}
+          <div className="absolute -right-6 bottom-0 w-56 h-40 bg-white/50 blur-2xl rounded-full pointer-events-none" />
+          {/* Render do veículo — protagonista, vazando pela direita */}
           <img
             src={imgUrl!}
             alt={`${vehicle.brand} ${vehicle.model}`}
             onError={() => setImgOk(false)}
             loading="lazy"
-            className="absolute right-1 bottom-2 h-[76px] w-auto max-w-[48%] object-contain pointer-events-none drop-shadow-xl z-0"
+            className="absolute right-[-10px] bottom-1 h-[120px] w-auto max-w-[68%] object-contain pointer-events-none z-0 drop-shadow-[0_14px_18px_rgba(15,23,42,0.22)]"
           />
-          <div className="relative z-10 flex flex-col justify-between gap-3 min-h-[98px]">
+          <div className="relative z-10 flex flex-col justify-between gap-3 min-h-[130px]">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-bold text-[#111111] text-[15px] leading-snug tracking-tight max-w-[56%] line-clamp-2">
+              <h3 className="font-extrabold text-[#0f172a] text-[16px] leading-tight tracking-tight max-w-[52%] line-clamp-2">
                 {vehicle.brand} {vehicle.model}
               </h3>
               <div className="flex flex-col items-end gap-1.5 shrink-0">
-                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full ${sig.bg} shadow-sm`}>
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${sig.bg} shadow-sm ring-1 ring-black/[0.03]`}>
                   <div className={`w-2 h-2 rounded-full ${sig.dot}`} />
                   <span className={`text-[11px] font-semibold ${sig.text}`}>{sig.label}</span>
                 </div>
@@ -599,7 +601,7 @@ function VehicleCard({
                 )}
               </div>
             </div>
-            <div>
+            <div className="drop-shadow-sm">
               {isVeh ? (
                 <LicensePlate plate={vehicle.plate} size="sm" />
               ) : (
