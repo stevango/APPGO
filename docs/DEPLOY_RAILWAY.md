@@ -100,8 +100,10 @@ reaproveite a mesma `CRON_SECRET`:
 ```
 GET https://SEU-DOMINIO/api/cron/maintenance-reminders?token=SEU_CRON_SECRET
 ```
-Avisa veículos com mais de **3 dias** sem posição (ajustável com `&days=N`),
-1x/dia enquanto seguir parado, com a contagem de dias atualizada. Responde `{ sent, skipped, total }`.
+Avisa veículos com mais de **3 dias** sem posição (ajustável com `&days=N`).
+O alerta no app é atualizado **todo dia** (1 card por veículo, contagem subindo:
+49, 50, 51...); o **push** vai só na 1ª vez e depois **semanalmente** (sem fadiga).
+Responde `{ sent, pushed, skipped, total }`.
 
 ## Custos (estimativa)
 - Plano **Hobby** da Railway (US$ 5/mês de crédito incluído) costuma cobrir app + MySQL para começar

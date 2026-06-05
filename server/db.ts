@@ -308,6 +308,33 @@ export async function createNotification(notification: InsertNotification) {
   return db.insert(notifications).values(notification);
 }
 
+/**
+ * Mantém UM único alerta de manutenção por veículo, atualizado a cada dia (a
+ * contagem de dias sobe), em vez de empilhar um card novo por dia. Reaproveita o
+ * card existente: atualiza a mensagem, marca como não lido e sobe para o topo.
+ */
+export async function upsertMaintenanceNotification(
+  userId: number, vehicleId: number, title: string, message: string,
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(notifications)
+    .where(and(
+      eq(notifications.userId, userId),
+      eq(notifications.vehicleId, vehicleId),
+      eq(notifications.type, "manutencao"),
+    ))
+    .orderBy(desc(notifications.createdAt))
+    .limit(1);
+  if (existing[0]) {
+    await db.update(notifications)
+      .set({ title, message, read: false, createdAt: new Date() })
+      .where(eq(notifications.id, existing[0].id));
+  } else {
+    await db.insert(notifications).values({ userId, vehicleId, type: "manutencao", title, message });
+  }
+}
+
 // Check if a battery notification was sent in the last hour (deduplication)
 export async function getRecentBatteryNotification(userId: number, vehicleId: number) {
   const db = await getDb();
