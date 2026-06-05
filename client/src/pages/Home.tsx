@@ -519,6 +519,9 @@ function VehicleCard({
   const timeSinceSignal = vehicle.lastSignalAt
     ? getTimeSince(new Date(vehicle.lastSignalAt))
     : "Sem dados";
+  const lastReadingAbs = vehicle.lastSignalAt
+    ? new Date(vehicle.lastSignalAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })
+    : null;
 
   // Tracker freshness — never show "Online" for a stale fix (safety/CS).
   const lastSignalMs = vehicle.lastSignalAt ? new Date(vehicle.lastSignalAt).getTime() : 0;
@@ -648,40 +651,55 @@ function VehicleCard({
         </div>
       )}
 
-      {/* Status headline — communicative, human-readable */}
+      {/* Status — honesto sobre o frescor dos dados */}
       <div className="mt-3.5 flex items-center gap-2">
-        <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold ${htext}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${dot} ${dot === "bg-green-500" ? "pulse-online" : ""}`} />
-          {headline}
+        <span className={`inline-flex items-center gap-1.5 text-[12px] font-semibold ${sig.stale ? "text-gray-500" : htext}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${sig.stale ? "bg-gray-400" : dot} ${!sig.stale && dot === "bg-green-500" ? "pulse-online" : ""}`} />
+          {sig.stale ? "Sem comunicação recente" : headline}
         </span>
-        {isVeh && (vehicle.speed ?? 0) > 0 && (
+        {!sig.stale && isVeh && (vehicle.speed ?? 0) > 0 && (
           <span className="text-[12px] text-gray-400 font-medium">• {vehicle.speed} km/h</span>
         )}
       </div>
 
-      {/* Key metrics — asset-aware, no duplication */}
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      {/* Quando desatualizado: deixa claro que os números abaixo são da última leitura */}
+      {sig.stale && lastReadingAbs && (
+        <div className="mt-2.5 flex items-center gap-1.5 text-[11px] font-medium text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5">
+          <Clock className="w-3.5 h-3.5 shrink-0" />
+          <span>Valores da última comunicação · {lastReadingAbs}</span>
+        </div>
+      )}
+
+      {/* Key metrics — asset-aware, esmaecidos quando os dados estão velhos */}
+      <div className={`mt-3 grid grid-cols-3 gap-2 ${sig.stale ? "opacity-75" : ""}`}>
         {isVeh ? (
           <>
-            <Metric icon={Gauge} label="Velocidade" value={`${vehicle.speed ?? 0}`} unit="km/h" />
-            <Metric icon={Power} label="Ignição" value={vehicle.ignition ? "Ligada" : "Off"} />
-            <Metric icon={Battery} label="Bateria" value={batteryMain.toFixed(1)} unit="V" tone={batteryTone} />
+            <Metric icon={Gauge} label="Velocidade" value={`${vehicle.speed ?? 0}`} unit="km/h" muted={sig.stale} />
+            <Metric icon={Power} label="Ignição" value={vehicle.ignition ? "Ligada" : "Off"} muted={sig.stale} />
+            <Metric icon={Battery} label="Bateria"
+              value={batteryMain > 0 ? batteryMain.toFixed(1) : "—"} unit={batteryMain > 0 ? "V" : undefined}
+              tone={sig.stale ? "default" : batteryTone} muted={sig.stale} />
           </>
         ) : (
           <>
             <Metric icon={Battery} label="Bateria" value={`${vehicle.batteryLevel ?? 100}`} unit="%"
-              tone={(vehicle.batteryLevel ?? 100) < 20 ? "danger" : (vehicle.batteryLevel ?? 100) < 40 ? "warning" : "default"} />
-            <Metric icon={Signal} label="Sinal GPS" value={`${vehicle.gpsSatellites ?? 0}`} unit="sat" />
-            <Metric icon={Wifi} label="Conexão" value={vehicle.trackerMode === "active" ? "Ativo" : "Repouso"} />
+              tone={sig.stale ? "default" : ((vehicle.batteryLevel ?? 100) < 20 ? "danger" : (vehicle.batteryLevel ?? 100) < 40 ? "warning" : "default")} muted={sig.stale} />
+            <Metric icon={Signal} label="Sinal GPS" value={`${vehicle.gpsSatellites ?? 0}`} unit="sat" muted={sig.stale} />
+            <Metric icon={Wifi} label="Conexão" value={vehicle.trackerMode === "active" ? "Ativo" : "Repouso"} muted={sig.stale} />
           </>
         )}
       </div>
 
-      <div className="mt-3 flex items-center gap-2 text-gray-400">
-        <MapPin className="w-3.5 h-3.5 shrink-0" />
-        <span className="text-[12px] truncate flex-1 leading-tight">
-          {vehicle.lastAddress || "Localização não disponível"}
-        </span>
+      <div className="mt-3 flex items-start gap-2 text-gray-400">
+        <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-medium text-gray-400 leading-none mb-0.5">
+            {sig.stale ? "Última localização conhecida" : "Localização atual"}
+          </p>
+          <span className="text-[12px] text-gray-500 line-clamp-2 leading-tight block">
+            {vehicle.lastAddress || "Localização não disponível"}
+          </span>
+        </div>
       </div>
 
       {/* Clear call-to-action */}
@@ -698,11 +716,11 @@ function VehicleCard({
   );
 }
 
-function Metric({ icon: Icon, label, value, unit, tone = "default" }: {
-  icon: any; label: string; value: string; unit?: string; tone?: "default" | "warning" | "danger";
+function Metric({ icon: Icon, label, value, unit, tone = "default", muted = false }: {
+  icon: any; label: string; value: string; unit?: string; tone?: "default" | "warning" | "danger"; muted?: boolean;
 }) {
-  const text = tone === "danger" ? "text-red-600" : tone === "warning" ? "text-amber-600" : "text-[#111111]";
-  const ic = tone === "danger" ? "text-red-500" : tone === "warning" ? "text-amber-500" : "text-[#243FF7]";
+  const text = muted ? "text-gray-500" : tone === "danger" ? "text-red-600" : tone === "warning" ? "text-amber-600" : "text-[#111111]";
+  const ic = muted ? "text-gray-400" : tone === "danger" ? "text-red-500" : tone === "warning" ? "text-amber-500" : "text-[#243FF7]";
   return (
     <div className="bg-gray-50 rounded-xl px-2.5 py-2.5">
       <Icon className={`w-4 h-4 ${ic} mb-1.5`} />
