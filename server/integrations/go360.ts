@@ -72,22 +72,27 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
   const veiculos: any[] = Array.isArray(resp?.veiculos) ? resp.veiculos : [];
   let synced = 0;
 
+  const pick = (o: any, ...keys: string[]) => {
+    for (const k of keys) { const val = o?.[k]; if (val !== undefined && val !== null && val !== "") return val; }
+    return undefined;
+  };
+
   for (const v of veiculos) {
-    const eq = v.equipamento || {};
-    const serial = eq.imei || eq.id_tracker || eq.iccid || null;
-    const productActive = String(v.status_produto ?? "").toUpperCase() === "ATIVO";
-    const trackerOp = String(eq.status ?? "").toLowerCase() === "em_operacao";
+    const eq = v.equipamento || v.tracker || {};
+    const serial = pick(eq, "imei", "id_tracker", "idTracker", "serial", "iccid") ?? pick(v, "imei", "id_tracker");
+    const productActive = String(pick(v, "status_produto", "statusProduto") ?? "").toUpperCase() === "ATIVO";
+    const trackerOp = ["em_operacao", "operando", "ativo", "online"].includes(String(pick(eq, "status") ?? "").toLowerCase());
     const trackerStatus: "online" | "offline" = productActive && trackerOp ? "online" : "offline";
-    const year = parseInt(String(v.ano_modelo ?? v.ano_fabricacao ?? ""), 10);
+    const year = parseInt(String(pick(v, "ano_modelo", "anoModelo", "ano_fabricacao", "anoFabricacao", "ano") ?? ""), 10);
 
     await db.upsertGo360Vehicle(userId, {
-      plate: String(v.placa ?? serial ?? "SEM-PLACA").toUpperCase(),
-      brand: v.marca ?? null,
-      model: v.modelo ?? "Veículo",
-      color: v.cor ?? null,
+      plate: String(pick(v, "placa", "plate") ?? serial ?? "SEM-PLACA").toUpperCase(),
+      brand: pick(v, "marca", "fabricante", "montadora", "marca_veiculo", "marcaVeiculo") ?? null,
+      model: pick(v, "modelo", "modelo_veiculo", "modeloVeiculo", "versao", "descricao", "nome") ?? "Veículo",
+      color: pick(v, "cor", "cor_veiculo") ?? null,
       year: Number.isFinite(year) ? year : null,
       trackerSerial: serial ? String(serial) : null,
-      trackerModel: eq.modelo ?? null,
+      trackerModel: pick(eq, "modelo", "fabricante", "model") ?? null,
       trackerStatus,
     });
     synced++;
