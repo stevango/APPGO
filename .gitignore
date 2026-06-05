@@ -122,3 +122,6 @@ client/public/__manus__/version.json
 /android/build/
 /android/app/src/main/assets/public/
 .env
+
+# Preview/mock assets (not part of the app build)
+preview/
