@@ -108,6 +108,31 @@ export async function setUserPassword(openId: string, passwordHash: string) {
   await db.update(users).set({ passwordHash }).where(eq(users.openId, openId));
 }
 
+/** Create/update a local user mirrored from a GO360 customer, return the row. */
+export async function upsertGo360User(input: { clienteId: string; name?: string | null; email?: string | null }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const openId = `go360_${input.clienteId}`;
+  const email = input.email ? input.email.trim().toLowerCase() : null;
+  await db.insert(users).values({
+    openId,
+    name: input.name ?? null,
+    email,
+    loginMethod: "go360",
+    go360ClienteId: input.clienteId,
+    lastSignedIn: new Date(),
+  }).onDuplicateKeyUpdate({
+    set: { name: input.name ?? null, email, go360ClienteId: input.clienteId, lastSignedIn: new Date() },
+  });
+  return getUserByOpenId(openId);
+}
+
+export async function setUserGo360Token(userId: number, token: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ go360Token: token }).where(eq(users.id, userId));
+}
+
 export async function setUserAddress(userId: number, data: { address: string; lat?: string | null; lng?: string | null }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

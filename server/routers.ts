@@ -16,6 +16,20 @@ const LOGIN_WINDOW_MS = 15 * 60 * 1000; // 15 min
 const REGISTER_MAX = 5;
 const REGISTER_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
+async function withGo360Token<T>(ctx: any, fn: (token: string) => Promise<T>): Promise<T> {
+  const token = ctx?.user?.go360Token as string | undefined;
+  if (!token) throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão GO360 expirada. Entre novamente." });
+  try {
+    return await fn(token);
+  } catch (err: any) {
+    if (err?.status === 401 || err?.status === 403) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão GO360 expirada. Entre novamente." });
+    }
+    console.error("[GO360] request error", err?.status, err?.body);
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "GO360 indisponível no momento." });
+  }
+}
+
 function enforceRateLimit(key: string, max: number, windowMs: number) {
   const { allowed, retryAfterMs } = rateLimit(key, { max, windowMs });
   if (!allowed) {
@@ -30,6 +44,7 @@ import { notifyOwner } from "./_core/notification";
 import { registerPushSubscription, unregisterPushSubscription, sendPushToUser } from "./pushService";
 import { reverseGeocode, searchAddress } from "./geocode";
 import { processTelemetry } from "./telemetry";
+import { go360Enabled, go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada, go360FirstAccess } from "./integrations/go360";
 
 export const appRouter = router({
   system: systemRouter,
@@ -67,17 +82,34 @@ export const appRouter = router({
         password: z.string().min(1, "Informe sua senha"),
       }))
       .mutation(async ({ ctx, input }) => {
-        // Limit by IP+email so one attacker can't brute-force a single account,
-        // and also by IP overall.
         enforceRateLimit(`login:${getClientIp(ctx.req)}:${input.email}`, LOGIN_MAX_ATTEMPTS, LOGIN_WINDOW_MS);
         enforceRateLimit(`login-ip:${getClientIp(ctx.req)}`, LOGIN_MAX_ATTEMPTS * 5, LOGIN_WINDOW_MS);
+
+        // When GO360 is enabled, it is the source of truth for authentication.
+        if (go360Enabled()) {
+          try {
+            const r = await go360Login(input.email, input.password);
+            const user = await db.upsertGo360User({ clienteId: r.cliente.id, name: r.cliente.nome ?? null, email: r.cliente.email ?? input.email });
+            if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao sincronizar usuário." });
+            await db.setUserGo360Token(user.id, r.token);
+            await issueSessionCookie(ctx.req, ctx.res, user);
+            return { success: true, mustChangePassword: r.mustChangePassword ?? false } as const;
+          } catch (err: any) {
+            if (err?.status === 401) throw new TRPCError({ code: "UNAUTHORIZED", message: "E-mail ou senha incorretos." });
+            if (err?.status === 403) throw new TRPCError({ code: "FORBIDDEN", message: "Conta suspensa. Fale com a central." });
+            console.error("[GO360] login error", err?.status, err?.body);
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Não foi possível entrar agora. Tente novamente." });
+          }
+        }
+
+        // Local email/password (demo / GO360 disabled)
         const user = await db.getUserByEmail(input.email);
         const ok = await verifyPassword(input.password, user?.passwordHash ?? null);
         if (!user || !ok) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "E-mail ou senha incorretos." });
         }
         await issueSessionCookie(ctx.req, ctx.res, user);
-        return { success: true } as const;
+        return { success: true, mustChangePassword: false } as const;
       }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -224,6 +256,27 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return searchAddress(input.query);
       }),
+  }),
+
+  // Real customer data proxied from the GO360 portal API (when enabled).
+  go360: router({
+    status: publicProcedure.query(() => ({ enabled: go360Enabled() })),
+    firstAccess: publicProcedure
+      .input(z.object({
+        email: z.string().trim().toLowerCase().email(),
+        senhaTemp: z.string().min(1),
+        novaSenha: z.string().min(8),
+        aceites: z.array(z.enum(["lgpd", "termos", "privacidade"])).min(3),
+      }))
+      .mutation(async ({ input }) => {
+        await go360FirstAccess(input);
+        return { success: true } as const;
+      }),
+    me: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Me)),
+    equipamento: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Equipamento)),
+    contrato: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Contrato)),
+    cobranca: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Cobranca)),
+    jornada: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Jornada)),
   }),
 
   vehicles: router({

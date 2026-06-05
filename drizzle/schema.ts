@@ -14,6 +14,8 @@ export const users = mysqlTable("users", {
   addressLat: decimal("addressLat", { precision: 10, scale: 7 }),
   addressLng: decimal("addressLng", { precision: 10, scale: 7 }),
   plan: varchar("plan", { length: 64 }).default("basico"),
+  go360ClienteId: varchar("go360ClienteId", { length: 64 }),
+  go360Token: text("go360Token"),
   lastBillingReminderAt: timestamp("lastBillingReminderAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
