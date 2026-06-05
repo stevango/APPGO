@@ -322,6 +322,18 @@ function MaintenanceAlert({ vehicle }: { vehicle: any }) {
   const lastSignalMs = vehicle?.lastSignalAt ? new Date(vehicle.lastSignalAt).getTime() : 0;
   const staleDays = lastSignalMs ? Math.floor((Date.now() - lastSignalMs) / (1000 * 60 * 60 * 24)) : 0;
 
+  // O cliente pode fechar o banner. Guardamos o nº de dias em que ele fechou —
+  // o aviso reaparece no dia seguinte (contagem maior), sem perder o caráter
+  // crítico (push diário e histórico de avisos continuam).
+  const dismissKey = `maintDismiss:${vehicle?.id}`;
+  const [dismissedDays, setDismissedDays] = useState<number>(() => {
+    try { return Number(localStorage.getItem(dismissKey) ?? -1); } catch { return -1; }
+  });
+  const dismiss = () => {
+    try { localStorage.setItem(dismissKey, String(staleDays)); } catch { /* ignore */ }
+    setDismissedDays(staleDays);
+  };
+
   const lastAck = trpc.alerts.lastAck.useQuery(
     { vehicleId: vehicle.id, type: "manutencao" },
     { enabled: staleDays >= 3 },
@@ -334,7 +346,7 @@ function MaintenanceAlert({ vehicle }: { vehicle: any }) {
     },
   });
 
-  if (staleDays < 3) return null;
+  if (staleDays < 3 || staleDays <= dismissedDays) return null;
 
   const severe = staleDays > 7;
   const box = severe ? "from-red-50 to-orange-50 border-red-200" : "from-amber-50 to-orange-50 border-amber-200";
@@ -349,13 +361,20 @@ function MaintenanceAlert({ vehicle }: { vehicle: any }) {
 
   return (
     <div className="mb-5 stagger-item">
-      <div className={`w-full rounded-2xl bg-gradient-to-r ${box} border p-4`}>
+      <div className={`relative w-full rounded-2xl bg-gradient-to-r ${box} border p-4`}>
+        <button
+          onClick={dismiss}
+          aria-label="Fechar aviso"
+          className="absolute top-2 right-2 p-1 rounded-full text-gray-400 hover:text-gray-600 go-btn-active"
+        >
+          <X className="w-4 h-4" />
+        </button>
         <button onClick={() => setLocation("/vehicle-care")} className="w-full text-left go-btn-active">
           <div className="flex items-center gap-3">
             <div className={`w-11 h-11 ${iconBox} rounded-xl flex items-center justify-center shrink-0`}>
               <Wrench className="w-5 h-5" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 pr-6">
               <h4 className={`font-bold text-sm ${h}`}>Rastreador há {staleDays} dias sem posicionar</h4>
               <p className={`text-xs ${p} mt-0.5`}>
                 {severe
