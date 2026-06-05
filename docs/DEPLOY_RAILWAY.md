@@ -82,7 +82,7 @@ Em produção o app roda um **agendador interno** que dispara, sozinho, a cada 6
 - **Alerta de manutenção** (rastreador sem posicionar)
 
 Não é preciso configurar nada no Railway — basta o serviço estar no ar. Ambos
-são deduplicados (cobrança ~1x/dia, manutenção ~1x a cada 3 dias por veículo),
+são deduplicados (cobrança e manutenção ~1x/dia por cliente/veículo),
 então rodar a cada 6h nunca gera spam. Para desligar: `SCHEDULER_DISABLED=1`.
 
 ### Disparo manual / agendador externo (opcional)
@@ -101,7 +101,7 @@ reaproveite a mesma `CRON_SECRET`:
 GET https://SEU-DOMINIO/api/cron/maintenance-reminders?token=SEU_CRON_SECRET
 ```
 Avisa veículos com mais de **3 dias** sem posição (ajustável com `&days=N`),
-deduplicado para no máx. 1x a cada 3 dias por veículo. Responde `{ sent, skipped, total }`.
+1x/dia enquanto seguir parado, com a contagem de dias atualizada. Responde `{ sent, skipped, total }`.
 
 ## Custos (estimativa)
 - Plano **Hobby** da Railway (US$ 5/mês de crédito incluído) costuma cobrir app + MySQL para começar

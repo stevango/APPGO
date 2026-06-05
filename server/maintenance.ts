@@ -3,7 +3,7 @@ import { sendPushToUser } from "./pushService";
 
 // Alerta de manutenção: rastreador parou de posicionar.
 const STALE_THRESHOLD_DAYS = 3;           // a partir de quando avisamos
-const REMINDER_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000; // re-avisa no máx. a cada 3 dias
+const REMINDER_COOLDOWN_MS = 20 * 60 * 60 * 1000; // ~1x/dia (avisa todo dia com a contagem atualizada)
 
 function maintenanceBody(plate: string, days: number): string {
   if (days <= 7) {
@@ -14,8 +14,9 @@ function maintenanceBody(plate: string, days: number): string {
 
 /**
  * Avisa (push + notificação no app) todo cliente cujo rastreador está há vários
- * dias sem posicionar, sugerindo manutenção. Deduplicado para no máx. a cada 3
- * dias por veículo. Pensado para um agendador diário (/api/cron/maintenance-reminders).
+ * dias sem posicionar, sugerindo manutenção. Repete 1x/dia enquanto seguir
+ * parado, com a contagem de dias atualizada (49, 50, 51...). Pensado para um
+ * agendador diário (/api/cron/maintenance-reminders).
  */
 export async function sendMaintenanceReminders(
   thresholdDays = STALE_THRESHOLD_DAYS,
