@@ -51,7 +51,7 @@ import { notifyOwner } from "./_core/notification";
 import { registerPushSubscription, unregisterPushSubscription, sendPushToUser } from "./pushService";
 import { reverseGeocode, searchAddress } from "./geocode";
 import { processTelemetry } from "./telemetry";
-import { go360Enabled, go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada, go360FirstAccess } from "./integrations/go360";
+import { go360Enabled, go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada, go360FirstAccess, syncGo360Equipment } from "./integrations/go360";
 
 export const appRouter = router({
   system: systemRouter,
@@ -99,6 +99,8 @@ export const appRouter = router({
             const user = await db.upsertGo360User({ clienteId: r.cliente.id, name: r.cliente.nome ?? null, email: r.cliente.email ?? input.email });
             if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Falha ao sincronizar usuário." });
             await db.setUserGo360Token(user.id, r.token);
+            // Best-effort: sync the customer's vehicles/equipment right away.
+            await syncGo360Equipment(user.id, r.token).catch((e) => console.warn("[GO360] equip sync (login)", e?.status));
             await issueSessionCookie(ctx.req, ctx.res, user);
             return { success: true, mustChangePassword: r.mustChangePassword ?? false } as const;
           } catch (err: any) {
@@ -281,6 +283,18 @@ export const appRouter = router({
       }),
     me: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Me)),
     equipamento: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Equipamento)),
+    // Re-sync the customer's vehicles/equipment from GO360 into our app.
+    syncEquipment: protectedProcedure.mutation(async ({ ctx }) => {
+      const token = (ctx.user as any)?.go360Token as string | undefined;
+      if (!token) return { ok: false, synced: 0 } as const;
+      try {
+        const r = await syncGo360Equipment(ctx.user.id, token);
+        return { ok: true, synced: r.synced } as const;
+      } catch (e: any) {
+        if (e?.status === 401 || e?.status === 403) throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão GO360 expirada." });
+        return { ok: false, synced: 0 } as const;
+      }
+    }),
     contrato: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Contrato)),
     cobranca: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Cobranca)),
     jornada: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Jornada)),

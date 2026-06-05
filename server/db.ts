@@ -133,6 +133,32 @@ export async function setUserGo360Token(userId: number, token: string) {
   await db.update(users).set({ go360Token: token }).where(eq(users.id, userId));
 }
 
+/** Upsert a vehicle synced from GO360 (matched by user + plate). */
+export async function upsertGo360Vehicle(userId: number, data: {
+  plate: string; brand?: string | null; model: string; color?: string | null; year?: number | null;
+  trackerSerial?: string | null; trackerModel?: string | null; trackerStatus?: "online" | "offline" | "alert";
+}) {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select().from(vehicles)
+    .where(and(eq(vehicles.userId, userId), eq(vehicles.plate, data.plate))).limit(1);
+  const fields = {
+    brand: data.brand ?? null,
+    model: data.model || "Veículo",
+    color: data.color ?? null,
+    year: data.year ?? null,
+    trackerSerial: data.trackerSerial ?? null,
+    trackerModel: data.trackerModel ?? null,
+    trackerStatus: data.trackerStatus ?? "online",
+    isDemo: false,
+  };
+  if (existing[0]) {
+    await db.update(vehicles).set(fields).where(eq(vehicles.id, existing[0].id));
+  } else {
+    await db.insert(vehicles).values({ userId, plate: data.plate, iconType: "car", ...fields });
+  }
+}
+
 export async function setUserAddress(userId: number, data: { address: string; lat?: string | null; lng?: string | null }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

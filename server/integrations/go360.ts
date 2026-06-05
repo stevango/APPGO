@@ -12,6 +12,8 @@
  */
 const BASE = () => (process.env.GO360_BASE_URL || "https://go360id-production.up.railway.app/api/app").replace(/\/+$/, "");
 
+import * as db from "../db";
+
 export function go360Enabled(): boolean {
   return process.env.GO360_ENABLED === "1";
 }
@@ -59,3 +61,36 @@ export const go360Equipamento = (token: string) => go360Request("/equipamento", 
 export const go360Contrato = (token: string) => go360Request("/contrato", { token });
 export const go360Cobranca = (token: string) => go360Request("/cobranca", { token });
 export const go360Jornada = (token: string) => go360Request("/minha-jornada", { token });
+
+/**
+ * Syncs the customer's GO360 vehicles/equipment into our local `vehicles` table
+ * so the app screens (Home, Tracking) show them. Real-time GPS still arrives via
+ * /api/ingest/telemetry, matched by trackerSerial (IMEI / id_tracker).
+ */
+export async function syncGo360Equipment(userId: number, token: string): Promise<{ synced: number }> {
+  const resp: any = await go360Equipamento(token);
+  const veiculos: any[] = Array.isArray(resp?.veiculos) ? resp.veiculos : [];
+  let synced = 0;
+
+  for (const v of veiculos) {
+    const eq = v.equipamento || {};
+    const serial = eq.imei || eq.id_tracker || eq.iccid || null;
+    const productActive = String(v.status_produto ?? "").toUpperCase() === "ATIVO";
+    const trackerOp = String(eq.status ?? "").toLowerCase() === "em_operacao";
+    const trackerStatus: "online" | "offline" = productActive && trackerOp ? "online" : "offline";
+    const year = parseInt(String(v.ano_modelo ?? v.ano_fabricacao ?? ""), 10);
+
+    await db.upsertGo360Vehicle(userId, {
+      plate: String(v.placa ?? serial ?? "SEM-PLACA").toUpperCase(),
+      brand: v.marca ?? null,
+      model: v.modelo ?? "Veículo",
+      color: v.cor ?? null,
+      year: Number.isFinite(year) ? year : null,
+      trackerSerial: serial ? String(serial) : null,
+      trackerModel: eq.modelo ?? null,
+      trackerStatus,
+    });
+    synced++;
+  }
+  return { synced };
+}

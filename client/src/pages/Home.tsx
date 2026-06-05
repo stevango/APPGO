@@ -30,6 +30,17 @@ export default function Home() {
   const openInvoices = trpc.payment.openSummary.useQuery();
   const currentMethod = trpc.payment.getCurrent.useQuery();
 
+  // When backed by GO360, refresh the customer's real vehicles on open.
+  const utils = trpc.useUtils();
+  const go360 = trpc.go360.status.useQuery();
+  const syncEquip = trpc.go360.syncEquipment.useMutation({
+    onSuccess: () => utils.vehicles.list.invalidate(),
+  });
+  useEffect(() => {
+    if (go360.data?.enabled) syncEquip.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [go360.data?.enabled]);
+
   const activeVehicleId = useActiveVehicleId();
   const vehicle = pickActiveVehicle(vehicles, activeVehicleId);
   const firstName = user?.name?.split(" ")[0] || "Usuário";
