@@ -146,7 +146,15 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
         "Imagem", "Foto", "Foto do Veículo", "URL da Imagem") ??
       pick(eq, "imagem", "foto", "image", "imageUrl") ?? null;
     const go360ImgUrl = go360Img && String(go360Img).startsWith("http") ? String(go360Img) : null;
-    let imageUrl: string | null = go360ImgUrl;
+    // Prioridade: curadoria manual (admin) > foto da GO360 > biblioteca auto > logo.
+    let imageUrl: string | null = null;
+    if (brand && model && model !== "Veículo") {
+      const mk = String(brand).trim().toLowerCase();
+      const md = String(model).trim().toLowerCase().split(/\s+/)[0];
+      const lib = await db.getModelImage(mk, md, Number.isFinite(year) ? year : null);
+      if (lib?.source === "manual") imageUrl = lib.imageUrl; // override do admin vence
+    }
+    if (!imageUrl) imageUrl = go360ImgUrl;
     if (!imageUrl && brand && model && model !== "Veículo") {
       imageUrl = await resolveModelImage(brand, model, Number.isFinite(year) ? year : null);
     }

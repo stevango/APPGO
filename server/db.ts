@@ -1046,7 +1046,23 @@ export async function getModelImages(filter?: { make?: string; model?: string })
 export async function updateModelImageById(id: number, imageUrl: string) {
   const db = await getDb();
   if (!db) return;
+  const rows = await db.select().from(vehicleModelImages).where(eq(vehicleModelImages.id, id)).limit(1);
   await db.update(vehicleModelImages).set({ imageUrl, source: "manual" }).where(eq(vehicleModelImages.id, id));
+  if (rows[0]) await applyModelImageToVehicles(rows[0].make, rows[0].model, imageUrl);
+}
+
+/**
+ * Propaga uma imagem de modelo para os veículos já cadastrados que casam
+ * (marca + família do modelo), para a curadoria do admin aparecer na hora,
+ * sem esperar a próxima sincronização.
+ */
+export async function applyModelImageToVehicles(make: string, model: string, imageUrl: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(vehicles).set({ imageUrl }).where(and(
+    sql`LOWER(${vehicles.brand}) LIKE ${`%${make}%`}`,
+    sql`LOWER(${vehicles.model}) LIKE ${`${model}%`}`,
+  ));
 }
 
 export async function deleteModelImage(id: number) {
@@ -1072,6 +1088,10 @@ export async function upsertModelImage(data: {
       make: data.make, model: data.model, year: data.year,
       imageUrl: data.imageUrl, source: data.source ?? "manual",
     });
+  }
+  // Curadoria manual reflete imediatamente nos veículos já cadastrados.
+  if ((data.source ?? "manual") === "manual") {
+    await applyModelImageToVehicles(data.make, data.model, data.imageUrl);
   }
 }
 

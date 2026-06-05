@@ -604,11 +604,11 @@ function VehicleCard({
                 )}
               </div>
             </div>
-            <div className="drop-shadow-sm">
+            <div className="drop-shadow-sm mb-3">
               {isVeh ? (
-                <LicensePlate plate={vehicle.plate} size="sm" />
+                <LicensePlate plate={vehicle.plate} size="md" />
               ) : (
-                <AssetTag label={vehicle.plate} size="sm" />
+                <AssetTag label={vehicle.plate} size="md" />
               )}
             </div>
           </div>
