@@ -1011,6 +1011,12 @@ export async function getUserConsents(userId: number) {
 export async function getOpenInvoicesSummary(userId: number) {
   const db = await getDb();
   if (!db) return { count: 0, totalAmount: 0, oldestDueDate: null as Date | null, invoiceId: null as number | null, daysLate: 0 };
+  // Cliente GO360: cobrança real vem do /cobranca deles. Faturas locais são
+  // resíduo de demonstração — não mostrar (evita banner de R$ 89,90 falso).
+  const u = await getUserById(userId);
+  if ((u as any)?.go360ClienteId) {
+    return { count: 0, totalAmount: 0, oldestDueDate: null as Date | null, invoiceId: null as number | null, daysLate: 0 };
+  }
   const now = new Date();
   const open = await db.select().from(invoices)
     .where(and(eq(invoices.userId, userId), inArray(invoices.status, ["overdue", "pending"])))
@@ -1046,10 +1052,11 @@ export async function getUsersWithLateInvoices() {
   if (byUser.size === 0) return [];
 
   const ids = Array.from(byUser.keys());
-  const us = await db.select({ id: users.id, lastBillingReminderAt: users.lastBillingReminderAt }).from(users).where(inArray(users.id, ids));
+  const us = await db.select({ id: users.id, lastBillingReminderAt: users.lastBillingReminderAt, go360ClienteId: users.go360ClienteId }).from(users).where(inArray(users.id, ids));
   const lastMap = new Map(us.map((u) => [u.id, u.lastBillingReminderAt]));
+  const go360Ids = new Set(us.filter((u) => u.go360ClienteId).map((u) => u.id));
 
-  return Array.from(byUser.values()).map((v) => ({
+  return Array.from(byUser.values()).filter((v) => !go360Ids.has(v.userId)).map((v) => ({
     userId: v.userId,
     totalAmount: v.totalAmount,
     daysLate: Math.max(0, Math.floor((now.getTime() - v.oldest.getTime()) / 86400000)),
