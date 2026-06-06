@@ -815,6 +815,10 @@ export const appRouter = router({
     }),
   }),
 
+  summary: router({
+    drive: protectedProcedure.query(({ ctx }) => db.getDriveSummary(ctx.user.id)),
+  }),
+
   sos: router({
     trigger: protectedProcedure.input(z.object({
       vehicleId: z.number().optional(),

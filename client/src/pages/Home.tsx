@@ -108,6 +108,9 @@ export default function Home() {
       {/* Onboarding ativador (some quando tudo configurado) */}
       <ActivationChecklist />
 
+      {/* Resumo de uso (aparece só com trajetos reais) */}
+      <DriveSummaryCard />
+
       {/* TOP banner: recurring-card discount for everyone NOT on recurring card */}
       {(!openInvoices.data || openInvoices.data.count === 0) &&
         (!currentMethod.data || currentMethod.data.type !== "recurring_card") && (
@@ -504,6 +507,33 @@ function Bell({ className }: { className?: string }) {
       <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
       <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
     </svg>
+  );
+}
+
+// Resumo de uso (km hoje/semana). Só aparece quando há trajetos registrados,
+// para não mostrar card vazio a quem ainda não tem telemetria.
+function DriveSummaryCard() {
+  const [, setLocation] = useLocation();
+  const { data } = trpc.summary.drive.useQuery(undefined, { staleTime: 60000 });
+  if (!data || (data.kmWeek <= 0 && data.tripsWeek <= 0)) return null;
+  return (
+    <button
+      onClick={() => setLocation("/trip-history")}
+      className="w-full mb-4 go-card p-4 text-left go-btn-active"
+    >
+      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Seu uso</p>
+      <div className="flex items-center gap-4">
+        <div className="flex-1">
+          <p className="text-2xl font-extrabold text-[#111111] leading-none">{data.kmToday} <span className="text-sm font-medium text-gray-400">km hoje</span></p>
+        </div>
+        <div className="h-8 w-px bg-gray-100" />
+        <div className="flex-1">
+          <p className="text-2xl font-extrabold text-[#111111] leading-none">{data.kmWeek} <span className="text-sm font-medium text-gray-400">km na semana</span></p>
+        </div>
+        <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+      </div>
+      <p className="text-[11px] text-gray-400 mt-2">{data.tripsWeek} trajeto(s) nos últimos 7 dias</p>
+    </button>
   );
 }
 

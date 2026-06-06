@@ -623,6 +623,33 @@ export async function getVehicleTrips(vehicleId: number, limit = 30) {
   return db.select().from(trips).where(eq(trips.vehicleId, vehicleId)).orderBy(desc(trips.startedAt)).limit(limit);
 }
 
+/** Resumo de uso (km) do usuário: hoje e últimos 7 dias. */
+export async function getDriveSummary(userId: number) {
+  const empty = { kmToday: 0, kmWeek: 0, tripsToday: 0, tripsWeek: 0 };
+  const db = await getDb();
+  if (!db) return empty;
+  const vs = await db.select({ id: vehicles.id }).from(vehicles)
+    .where(and(eq(vehicles.userId, userId), eq(vehicles.isDemo, false)));
+  const ids = vs.map((v) => v.id);
+  if (ids.length === 0) return empty;
+  const weekAgo = new Date(Date.now() - 7 * 86400000);
+  const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+  const rows = await db.select().from(trips)
+    .where(and(inArray(trips.vehicleId, ids), gte(trips.startedAt, weekAgo)));
+  let kmToday = 0, kmWeek = 0, tripsToday = 0, tripsWeek = 0;
+  for (const t of rows) {
+    const km = parseFloat(String(t.distanceKm ?? 0)) || 0;
+    kmWeek += km; tripsWeek++;
+    if (new Date(t.startedAt) >= startOfToday) { kmToday += km; tripsToday++; }
+  }
+  return {
+    kmToday: Math.round(kmToday * 10) / 10,
+    kmWeek: Math.round(kmWeek * 10) / 10,
+    tripsToday,
+    tripsWeek,
+  };
+}
+
 export async function getTripById(tripId: number) {
   const db = await getDb();
   if (!db) return null;
