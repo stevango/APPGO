@@ -4,7 +4,8 @@ import { trpc } from "@/lib/trpc";
 import { ChevronLeft, Copy, Car, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BrandMark, LicensePlate } from "@/lib/vehicle";
+import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
+import { isVehicleAsset } from "@/lib/assetIcons";
 import { getVehicleImageUrl } from "@/lib/vehicleImage";
 
 export default function VehicleDetails() {
@@ -85,13 +86,15 @@ export default function VehicleDetails() {
         </div>
       )}
 
-      {/* Título + placa */}
-      <div className="flex items-center justify-between gap-3 mb-4">
-        <div className="min-w-0">
-          <h2 className="text-[17px] font-extrabold text-[#0f172a] leading-tight">{vehicle.brand} {vehicle.model}</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Ficha completa</p>
-        </div>
-        <LicensePlate plate={vehicle.plate} size="sm" />
+      {/* Título + placa (placa em linha própria para não quebrar) */}
+      <div className="mb-4">
+        <h2 className="text-[17px] font-extrabold text-[#0f172a] leading-tight">{vehicle.brand} {vehicle.model}</h2>
+        <p className="text-xs text-gray-400 mt-0.5 mb-3">Ficha completa</p>
+        {isVehicleAsset(vehicle.iconType) ? (
+          <LicensePlate plate={vehicle.plate} size="md" />
+        ) : (
+          <AssetTag label={vehicle.plate} size="md" />
+        )}
       </div>
 
       {/* Ficha */}
