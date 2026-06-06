@@ -394,6 +394,7 @@ export const appRouter = router({
           if (e?.status === 400) return { ok: false as const, reason: "invalid" as const };
           return { ok: false as const, reason: "unavailable" as const };
         }
+        await db.updateUserProfile(ctx.user.id, input);
         return { ok: true as const };
       }),
   }),

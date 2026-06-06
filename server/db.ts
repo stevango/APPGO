@@ -213,6 +213,17 @@ export async function setUserAddress(userId: number, data: { address: string; la
   }).where(eq(users.id, userId));
 }
 
+/** Atualiza nome/e-mail do usuário localmente (após gravar no GO360). */
+export async function updateUserProfile(userId: number, data: { name?: string; email?: string }) {
+  const db = await getDb();
+  if (!db) return;
+  const fields: Record<string, unknown> = {};
+  if (data.name !== undefined) fields.name = data.name;
+  if (data.email !== undefined) fields.email = data.email.trim().toLowerCase();
+  if (Object.keys(fields).length === 0) return;
+  await db.update(users).set(fields).where(eq(users.id, userId));
+}
+
 /**
  * Permanently delete a user and all data linked to them (LGPD / app-store
  * "delete account" requirement). Removes vehicle-scoped data first, then

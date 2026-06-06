@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, ChevronDown, Gauge, Compass, Battery, Satellite, Zap, Power, Activity, AlertTriangle, Layers, Check } from "lucide-react";
+import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, ChevronDown, Gauge, Compass, Battery, Satellite, Zap, Power, Activity, AlertTriangle, Layers, Check, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
@@ -308,14 +308,17 @@ export default function Tracking() {
         </div>
       </div>
 
-      {/* Tracker switcher sheet — change the active equipment without leaving the map */}
+      {/* Tracker switcher — tela cheia com X para fechar */}
       {showSwitcher && vehicles && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowSwitcher(false)} />
-          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-5 pb-8 max-h-[75vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-[#111111] mb-3">Trocar rastreador</h3>
-            <div className="space-y-2">
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in duration-150">
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
+            <h3 className="text-lg font-bold text-[#111111]">Trocar rastreador</h3>
+            <button onClick={() => setShowSwitcher(false)} aria-label="Fechar" className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center go-btn-active">
+              <X className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="space-y-2 max-w-md mx-auto">
               {vehicles.map((v) => {
                 const Icon = getAssetIcon(v.iconType);
                 const active = vehicle != null && v.id != null && v.id === vehicle.id;

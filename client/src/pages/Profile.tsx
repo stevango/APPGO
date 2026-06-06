@@ -5,7 +5,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import {
   ChevronLeft, User, Car, CreditCard, Shield, Bell,
-  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature, MapPin, Route, Images
+  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature, MapPin, Route, Images, Pencil, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddressSearch } from "@/components/AddressSearch";
@@ -38,6 +38,39 @@ export default function Profile() {
   const [speedLimit, setSpeedLimit] = useState<number>(120);
   const [speedTarget, setSpeedTarget] = useState<number | "all">("all");
   const [speedSaving, setSpeedSaving] = useState(false);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [profileForm, setProfileForm] = useState<{ nome: string; email: string }>({ nome: "", email: "" });
+  const updatePerfil = trpc.go360.updatePerfil.useMutation({
+    onSuccess: (res: any) => {
+      if (res?.ok) {
+        utils.auth.me.invalidate();
+        setShowProfileEdit(false);
+        toast.success("Perfil atualizado!");
+      } else if (res?.reason === "dup_email") {
+        toast.error("Este e-mail já está em uso por outro cliente.");
+      } else if (res?.reason === "unavailable") {
+        toast("Edição de perfil estará disponível em breve.");
+      } else if (res?.reason === "invalid") {
+        toast.error("Confira os dados e tente novamente.");
+      } else {
+        toast("Edição indisponível.");
+      }
+    },
+    onError: (e) => toast.error(e.message || "Não foi possível salvar."),
+  });
+  const openProfileEdit = () => {
+    setProfileForm({ nome: (user as any)?.name || "", email: (user as any)?.email || "" });
+    setShowProfileEdit(true);
+  };
+  const saveProfile = () => {
+    const patch: { nome?: string; email?: string } = {};
+    const nome = profileForm.nome.trim();
+    const email = profileForm.email.trim();
+    if (nome && nome !== ((user as any)?.name || "")) patch.nome = nome;
+    if (email && email !== ((user as any)?.email || "")) patch.email = email;
+    if (!patch.nome && !patch.email) { setShowProfileEdit(false); return; }
+    updatePerfil.mutate(patch);
+  };
   const { language, setLanguage, t } = useLanguage();
   const { permission, isSubscribed, isLoading: pushLoading, subscribe, unsubscribe, isSupported } = usePushNotifications();
   const [showPushConfig, setShowPushConfig] = useState(false);
@@ -218,18 +251,27 @@ export default function Profile() {
       {/* Profile Card */}
       <div className="bg-white rounded-2xl p-5 border border-gray-100 mb-6">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-[#243FF7] rounded-full flex items-center justify-center">
+          <div className="w-16 h-16 bg-[#243FF7] rounded-full flex items-center justify-center shrink-0">
             <span className="text-2xl font-bold text-white">
               {user?.name?.charAt(0)?.toUpperCase() || "U"}
             </span>
           </div>
-          <div className="flex-1">
-            <h2 className="text-lg font-bold text-[#111111]">{user?.name || "Usuário"}</h2>
-            <p className="text-sm text-gray-500">{user?.email || ""}</p>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-bold text-[#111111] truncate">{user?.name || "Usuário"}</h2>
+            <p className="text-sm text-gray-500 truncate">{user?.email || ""}</p>
             <div className="mt-1 inline-flex items-center gap-1 bg-[#243FF7]/10 px-2 py-0.5 rounded-full">
               <span className="text-[10px] font-semibold text-[#243FF7]">GO ID</span>
             </div>
           </div>
+          {go360Status.data?.enabled && (
+            <button
+              onClick={openProfileEdit}
+              aria-label="Editar perfil"
+              className="shrink-0 flex items-center gap-1 text-[13px] font-semibold text-[#243FF7] bg-[#243FF7]/8 rounded-full px-3 py-1.5 go-btn-active"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Editar
+            </button>
+          )}
         </div>
       </div>
 
@@ -677,6 +719,54 @@ export default function Profile() {
             )}
           </div>
         </div>
+      )}
+
+      {/* Editar perfil (tela cheia com X) */}
+      {showProfileEdit && createPortal(
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in duration-150">
+          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
+            <h3 className="text-lg font-bold text-[#111111]">Editar perfil</h3>
+            <button onClick={() => setShowProfileEdit(false)} aria-label="Fechar" className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center go-btn-active">
+              <X className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-5">
+            <div className="space-y-4 max-w-md mx-auto">
+              <div>
+                <label className="text-[12px] font-semibold text-gray-400">Nome completo</label>
+                <input
+                  value={profileForm.nome}
+                  onChange={(e) => setProfileForm((s) => ({ ...s, nome: e.target.value }))}
+                  className="w-full mt-1 border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#243FF7]"
+                  placeholder="Seu nome"
+                />
+              </div>
+              <div>
+                <label className="text-[12px] font-semibold text-gray-400">E-mail</label>
+                <input
+                  type="email"
+                  value={profileForm.email}
+                  onChange={(e) => setProfileForm((s) => ({ ...s, email: e.target.value }))}
+                  className="w-full mt-1 border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#243FF7]"
+                  placeholder="voce@email.com"
+                />
+              </div>
+              <p className="text-[11px] text-gray-400 leading-relaxed">
+                Seu CPF não pode ser alterado. As mudanças são salvas no GO360.
+              </p>
+            </div>
+          </div>
+          <div className="p-4 border-t border-gray-100">
+            <Button
+              className="w-full max-w-md mx-auto flex h-12 bg-[#243FF7] hover:bg-[#1a2fd6] rounded-xl"
+              onClick={saveProfile}
+              disabled={updatePerfil.isPending}
+            >
+              {updatePerfil.isPending ? "Salvando..." : <span className="flex items-center gap-2"><Check className="w-4 h-4" /> Salvar</span>}
+            </Button>
+          </div>
+        </div>,
+        document.body,
       )}
 
       {/* Speed Limit Configuration Sheet */}
