@@ -589,7 +589,7 @@ function FleetSummary({ vehicles }: { vehicles: any[] }) {
       onClick={() => setLocation("/vehicles")}
       className="w-full mb-4 go-card p-3.5 flex items-center gap-2 text-left go-btn-active"
     >
-      <span className="text-[13px] font-bold text-[#111111] mr-1">Sua frota</span>
+      <span className="text-[13px] font-bold text-[#111111] mr-1">Seus equipamentos</span>
       <span className="flex items-center gap-1 text-[12px] font-semibold text-green-600">
         <span className="w-2 h-2 rounded-full bg-green-500" />{online}
       </span>
