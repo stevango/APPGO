@@ -39,7 +39,7 @@ export default function Legal() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center gap-3 sticky top-0 z-10">
-        <button onClick={() => setLocation("/profile")} className="go-btn-active">
+        <button onClick={() => setLocation("/profile")} className="go-btn-active" aria-label="Voltar">
           <ChevronLeft className="w-6 h-6 text-[#343C42]" />
         </button>
         <h1 className="text-lg font-bold text-[#111111]">Termos e Privacidade</h1>
@@ -111,7 +111,7 @@ export default function Legal() {
       {openDoc && (
         <div className="fixed inset-0 z-50 bg-white flex flex-col animate-in slide-in-from-bottom duration-300">
           <div className="border-b border-gray-100 px-4 py-4 flex items-center gap-3 shrink-0">
-            <button onClick={() => setOpenDoc(null)} className="go-btn-active">
+            <button onClick={() => setOpenDoc(null)} className="go-btn-active" aria-label="Voltar">
               <ChevronLeft className="w-6 h-6 text-[#343C42]" />
             </button>
             <div className="min-w-0">

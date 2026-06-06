@@ -14,6 +14,7 @@ import { isVehicleAsset, getAssetIcon } from "@/lib/assetIcons";
 import { getVehicleImageUrl } from "@/lib/vehicleImage";
 import { getTrackerStatus } from "@/lib/trackerStatus";
 import DistanceToVehicle from "@/components/DistanceToVehicle";
+import ActivationChecklist from "@/components/ActivationChecklist";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicles } from "@/lib/activeVehicle";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -103,6 +104,9 @@ export default function Home() {
 
       {/* Resumo da frota (visão diária) — só com mais de um equipamento */}
       {!isLoading && vehicles && vehicles.length > 1 && <FleetSummary vehicles={vehicles} />}
+
+      {/* Onboarding ativador (some quando tudo configurado) */}
+      <ActivationChecklist />
 
       {/* TOP banner: recurring-card discount for everyone NOT on recurring card */}
       {(!openInvoices.data || openInvoices.data.count === 0) &&

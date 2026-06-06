@@ -85,7 +85,7 @@ export default function BlockVehicle() {
       {/* Header (fixo no topo) */}
       <div className="sticky top-0 z-30 -mx-4 px-4 pt-6 pb-3 mb-6 bg-[#F5F6FA]/90 backdrop-blur flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => setLocation("/")} className="go-btn-active">
+          <button onClick={() => setLocation("/")} className="go-btn-active" aria-label="Voltar">
             <ChevronLeft className="w-6 h-6 text-[#343C42]" />
           </button>
           <h1 className="text-lg font-bold text-[#111111]">Bloqueio Remoto</h1>

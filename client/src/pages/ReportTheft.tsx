@@ -92,7 +92,7 @@ export default function ReportTheft() {
     <div className="px-4 pb-4 min-h-screen flex flex-col">
       {/* Header (fixo no topo) */}
       <div className="sticky top-0 z-30 -mx-4 px-4 pt-6 pb-3 mb-4 bg-[#F5F6FA]/90 backdrop-blur flex items-center gap-3">
-        <button onClick={() => step > 1 ? setStep(step - 1) : setLocation("/")} className="go-btn-active">
+        <button onClick={() => step > 1 ? setStep(step - 1) : setLocation("/")} className="go-btn-active" aria-label="Voltar">
           <ChevronLeft className="w-6 h-6 text-[#343C42]" />
         </button>
         <h1 className="text-lg font-bold text-[#111111]">Comunicar Furto/Roubo</h1>

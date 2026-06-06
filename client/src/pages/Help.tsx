@@ -59,7 +59,7 @@ export default function Help() {
     <div className="flex flex-col bg-gray-50" style={{ height: "calc(100dvh - 92px - env(safe-area-inset-bottom))" }}>
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 shrink-0">
-        <button onClick={() => setLocation("/profile")} className="go-btn-active">
+        <button onClick={() => setLocation("/profile")} className="go-btn-active" aria-label="Voltar">
           <ChevronLeft className="w-6 h-6 text-[#343C42]" />
         </button>
         <div className="w-9 h-9 rounded-full bg-[#243FF7]/10 flex items-center justify-center">

@@ -263,7 +263,7 @@ export default function Tracking() {
       <div className="absolute top-0 left-0 right-0 z-20 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => setLocation("/")} className="go-btn-active">
+            <button onClick={() => setLocation("/")} className="go-btn-active" aria-label="Voltar">
               <ChevronLeft className="w-6 h-6 text-[#343C42]" />
             </button>
             <button
