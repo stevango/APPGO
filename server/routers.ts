@@ -51,7 +51,7 @@ import { notifyOwner } from "./_core/notification";
 import { registerPushSubscription, unregisterPushSubscription, sendPushToUser } from "./pushService";
 import { reverseGeocode, searchAddress } from "./geocode";
 import { processTelemetry } from "./telemetry";
-import { go360Enabled, go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada, go360FirstAccess, syncGo360Equipment, go360Historico, go360UpdateEquipamento } from "./integrations/go360";
+import { go360Enabled, go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada, go360FirstAccess, syncGo360Equipment, go360Historico, go360UpdateEquipamento, go360UpdatePerfil } from "./integrations/go360";
 
 export const appRouter = router({
   system: systemRouter,
@@ -327,20 +327,20 @@ export const appRouter = router({
         }
       }),
     // Edição dos dados do veículo pelo cliente → grava no GO360 (PATCH) e reflete
-    // no app. Degrada com { ok:false, reason } enquanto a GO360 não abrir a escrita.
+    // no app. Placa/chassi não são editáveis. "" limpa o override (volta ao B2B).
     updateEquipamento: protectedProcedure
       .input(z.object({
         vehicleId: z.number(),
         patch: z.object({
-          cor: z.string().max(40).optional(),
-          placa: z.string().max(10).optional(),
-          chassi: z.string().max(30).optional(),
-          renavam: z.string().max(20).optional(),
           marca: z.string().max(100).optional(),
           modelo: z.string().max(120).optional(),
-          anoFabricacao: z.number().int().min(1950).max(2100).optional(),
-          anoModelo: z.number().int().min(1950).max(2100).optional(),
+          cor: z.string().max(40).optional(),
+          renavam: z.string().max(20).optional(),
           combustivel: z.string().max(30).optional(),
+          cidade: z.string().max(80).optional(),
+          estado: z.string().max(2).optional(),
+          anoFabricacao: z.number().int().min(1900).max(2100).optional(),
+          anoModelo: z.number().int().min(1900).max(2100).optional(),
         }),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -349,30 +349,51 @@ export const appRouter = router({
         if (!vehicle || vehicle.userId !== ctx.user.id) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Veículo não pertence ao usuário." });
         }
-        const ativoId = (vehicle as any)?.go360AtivoId as string | undefined;
-        if (!token || !ativoId) return { ok: false as const, reason: "no_go360" as const };
+        const veiculoId = (vehicle as any)?.go360AtivoId as string | undefined;
+        if (!token || !veiculoId) return { ok: false as const, reason: "no_go360" as const };
 
         const p = input.patch;
+        // Body no formato da GO360. Mantém "" (limpa o override); remove só undefined.
         const campos: Record<string, unknown> = {
-          cor: p.cor, placa: p.placa, chassi: p.chassi, renavam: p.renavam,
-          marca: p.marca, modelo: p.modelo,
-          ano_fabricacao: p.anoFabricacao, ano_modelo: p.anoModelo, combustivel: p.combustivel,
+          marca: p.marca, modelo: p.modelo, cor: p.cor, renavam: p.renavam,
+          combustivel: p.combustivel, cidade: p.cidade, estado: p.estado,
+          ano_fabricacao: p.anoFabricacao, ano_modelo: p.anoModelo,
         };
         Object.keys(campos).forEach((k) => campos[k] === undefined && delete campos[k]);
 
         try {
-          await go360UpdateEquipamento(token, ativoId, campos);
+          await go360UpdateEquipamento(token, veiculoId, campos);
         } catch (e: any) {
           if (e?.status === 401 || e?.status === 403) throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão GO360 expirada." });
+          if (e?.status === 400) return { ok: false as const, reason: "invalid" as const, body: e?.body };
           // 404/405/501/etc → endpoint de escrita ainda não disponível.
           return { ok: false as const, reason: "unavailable" as const };
         }
 
         // Reflete localmente os campos editados.
+        const cityState = (p.cidade != null || p.estado != null)
+          ? [p.cidade ?? "", p.estado ?? ""].filter(Boolean).join(" - ")
+          : undefined;
         await db.updateVehicleFields(input.vehicleId, {
-          color: p.cor, plate: p.placa, chassi: p.chassi, renavam: p.renavam,
-          brand: p.marca, model: p.modelo, anoFabricacao: p.anoFabricacao, anoModelo: p.anoModelo, fuel: p.combustivel,
+          brand: p.marca, model: p.modelo, color: p.cor, renavam: p.renavam,
+          fuel: p.combustivel, cityState, anoFabricacao: p.anoFabricacao, anoModelo: p.anoModelo,
         });
+        return { ok: true as const };
+      }),
+    // Edição do perfil do cliente (nome/email) → grava no GO360.
+    updatePerfil: protectedProcedure
+      .input(z.object({ nome: z.string().max(120).optional(), email: z.string().email().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const token = (ctx.user as any)?.go360Token as string | undefined;
+        if (!token) return { ok: false as const, reason: "no_go360" as const };
+        try {
+          await go360UpdatePerfil(token, input);
+        } catch (e: any) {
+          if (e?.status === 401 || e?.status === 403) throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão GO360 expirada." });
+          if (e?.status === 409) return { ok: false as const, reason: "dup_email" as const };
+          if (e?.status === 400) return { ok: false as const, reason: "invalid" as const };
+          return { ok: false as const, reason: "unavailable" as const };
+        }
         return { ok: true as const };
       }),
   }),

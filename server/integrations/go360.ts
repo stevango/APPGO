@@ -58,12 +58,18 @@ export function go360FirstAccess(input: { email: string; senhaTemp: string; nova
 }
 
 /**
- * Atualiza dados do veículo no GO360 (edição pelo cliente). Depende de a GO360
- * expor escrita: PATCH /equipamento  body: { ativoId, campos: {...} }.
- * Enquanto não existir, retorna erro (o app degrada com aviso).
+ * Atualiza dados do veículo no GO360 (edição pelo cliente).
+ * Contrato GO360: PATCH /equipamento/veiculo/:id  body: { marca?, modelo?, cor?,
+ * ano_fabricacao?, ano_modelo?, renavam?, combustivel?, cidade?, estado? }.
+ * Placa/chassi não são editáveis. Valor "" remove o override (volta ao B2B).
  */
-export function go360UpdateEquipamento(token: string, ativoId: string, campos: Record<string, unknown>) {
-  return go360Request("/equipamento", { method: "PATCH", token, body: { ativoId, campos } });
+export function go360UpdateEquipamento(token: string, veiculoId: string, campos: Record<string, unknown>) {
+  return go360Request(`/equipamento/veiculo/${encodeURIComponent(veiculoId)}`, { method: "PATCH", token, body: campos });
+}
+
+/** Atualiza o perfil do cliente no GO360. PATCH /me { nome?, email? } (CPF fixo). */
+export function go360UpdatePerfil(token: string, data: { nome?: string; email?: string }) {
+  return go360Request("/me", { method: "PATCH", token, body: data });
 }
 
 export const go360Me = (token: string) => go360Request("/me", { token });

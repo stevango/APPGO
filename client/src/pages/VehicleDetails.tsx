@@ -10,16 +10,17 @@ import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
 import { isVehicleAsset } from "@/lib/assetIcons";
 import { getVehicleImageUrl } from "@/lib/vehicleImage";
 
-const EDIT_FIELDS: Array<{ key: string; label: string; numeric?: boolean }> = [
+// Placa e chassi NÃO são editáveis (chaves contratuais B2B no GO360).
+const EDIT_FIELDS: Array<{ key: string; label: string; numeric?: boolean; max?: number }> = [
   { key: "marca", label: "Marca" },
   { key: "modelo", label: "Modelo" },
   { key: "cor", label: "Cor" },
-  { key: "placa", label: "Placa" },
   { key: "anoFabricacao", label: "Ano de fabricação", numeric: true },
   { key: "anoModelo", label: "Ano do modelo", numeric: true },
-  { key: "chassi", label: "Chassi" },
   { key: "renavam", label: "Renavam", numeric: true },
   { key: "combustivel", label: "Combustível" },
+  { key: "cidade", label: "Cidade" },
+  { key: "estado", label: "Estado (UF)", max: 2 },
 ];
 
 export default function VehicleDetails() {
@@ -42,6 +43,8 @@ export default function VehicleDetails() {
         toast.success("Dados atualizados!");
       } else if (res?.reason === "unavailable") {
         toast("Edição estará disponível em breve (aguardando a GO360 liberar).");
+      } else if (res?.reason === "invalid") {
+        toast.error("Algum campo não passou na validação. Confira e tente de novo.");
       } else {
         toast("Edição indisponível para este equipamento.");
       }
@@ -53,39 +56,41 @@ export default function VehicleDetails() {
 
   const openEdit = () => {
     if (!vehicle) return;
+    const [cidadePart = "", estadoPart = ""] = String(vehicle.cityState ?? "").split(" - ");
     setForm({
       marca: vehicle.brand ?? "",
       modelo: vehicle.model ?? "",
       cor: vehicle.color ?? "",
-      placa: vehicle.plate ?? "",
       anoFabricacao: vehicle.anoFabricacao != null ? String(vehicle.anoFabricacao) : "",
       anoModelo: vehicle.anoModelo != null ? String(vehicle.anoModelo) : (vehicle.year != null ? String(vehicle.year) : ""),
-      chassi: vehicle.chassi ?? "",
       renavam: vehicle.renavam ?? "",
       combustivel: vehicle.fuel ?? "",
+      cidade: cidadePart,
+      estado: estadoPart,
     });
     setEditing(true);
   };
 
   const saveEdit = () => {
     if (!vehicle) return;
-    const patch: Record<string, any> = {};
+    const [cidadeCur = "", estadoCur = ""] = String(vehicle.cityState ?? "").split(" - ");
     const cur: Record<string, any> = {
-      marca: vehicle.brand ?? "", modelo: vehicle.model ?? "", cor: vehicle.color ?? "", placa: vehicle.plate ?? "",
+      marca: vehicle.brand ?? "", modelo: vehicle.model ?? "", cor: vehicle.color ?? "",
       anoFabricacao: vehicle.anoFabricacao ?? "", anoModelo: vehicle.anoModelo ?? vehicle.year ?? "",
-      chassi: vehicle.chassi ?? "", renavam: vehicle.renavam ?? "", combustivel: vehicle.fuel ?? "",
+      renavam: vehicle.renavam ?? "", combustivel: vehicle.fuel ?? "", cidade: cidadeCur, estado: estadoCur,
     };
+    const patch: Record<string, any> = {};
     for (const f of EDIT_FIELDS) {
       const raw = (form[f.key] ?? "").trim();
       if (f.numeric) {
         const n = raw === "" ? undefined : Number(raw);
         if (n !== undefined && String(n) !== String(cur[f.key])) patch[f.key] = n;
       } else if (raw !== String(cur[f.key] ?? "")) {
-        patch[f.key] = raw;
+        patch[f.key] = raw; // "" limpa o override no GO360
       }
     }
     if (Object.keys(patch).length === 0) { setEditing(false); return; }
-    if (patch.chassi && patch.chassi.length !== 17) { toast.error("Chassi deve ter 17 caracteres."); return; }
+    if (patch.estado && patch.estado.length !== 2) { toast.error("Estado deve ter 2 letras (UF)."); return; }
     updateMut.mutate({ vehicleId: vehicle.id, patch });
   };
 
@@ -137,14 +142,6 @@ export default function VehicleDetails() {
           <ChevronLeft className="w-6 h-6 text-[#343C42]" />
         </button>
         <h1 className="text-lg font-bold text-[#111111] flex-1">Detalhes do veículo</h1>
-        {go360.data?.enabled && (vehicle as any).go360AtivoId && isVehicleAsset(vehicle.iconType) && (
-          <button
-            onClick={openEdit}
-            className="flex items-center gap-1 text-[13px] font-semibold text-[#243FF7] bg-[#243FF7]/8 rounded-full px-3 py-1.5 go-btn-active"
-          >
-            <Pencil className="w-3.5 h-3.5" /> Editar
-          </button>
-        )}
       </div>
 
       {/* Hero */}
@@ -178,6 +175,17 @@ export default function VehicleDetails() {
 
       {/* Ficha */}
       <div className="go-card p-4">
+        <div className="flex items-center justify-between mb-1 pb-2 border-b border-gray-100">
+          <h3 className="text-[13px] font-bold text-[#111111]">Dados do veículo</h3>
+          {go360.data?.enabled && (vehicle as any).go360AtivoId && isVehicleAsset(vehicle.iconType) && (
+            <button
+              onClick={openEdit}
+              className="flex items-center gap-1 text-[13px] font-semibold text-[#243FF7] bg-[#243FF7]/8 rounded-full px-3 py-1.5 go-btn-active"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Editar
+            </button>
+          )}
+        </div>
         <div className="divide-y divide-gray-100">
           {rows.map((r) => (
             <div key={r.label} className="flex items-center justify-between gap-3 py-2.5">
