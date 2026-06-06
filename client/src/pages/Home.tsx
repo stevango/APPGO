@@ -584,27 +584,54 @@ function FleetSummary({ vehicles }: { vehicles: any[] }) {
     else offline++;
   }
   const needAttention = standby + offline;
+  const total = vehicles.length;
+
+  const Chip = ({ count, label, dot, tint, active }: {
+    count: number; label: string; dot: string; tint: string; active: boolean;
+  }) => (
+    <span
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-semibold ${
+        active ? tint : "bg-gray-50 text-gray-300"
+      }`}
+    >
+      <span className={`w-2 h-2 rounded-full ${active ? dot : "bg-gray-300"}`} />
+      {count} <span className="font-medium">{label}</span>
+    </span>
+  );
+
   return (
     <button
       onClick={() => setLocation("/vehicles")}
-      className="w-full mb-4 go-card p-3.5 flex items-center gap-2 text-left go-btn-active"
+      className="w-full mb-4 go-card p-4 text-left go-btn-active"
     >
-      <span className="text-[13px] font-bold text-[#111111] mr-1">Seus equipamentos</span>
-      <span className="flex items-center gap-1 text-[12px] font-semibold text-green-600">
-        <span className="w-2 h-2 rounded-full bg-green-500" />{online}
-      </span>
-      <span className="flex items-center gap-1 text-[12px] font-semibold text-amber-600">
-        <span className="w-2 h-2 rounded-full bg-amber-500" />{standby}
-      </span>
-      <span className="flex items-center gap-1 text-[12px] font-semibold text-red-500">
-        <span className="w-2 h-2 rounded-full bg-red-400" />{offline}
-      </span>
-      <span className="ml-auto text-[11px] font-medium text-gray-400">
-        {needAttention > 0
-          ? `${needAttention} ${needAttention === 1 ? "precisa" : "precisam"} de atenção`
-          : "tudo em dia ✓"}
-      </span>
-      <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+      {/* Linha 1: título + status geral */}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="min-w-0">
+          <p className="text-[14px] font-bold text-[#111111] leading-tight">Seus equipamentos</p>
+          <p className="text-[11px] text-gray-400 font-medium">
+            {total} {total === 1 ? "rastreador" : "rastreadores"}
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span
+            className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${
+              needAttention > 0 ? "bg-amber-50 text-amber-600" : "bg-green-50 text-green-600"
+            }`}
+          >
+            {needAttention > 0
+              ? `${needAttention} ${needAttention === 1 ? "precisa" : "precisam"} de atenção`
+              : "Tudo em dia ✓"}
+          </span>
+          <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+        </div>
+      </div>
+
+      {/* Linha 2: contagem por status */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Chip count={online} label="Online" dot="bg-green-500" tint="bg-green-50 text-green-600" active={online > 0} />
+        <Chip count={standby} label="Standby" dot="bg-amber-500" tint="bg-amber-50 text-amber-600" active={standby > 0} />
+        <Chip count={offline} label="Offline" dot="bg-red-400" tint="bg-red-50 text-red-500" active={offline > 0} />
+      </div>
     </button>
   );
 }

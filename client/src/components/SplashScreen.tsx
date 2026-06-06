@@ -80,27 +80,20 @@ export function SplashScreen({ onFinish, duration = 2500 }: SplashScreenProps) {
         fadeIn ? "opacity-100" : "opacity-0"
       }`}
     >
-      {/* Logo GO */}
-      <div className="absolute top-12 left-1/2 -translate-x-1/2">
-        <GoMark height={32} />
-      </div>
-
-      {/* Ícone central com glow */}
-      <div className="relative mb-8">
-        <div className="absolute inset-0 bg-white/10 rounded-full blur-2xl scale-150" />
-        <div className="relative w-24 h-24 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20">
-          <Icon className="w-12 h-12 text-white" strokeWidth={1.5} />
-        </div>
+      {/* Marca GO — herói central com glow */}
+      <div className="relative mb-10">
+        <div className="absolute inset-0 bg-white/15 rounded-full blur-3xl scale-[2.2]" />
+        <GoMark height={96} className="relative drop-shadow-[0_8px_24px_rgba(0,0,0,0.18)]" />
       </div>
 
       {/* Mensagem principal */}
-      <h1 className="text-white text-3xl font-black text-center leading-tight whitespace-pre-line tracking-tight">
+      <h1 className="text-white text-2xl font-black text-center leading-tight whitespace-pre-line tracking-tight px-6">
         {message.text}
       </h1>
 
       {/* Subtítulo */}
-      <p className="text-white/60 text-sm mt-4 font-medium">
-        {message.subtitle}
+      <p className="text-white/70 text-sm mt-3 font-medium flex items-center gap-1.5">
+        <Icon className="w-4 h-4" strokeWidth={2} /> {message.subtitle}
       </p>
 
       {/* Loading bar */}
@@ -143,27 +136,20 @@ export function LoadingSplash() {
 
   return (
     <div className="fixed inset-0 z-[9999] bg-[#243FF7] flex flex-col items-center justify-center">
-      {/* Logo GO */}
-      <div className="absolute top-12 left-1/2 -translate-x-1/2">
-        <GoMark height={32} />
+      {/* Marca GO — herói central com glow (fixo, não pisca com o carrossel) */}
+      <div className="relative mb-10">
+        <div className="absolute inset-0 bg-white/15 rounded-full blur-3xl scale-[2.2]" />
+        <GoMark height={96} className="relative drop-shadow-[0_8px_24px_rgba(0,0,0,0.18)]" />
       </div>
 
       <div className={`flex flex-col items-center transition-opacity duration-300 ${fade ? "opacity-100" : "opacity-0"}`}>
-        {/* Ícone central */}
-        <div className="relative mb-8">
-          <div className="absolute inset-0 bg-white/10 rounded-full blur-2xl scale-150" />
-          <div className="relative w-24 h-24 bg-white/15 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20">
-            <Icon className="w-12 h-12 text-white" strokeWidth={1.5} />
-          </div>
-        </div>
-
         {/* Mensagem */}
-        <h1 className="text-white text-3xl font-black text-center leading-tight whitespace-pre-line tracking-tight px-6">
+        <h1 className="text-white text-2xl font-black text-center leading-tight whitespace-pre-line tracking-tight px-6">
           {message.text}
         </h1>
 
-        <p className="text-white/60 text-sm mt-4 font-medium">
-          {message.subtitle}
+        <p className="text-white/70 text-sm mt-3 font-medium flex items-center gap-1.5">
+          <Icon className="w-4 h-4" strokeWidth={2} /> {message.subtitle}
         </p>
       </div>
 
