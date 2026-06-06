@@ -24,7 +24,7 @@ export default function FullScreenModal({
     // para o conteúdo/rodapé não ficarem sob ela.
     <div
       className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in duration-150"
-      style={{ paddingBottom: "calc(68px + env(safe-area-inset-bottom))" }}
+      style={{ paddingBottom: "calc(92px + env(safe-area-inset-bottom))" }}
     >
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100 shrink-0">
         <div className="min-w-0">

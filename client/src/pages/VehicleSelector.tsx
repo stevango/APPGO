@@ -120,9 +120,9 @@ export default function VehicleSelector() {
                     </p>
                     <div className="mt-1.5">
                       {isVehicleAsset(vehicle.iconType) ? (
-                        <LicensePlate plate={vehicle.plate} size="md" />
+                        <LicensePlate plate={vehicle.plate} size="sm" />
                       ) : (
-                        <AssetTag label={vehicle.plate} size="md" />
+                        <AssetTag label={vehicle.plate} size="sm" />
                       )}
                     </div>
                     {vehicle.color && (

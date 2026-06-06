@@ -103,7 +103,7 @@ export function LicensePlate({ plate, size = "md" }: { plate: string; size?: "sm
   }[size];
 
   return (
-    <div className={`inline-flex flex-col overflow-hidden border-2 border-gray-800 bg-white shadow-sm ${dims.radius}`}>
+    <div className={`inline-flex flex-col overflow-hidden border-2 border-gray-800 bg-white shadow-sm shrink-0 ${dims.radius}`}>
       {/* Mercosul top bar */}
       <div className={`bg-[#0b3bd1] flex items-center justify-between px-1.5 ${dims.bar}`}>
         <span className="font-bold text-white leading-none">BR</span>
@@ -111,8 +111,8 @@ export function LicensePlate({ plate, size = "md" }: { plate: string; size?: "sm
         <span className="text-[#E2FF04] leading-none">★</span>
       </div>
       {/* Plate number */}
-      <div className={`text-center ${dims.body}`}>
-        <span className="font-mono font-extrabold text-gray-900 tracking-[0.12em] leading-none">{text}</span>
+      <div className={`text-center whitespace-nowrap ${dims.body}`}>
+        <span className="font-mono font-extrabold text-gray-900 tracking-[0.12em] leading-none whitespace-nowrap">{text}</span>
       </div>
     </div>
   );
