@@ -1,4 +1,5 @@
 import { useLocation } from "wouter";
+import { useEffect, useRef } from "react";
 import { Home, MapPin, Bell, User, AlertTriangle } from "lucide-react";
 
 interface MobileLayoutProps {
@@ -7,6 +8,13 @@ interface MobileLayoutProps {
 
 export default function MobileLayout({ children }: MobileLayoutProps) {
   const [location, setLocation] = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Toda troca de página começa no topo (o scroll fica no <main>, não na janela).
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location]);
 
   const navItems = [
     { path: "/", icon: Home, label: "Início" },
@@ -19,7 +27,7 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
   return (
     <div className="min-h-screen bg-[#F5F6FA] flex flex-col max-w-md mx-auto relative">
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto pb-24 no-scrollbar">
+      <main ref={mainRef} className="flex-1 overflow-y-auto pb-24 no-scrollbar">
         <div className="page-enter">
           {children}
         </div>
