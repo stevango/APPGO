@@ -14,6 +14,8 @@ import { sendMaintenanceReminders } from "../maintenance";
 import { startScheduler } from "../scheduler";
 import { ingestTelemetry } from "../telemetry";
 import { go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada } from "../integrations/go360";
+import { sdk } from "./sdk";
+import * as db from "../db";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -132,6 +134,41 @@ async function startServer() {
       res.status(500).json({ error: "failed" });
     }
   });
+  // Proxy autenticado da ficha técnica: serve a página da GO360 pelo nosso
+  // domínio (sem X-Frame-Options/CSP que bloqueiam o iframe) para exibir DENTRO
+  // do app. Só serve a URL salva no veículo do próprio usuário (não é open proxy).
+  app.get("/api/ficha/:vehicleId", async (req, res) => {
+    try {
+      const user = await sdk.authenticateRequest(req).catch(() => null);
+      if (!user) { res.status(401).send("Faça login para ver a ficha."); return; }
+      const id = Number(req.params.vehicleId);
+      const vehicles = await db.getUserVehicles(user.id);
+      const vehicle = vehicles.find((v) => v.id === id);
+      const url = (vehicle as any)?.fichaUrl as string | undefined;
+      if (!url || !/^https?:\/\//.test(url)) { res.status(404).send("Ficha não disponível."); return; }
+
+      const upstream = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 GOApp", Accept: "text/html,*/*" } });
+      const ct = upstream.headers.get("content-type") || "text/html; charset=utf-8";
+      // Permite o embed no nosso próprio domínio (o middleware global já põe SAMEORIGIN).
+      res.removeHeader("X-Frame-Options");
+      res.removeHeader("Content-Security-Policy");
+      res.setHeader("Content-Type", ct);
+
+      if (ct.includes("text/html")) {
+        let html = await upstream.text();
+        const baseTag = `<base href="${url}">`; // assets/links relativos resolvem na origem
+        html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => m + baseTag) : baseTag + html;
+        res.status(upstream.status).send(html);
+      } else {
+        const buf = Buffer.from(await upstream.arrayBuffer());
+        res.status(upstream.status).send(buf);
+      }
+    } catch (e) {
+      console.error("[Ficha] proxy failed", e);
+      res.status(502).send("Não foi possível carregar a ficha agora.");
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",

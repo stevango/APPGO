@@ -51,7 +51,7 @@ export default function FichaTecnica() {
               </div>
             )}
             <iframe
-              src={url}
+              src={`/api/ficha/${id}`}
               title="Ficha técnica do veículo"
               onLoad={() => setLoaded(true)}
               className="w-full h-full border-0"
