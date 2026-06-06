@@ -1,6 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
-import { MapPin, Clock, Gauge, ArrowLeft, Route, Calendar, ChevronRight, Loader2 } from "lucide-react";
+import { MapPin, Clock, Gauge, ArrowLeft, Route, Calendar, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { MapView, createDot, createPolyline, fitToPoints } from "@/components/Map";
@@ -298,6 +298,19 @@ function LocalTripHistory() {
                 <div className="h-3 bg-white/10 rounded w-2/3" />
               </div>
             ))}
+          </div>
+        ) : tripsQuery.isError ? (
+          <div className="text-center py-12">
+            <AlertTriangle className="w-12 h-12 text-red-400/60 mx-auto mb-3" />
+            <p className="text-white/70 text-sm font-medium">Erro ao carregar os trajetos</p>
+            <p className="text-white/40 text-xs mt-1 mb-4">Verifique sua conexão e tente novamente.</p>
+            <button
+              onClick={() => tripsQuery.refetch()}
+              disabled={tripsQuery.isRefetching}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#243FF7] text-white font-semibold px-5 py-2.5 active:scale-95 disabled:opacity-60"
+            >
+              {tripsQuery.isRefetching ? "Tentando..." : "Tentar novamente"}
+            </button>
           </div>
         ) : filteredTrips.length === 0 ? (
           <div className="text-center py-12">

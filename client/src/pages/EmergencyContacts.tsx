@@ -7,6 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import ErrorState from "@/components/ErrorState";
 
 export default function EmergencyContacts() {
   const [, setLocation] = useLocation();
@@ -20,7 +21,7 @@ export default function EmergencyContacts() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [sosData, setSosData] = useState<{ type: string; latitude?: string; longitude?: string; address?: string } | null>(null);
 
-  const { data: contacts = [], isLoading, refetch } = trpc.emergencyContacts.list.useQuery();
+  const { data: contacts = [], isLoading, isError, refetch, isRefetching } = trpc.emergencyContacts.list.useQuery();
   const { data: primaryContact } = trpc.emergencyContacts.getPrimary.useQuery();
   const createMutation = trpc.emergencyContacts.create.useMutation();
   const updateMutation = trpc.emergencyContacts.update.useMutation();
@@ -276,6 +277,8 @@ export default function EmergencyContacts() {
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
           </div>
+        ) : isError ? (
+          <ErrorState title="Erro ao carregar os contatos" onRetry={() => refetch()} retrying={isRefetching} />
         ) : contacts.length === 0 ? (
           <div className="text-center py-12">
             <Heart className="w-12 h-12 text-gray-300 mx-auto mb-4" />

@@ -5,6 +5,7 @@ import {
   Battery, Zap, Wifi, CheckCheck, Gauge, Wrench, History
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ErrorState from "@/components/ErrorState";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const typeIcons: Record<string, any> = {
@@ -41,7 +42,7 @@ const typeColors: Record<string, string> = {
 
 export default function Notifications() {
   const [, setLocation] = useLocation();
-  const { data: notifications, isLoading } = trpc.notifications.list.useQuery();
+  const { data: notifications, isLoading, isError, refetch, isRefetching } = trpc.notifications.list.useQuery();
   const markAllRead = trpc.notifications.markAllRead.useMutation({
     onSuccess: () => {
       utils.notifications.list.invalidate();
@@ -100,6 +101,12 @@ export default function Notifications() {
             </div>
           ))}
         </div>
+      ) : isError ? (
+        <ErrorState
+          title="Erro ao carregar notificações"
+          onRetry={() => refetch()}
+          retrying={isRefetching}
+        />
       ) : notifications && notifications.length > 0 ? (
         <div className="space-y-2">
           {notifications.map((notification: any) => {

@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import L from "leaflet";
 import { MapView, createDot, createCircle } from "@/components/Map";
 import { AddressSearch } from "@/components/AddressSearch";
+import ErrorState from "@/components/ErrorState";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const geofenceTypes = [
   { value: "casa", icon: Home, label: "Casa" },
@@ -37,7 +39,7 @@ export default function Geofences() {
   const radiusRef = useRef(radius);
   const mapRef = useRef<L.Map | null>(null);
 
-  const { data: geofences } = trpc.geofences.list.useQuery();
+  const { data: geofences, isLoading: geofencesLoading, isError: geofencesError, refetch: refetchGeofences, isRefetching: geofencesRefetching } = trpc.geofences.list.useQuery();
   const { data: vehicles } = trpc.vehicles.list.useQuery();
   const utils = trpc.useUtils();
 
@@ -313,7 +315,23 @@ export default function Geofences() {
       </div>
 
       {/* Geofences List */}
-      {geofences && geofences.length > 0 ? (
+      {geofencesLoading ? (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-xl p-4 border border-gray-100">
+              <div className="flex items-center gap-3">
+                <Skeleton className="w-10 h-10 rounded-xl" />
+                <div className="flex-1">
+                  <Skeleton className="w-28 h-4 mb-1.5" />
+                  <Skeleton className="w-16 h-3" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : geofencesError ? (
+        <ErrorState title="Erro ao carregar as cercas" onRetry={() => refetchGeofences()} retrying={geofencesRefetching} />
+      ) : geofences && geofences.length > 0 ? (
         <div className="space-y-3">
           {geofences.map((fence: any) => {
             const typeInfo = geofenceTypes.find((t) => t.value === fence.type) || geofenceTypes[6];

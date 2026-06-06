@@ -2,6 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { ChevronLeft, Bell, BellRing, Mail, MessageSquare, Smartphone, ShieldCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import ErrorState from "@/components/ErrorState";
 
 const channelMeta: Record<string, { label: string; icon: any; color: string }> = {
   push: { label: "Push", icon: BellRing, color: "#243FF7" },
@@ -19,7 +20,7 @@ const severityMeta: Record<string, { label: string; color: string; bg: string }>
 
 export default function AlertsHistory() {
   const [, setLocation] = useLocation();
-  const { data, isLoading } = trpc.alerts.history.useQuery();
+  const { data, isLoading, isError, refetch, isRefetching } = trpc.alerts.history.useQuery();
 
   return (
     <div className="px-4 pb-4">
@@ -42,6 +43,8 @@ export default function AlertsHistory() {
             </div>
           ))}
         </div>
+      ) : isError ? (
+        <ErrorState title="Erro ao carregar o histórico" onRetry={() => refetch()} retrying={isRefetching} />
       ) : data && data.length > 0 ? (
         <div className="space-y-2">
           {data.map((log: any) => {

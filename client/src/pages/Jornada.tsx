@@ -1,6 +1,7 @@
 import { useLocation } from "wouter";
 import { ChevronLeft, Check, Clock, Circle, ShieldCheck } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import ErrorState from "@/components/ErrorState";
 
 type Etapa = { id: string; ordem: number; titulo: string; status: "concluido" | "em_andamento" | "pendente"; desde?: string | null };
 
@@ -30,6 +31,8 @@ export default function Jornada() {
       <div className="px-4 py-5">
         {q.isLoading ? (
           <div className="go-card p-6 animate-pulse h-64" />
+        ) : q.isError ? (
+          <ErrorState title="Erro ao carregar sua jornada" onRetry={() => q.refetch()} retrying={q.isRefetching} />
         ) : !result || !result.ok ? (
           <div className="go-card p-8 text-center">
             <ShieldCheck className="w-10 h-10 text-gray-300 mx-auto mb-3" />
