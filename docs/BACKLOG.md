@@ -1,5 +1,26 @@
 # Backlog priorizado — GO
 
+> ## ✅ Concluído (rodada de execução 2026-06)
+> **Segurança (Sprint 0 inteiro):** anti-IDOR (assertVehicleOwner em todas as
+> procedures críticas), rate limiting nas mutations sensíveis, validação zod
+> reforçada, TRPCError correto, sessão 1 ano→90 dias, timeout no proxy da ficha,
+> **índices de DB**, **go360Token criptografado** (opt-in via `TOKEN_ENC_KEY`).
+> **Retenção/UX:** distância do celular até o equipamento (+ "Como chegar"),
+> resumo da frota na Home, status unificado Online/Standby/Offline (regra
+> 24/48/72h), **push de reengajamento** (inativos 7d), **onboarding ativador**
+> (checklist push/contato/cerca), fatura demo removida p/ GO360.
+> **UI/A11y:** todos os modais em tela cheia com X e navegação sempre visível,
+> cabeçalhos fixos (sticky), loaders da marca + auto-reload pós-deploy,
+> aria-label nos "voltar".
+>
+> **Pendente (precisa de dado real / native / decisão):** resumo diário com km,
+> **score de direção**, **widget de tela inicial**, ranking — dependem de
+> telemetria fluindo e/ou desenvolvimento nativo. Revisão fina de contraste.
+>
+> Para ligar a criptografia do token: definir `TOKEN_ENC_KEY` no Railway.
+
+---
+
 Plano de ação derivado da [`AUDITORIA.md`](./AUDITORIA.md). Ordenado por
 **impacto × esforço**. Norte: **fazer o usuário voltar todo dia** (CS/CX/UI/UX),
 sem abrir mão de segurança e escalabilidade.
