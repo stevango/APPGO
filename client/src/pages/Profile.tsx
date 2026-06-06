@@ -783,10 +783,13 @@ export default function Profile() {
               <div className="w-11 h-11 bg-[#243FF7]/10 rounded-xl flex items-center justify-center shrink-0">
                 <Gauge className="w-5 h-5 text-[#243FF7]" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-bold text-[#111111]">Limite de Velocidade</h3>
                 <p className="text-xs text-gray-500">Receba alertas ao ultrapassar o limite</p>
               </div>
+              <button onClick={() => setShowSpeedConfig(false)} aria-label="Fechar" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center go-btn-active shrink-0">
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
             </div>
 
             {/* Selecionar a qual veículo aplicar */}

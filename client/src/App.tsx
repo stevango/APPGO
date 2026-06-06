@@ -10,33 +10,50 @@ import { LoadingSplash, SplashScreen } from "./components/SplashScreen";
 import PageLoader from "./components/PageLoader";
 import { useState, useEffect, useRef, lazy, Suspense } from "react";
 
+// Após um deploy novo, os chunks antigos somem do servidor. Se a sessão estava
+// aberta, o import dinâmico falha ("Failed to fetch dynamically imported
+// module"). Recarregamos uma vez para pegar a versão nova (sem loop infinito).
+function lazyWithRetry(factory: () => Promise<any>) {
+  return lazy(() =>
+    factory().catch((err: unknown) => {
+      const key = "go-chunk-reload-at";
+      const last = Number(sessionStorage.getItem(key) || 0);
+      if (Date.now() - last > 10000) {
+        sessionStorage.setItem(key, String(Date.now()));
+        window.location.reload();
+      }
+      throw err;
+    }),
+  );
+}
+
 // Lazy-loaded pages: each becomes its own chunk, so the initial load only ships
 // what the first screen needs. Heavy pages (maps, charts) load on demand.
-const Home = lazy(() => import("./pages/Home"));
-const Tracking = lazy(() => import("./pages/Tracking"));
-const SOS = lazy(() => import("./pages/SOS"));
-const Notifications = lazy(() => import("./pages/Notifications"));
-const AlertsHistory = lazy(() => import("./pages/AlertsHistory"));
-const Profile = lazy(() => import("./pages/Profile"));
-const Geofences = lazy(() => import("./pages/Geofences"));
-const BlockVehicle = lazy(() => import("./pages/BlockVehicle"));
-const ReportTheft = lazy(() => import("./pages/ReportTheft"));
-const TripHistory = lazy(() => import("./pages/TripHistory"));
-const ShareLocation = lazy(() => import("./pages/ShareLocation"));
-const SharedView = lazy(() => import("./pages/SharedView"));
-const VehicleSelector = lazy(() => import("./pages/VehicleSelector"));
-const VehicleCare = lazy(() => import("./pages/VehicleCare"));
-const PaymentManagement = lazy(() => import("./pages/PaymentManagement"));
-const PaymentHistory = lazy(() => import("./pages/PaymentHistory"));
-const EmergencyContacts = lazy(() => import("./pages/EmergencyContacts"));
-const Help = lazy(() => import("./pages/Help"));
-const Legal = lazy(() => import("./pages/Legal"));
-const Contract = lazy(() => import("./pages/Contract"));
-const Jornada = lazy(() => import("./pages/Jornada"));
-const AdminVehicleImages = lazy(() => import("./pages/AdminVehicleImages"));
-const VehicleDetails = lazy(() => import("./pages/VehicleDetails"));
-const FichaTecnica = lazy(() => import("./pages/FichaTecnica"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const Home = lazyWithRetry(() => import("./pages/Home"));
+const Tracking = lazyWithRetry(() => import("./pages/Tracking"));
+const SOS = lazyWithRetry(() => import("./pages/SOS"));
+const Notifications = lazyWithRetry(() => import("./pages/Notifications"));
+const AlertsHistory = lazyWithRetry(() => import("./pages/AlertsHistory"));
+const Profile = lazyWithRetry(() => import("./pages/Profile"));
+const Geofences = lazyWithRetry(() => import("./pages/Geofences"));
+const BlockVehicle = lazyWithRetry(() => import("./pages/BlockVehicle"));
+const ReportTheft = lazyWithRetry(() => import("./pages/ReportTheft"));
+const TripHistory = lazyWithRetry(() => import("./pages/TripHistory"));
+const ShareLocation = lazyWithRetry(() => import("./pages/ShareLocation"));
+const SharedView = lazyWithRetry(() => import("./pages/SharedView"));
+const VehicleSelector = lazyWithRetry(() => import("./pages/VehicleSelector"));
+const VehicleCare = lazyWithRetry(() => import("./pages/VehicleCare"));
+const PaymentManagement = lazyWithRetry(() => import("./pages/PaymentManagement"));
+const PaymentHistory = lazyWithRetry(() => import("./pages/PaymentHistory"));
+const EmergencyContacts = lazyWithRetry(() => import("./pages/EmergencyContacts"));
+const Help = lazyWithRetry(() => import("./pages/Help"));
+const Legal = lazyWithRetry(() => import("./pages/Legal"));
+const Contract = lazyWithRetry(() => import("./pages/Contract"));
+const Jornada = lazyWithRetry(() => import("./pages/Jornada"));
+const AdminVehicleImages = lazyWithRetry(() => import("./pages/AdminVehicleImages"));
+const VehicleDetails = lazyWithRetry(() => import("./pages/VehicleDetails"));
+const FichaTecnica = lazyWithRetry(() => import("./pages/FichaTecnica"));
+const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 
 function AuthenticatedApp() {
   return (

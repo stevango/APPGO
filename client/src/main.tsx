@@ -9,6 +9,24 @@ import { TRPC_URL } from "./lib/apiBase";
 import { initNative } from "./lib/native";
 import "./index.css";
 
+// Deploy novo → chunk antigo some. O Vite dispara este evento ao falhar o
+// preload de um módulo; recarregamos uma vez para pegar a versão nova.
+if (typeof window !== "undefined") {
+  const reloadOnce = () => {
+    const key = "go-chunk-reload-at";
+    const last = Number(sessionStorage.getItem(key) || 0);
+    if (Date.now() - last > 10000) {
+      sessionStorage.setItem(key, String(Date.now()));
+      window.location.reload();
+    }
+  };
+  window.addEventListener("vite:preloadError", (e) => { e.preventDefault(); reloadOnce(); });
+  window.addEventListener("unhandledrejection", (e) => {
+    const msg = String((e as PromiseRejectionEvent)?.reason?.message || "");
+    if (/dynamically imported module|Importing a module script failed|Failed to fetch/i.test(msg)) reloadOnce();
+  });
+}
+
 const queryClient = new QueryClient();
 
 // When a session expires, the public `auth.me` query simply returns null, so the
