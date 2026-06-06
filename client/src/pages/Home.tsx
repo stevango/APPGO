@@ -600,7 +600,9 @@ function FleetSummary({ vehicles }: { vehicles: any[] }) {
         <span className="w-2 h-2 rounded-full bg-red-400" />{offline}
       </span>
       <span className="ml-auto text-[11px] font-medium text-gray-400">
-        {needAttention > 0 ? `${needAttention} precisa(m) de atenção` : "tudo em dia ✓"}
+        {needAttention > 0
+          ? `${needAttention} ${needAttention === 1 ? "precisa" : "precisam"} de atenção`
+          : "tudo em dia ✓"}
       </span>
       <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
     </button>

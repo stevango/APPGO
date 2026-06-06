@@ -10,6 +10,7 @@ import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
 import { getTrackerStatus } from "@/lib/trackerStatus";
 import { ASSET_ICONS, ASSET_GROUPS, isVehicleAsset } from "@/lib/assetIcons";
 import { useActiveVehicleId, setActiveVehicleId } from "@/lib/activeVehicle";
+import StatusLegend from "@/components/StatusLegend";
 
 export default function VehicleSelector() {
   const [, setLocation] = useLocation();
@@ -106,15 +107,9 @@ export default function VehicleSelector() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    {(() => {
-                      const st = getTrackerStatus(vehicle.lastSignalAt);
-                      return (
-                        <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full ${st.bg} mb-1`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-                          <span className={`text-[10px] font-semibold ${st.text}`}>{st.label}</span>
-                        </div>
-                      );
-                    })()}
+                    <div className="mb-1">
+                      <StatusLegend status={getTrackerStatus(vehicle.lastSignalAt)} size="sm" />
+                    </div>
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
                       {vehicle.model || "Equipamento"}
                     </p>
@@ -164,25 +159,34 @@ export default function VehicleSelector() {
             })}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-20">
+          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
               <Car className="w-10 h-10 text-gray-400" />
             </div>
             <p className="text-base font-semibold text-[#111111] mb-1">Nenhum equipamento cadastrado</p>
             <p className="text-sm text-gray-500 mb-6">Adicione seu primeiro equipamento para começar</p>
+            <button
+              onClick={() => setLocation("/onboarding")}
+              className="inline-flex items-center gap-2 bg-[#243FF7] text-white font-semibold rounded-full px-5 py-3 shadow-lg shadow-[#243FF7]/30 go-btn-active"
+            >
+              <Plus className="w-5 h-5" /> Adicionar equipamento
+            </button>
           </div>
         )}
       </div>
 
-      {/* Add Vehicle Button */}
-      <div className="flex justify-center py-8">
-        <button
-          onClick={() => setLocation("/onboarding")}
-          className="w-14 h-14 bg-[#243FF7] rounded-full flex items-center justify-center shadow-lg shadow-[#243FF7]/30 go-btn-active transition-transform hover:scale-105"
-        >
-          <Plus className="w-7 h-7 text-white" />
-        </button>
-      </div>
+      {/* Botão flutuante de adicionar — só quando já há equipamentos */}
+      {!isLoading && vehicles && vehicles.length > 0 && (
+        <div className="flex justify-center py-8">
+          <button
+            onClick={() => setLocation("/onboarding")}
+            className="w-14 h-14 bg-[#243FF7] rounded-full flex items-center justify-center shadow-lg shadow-[#243FF7]/30 go-btn-active transition-transform hover:scale-105"
+            aria-label="Adicionar equipamento"
+          >
+            <Plus className="w-7 h-7 text-white" />
+          </button>
+        </div>
+      )}
 
       {/* Icon picker — tela cheia com X (nav inferior continua visível) */}
       {iconPickerFor !== null && (() => {
