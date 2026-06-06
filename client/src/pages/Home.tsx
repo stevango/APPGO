@@ -529,17 +529,15 @@ function VehicleCard({
     ? new Date(vehicle.lastSignalAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })
     : null;
 
-  // Frescor do rastreador (regra GO): < 24h = Online; ≥ 24h = Desatualizado;
-  // ≥ 72h fica em vermelho (crítico).
+  // Status do rastreador por tempo sem comunicar (regra GO): < 24h Online;
+  // 24h–72h Standby; ≥ 72h Offline.
   const lastSignalMs = vehicle.lastSignalAt ? new Date(vehicle.lastSignalAt).getTime() : 0;
   const ageH = lastSignalMs ? (Date.now() - lastSignalMs) / 3600000 : Infinity;
   const sig =
-    vehicle.trackerStatus !== "online"
+    ageH >= 72
       ? { label: "Offline", bg: "bg-red-50", dot: "bg-red-400", text: "text-red-500", stale: true }
-      : ageH >= 72
-      ? { label: "Desatualizado", bg: "bg-red-50", dot: "bg-red-400", text: "text-red-500", stale: true }
       : ageH >= 24
-      ? { label: "Desatualizado", bg: "bg-amber-50", dot: "bg-amber-500", text: "text-amber-600", stale: true }
+      ? { label: "Standby", bg: "bg-amber-50", dot: "bg-amber-500", text: "text-amber-600", stale: true }
       : { label: "Online", bg: "bg-green-50", dot: "bg-green-500 pulse-online", text: "text-green-600", stale: false };
 
   const isVeh = isVehicleAsset(vehicle.iconType);
