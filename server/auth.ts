@@ -32,10 +32,11 @@ export async function issueSessionCookie(
   res: Response,
   user: { openId: string; name: string | null },
 ): Promise<void> {
+  const SESSION_MS = 90 * 24 * 60 * 60 * 1000; // 90 dias (antes: 1 ano)
   const token = await sdk.signSession(
     { openId: user.openId, appId: process.env.VITE_APP_ID ?? "go-app", name: user.name ?? "" },
-    { expiresInMs: ONE_YEAR_MS },
+    { expiresInMs: SESSION_MS },
   );
   const cookieOptions = getSessionCookieOptions(req);
-  res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+  res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: SESSION_MS });
 }

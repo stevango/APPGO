@@ -150,7 +150,9 @@ async function startServer() {
       const url = raw.replace(/^http:\/\//i, "https://");
       const host = new URL(url).host;
 
-      const upstream = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 GOApp", Accept: "text/html,*/*" } });
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 8000);
+      const upstream = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 GOApp", Accept: "text/html,*/*" }, signal: ctrl.signal }).finally(() => clearTimeout(timer));
       const ct = upstream.headers.get("content-type") || "text/html; charset=utf-8";
       // Permite o embed no nosso próprio domínio (o middleware global já põe SAMEORIGIN).
       res.removeHeader("X-Frame-Options");

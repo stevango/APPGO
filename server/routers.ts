@@ -185,6 +185,7 @@ export const appRouter = router({
         message: z.string().trim().max(1000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        enforceRateLimit(`feedback:${ctx.user.id}`, 5, 24 * 60 * 60 * 1000);
         await db.createAppFeedback({ userId: ctx.user.id, rating: input.rating, message: input.message });
         // Let the ops team see suggestions as they arrive (best-effort).
         notifyOwner({
@@ -517,12 +518,13 @@ export const appRouter = router({
       return assertVehicleOwner(ctx, input.id);
     }),
     create: protectedProcedure.input(z.object({
-      plate: z.string(),
-      model: z.string(),
-      brand: z.string().optional(),
-      color: z.string().optional(),
-      year: z.number().optional(),
+      plate: z.string().min(1).max(10),
+      model: z.string().min(1).max(120),
+      brand: z.string().max(100).optional(),
+      color: z.string().max(40).optional(),
+      year: z.number().int().min(1900).max(2100).optional(),
     })).mutation(async ({ ctx, input }) => {
+      enforceRateLimit(`vehicle-create:${ctx.user.id}`, 10, 60 * 60 * 1000);
       await db.createVehicle({
         userId: ctx.user.id,
         plate: input.plate,
@@ -598,8 +600,9 @@ export const appRouter = router({
     }),
     setIconType: protectedProcedure.input(z.object({
       vehicleId: z.number(),
-      iconType: z.string().min(1).max(32),
+      iconType: z.string().min(1).max(32).regex(/^[a-z_]+$/),
     })).mutation(async ({ ctx, input }) => {
+      await assertVehicleOwner(ctx, input.vehicleId);
       await db.updateVehicleIconType(input.vehicleId, ctx.user.id, input.iconType);
       return { success: true };
     }),
@@ -680,14 +683,16 @@ export const appRouter = router({
     }),
     create: protectedProcedure.input(z.object({
       vehicleId: z.number(),
-      name: z.string(),
+      name: z.string().min(1).max(100),
       type: z.enum(["casa", "trabalho", "escola", "oficina", "garagem", "cidade", "personalizada"]).optional(),
-      latitude: z.string(),
-      longitude: z.string(),
-      radius: z.number().optional(),
+      latitude: z.string().regex(/^-?\d{1,3}(\.\d+)?$/),
+      longitude: z.string().regex(/^-?\d{1,3}(\.\d+)?$/),
+      radius: z.number().int().min(50).max(50000).optional(),
       alertOnEntry: z.boolean().optional(),
       alertOnExit: z.boolean().optional(),
     })).mutation(async ({ ctx, input }) => {
+      enforceRateLimit(`geofence-create:${ctx.user.id}`, 30, 60 * 60 * 1000);
+      await assertVehicleOwner(ctx, input.vehicleId);
       await db.createGeofence({
         userId: ctx.user.id,
         vehicleId: input.vehicleId,
@@ -895,16 +900,13 @@ export const appRouter = router({
       label: z.string().optional(),
       duration: z.enum(["1h", "4h", "12h", "24h", "48h"]),
     })).mutation(async ({ ctx, input }) => {
-      // Validar que o veículo pertence ao usuário
-      const vehicle = await db.getVehicleById(input.vehicleId);
-      if (!vehicle || vehicle.userId !== ctx.user.id) {
-        throw new Error("Veículo não encontrado ou não autorizado");
-      }
+      enforceRateLimit(`share-create:${ctx.user.id}`, 15, 60 * 60 * 1000);
+      await assertVehicleOwner(ctx, input.vehicleId);
       // Limite máximo de 5 links ativos simultâneos por veículo
       const MAX_ACTIVE_LINKS = 5;
       const activeCount = await db.countActiveShareLinksForVehicle(input.vehicleId);
       if (activeCount >= MAX_ACTIVE_LINKS) {
-        throw new Error(`Limite atingido: máximo de ${MAX_ACTIVE_LINKS} links ativos por veículo. Revogue um link existente para criar um novo.`);
+        throw new TRPCError({ code: "CONFLICT", message: `Limite atingido: máximo de ${MAX_ACTIVE_LINKS} links ativos por veículo. Revogue um link existente para criar um novo.` });
       }
       const { nanoid } = await import("nanoid");
       const token = nanoid(32);
@@ -1180,9 +1182,10 @@ export const appRouter = router({
       longitude: z.string().optional(),
       address: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
+      enforceRateLimit(`sos-alert:${ctx.user.id}`, 10, 60 * 60 * 1000);
       const contacts = await db.getUserEmergencyContacts(ctx.user.id);
       const contact = contacts.find(c => c.id === input.contactId);
-      if (!contact) throw new Error("Contact not found");
+      if (!contact) throw new TRPCError({ code: "NOT_FOUND", message: "Contato não encontrado." });
       
       const message = `🚨 ALERTA DE EMERGÊNCIA\n\nNome: ${ctx.user?.name || "Usuário"}\nTipo: ${input.sosType}\nLocalização: ${input.address || `${input.latitude}, ${input.longitude}`}\n\nPor favor, verifique imediatamente!`;
       
