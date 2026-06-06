@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Shield, Wrench, MapPin, Clock, Zap } from "lucide-react";
 
 /**
@@ -17,8 +18,10 @@ export default function PageLoader() {
   const [message] = useState(() => MESSAGES[Math.floor(Math.random() * MESSAGES.length)]);
   const Icon = message.icon;
 
-  return (
-    <div className="fixed inset-0 z-[9999] bg-[#243FF7] flex flex-col items-center justify-center animate-in fade-in duration-200">
+  // Renderiza no body (portal) para não ficar preso no wrapper de transição
+  // (.page-enter usa transform), que deixava o loader desbotado e sem cobrir a tela.
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] bg-[#243FF7] flex flex-col items-center justify-center">
       {/* Logo GO */}
       <div className="absolute top-12 left-1/2 -translate-x-1/2">
         <span className="text-2xl font-black text-white tracking-tight">
@@ -51,6 +54,7 @@ export default function PageLoader() {
       <p className="absolute bottom-8 text-white/30 text-xs font-medium">
         GO Direction — Tecnologia que protege.
       </p>
-    </div>
+    </div>,
+    document.body,
   );
 }
