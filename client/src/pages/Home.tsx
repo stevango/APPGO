@@ -321,7 +321,8 @@ function MaintenanceAlert({ vehicle }: { vehicle: any }) {
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
   const lastSignalMs = vehicle?.lastSignalAt ? new Date(vehicle.lastSignalAt).getTime() : 0;
-  const staleDays = lastSignalMs ? Math.floor((Date.now() - lastSignalMs) / (1000 * 60 * 60 * 24)) : 0;
+  const staleHours = lastSignalMs ? (Date.now() - lastSignalMs) / 3600000 : 0;
+  const staleDays = Math.floor(staleHours / 24);
 
   // O cliente pode fechar o banner. Guardamos o nº de dias em que ele fechou —
   // o aviso reaparece no dia seguinte (contagem maior), sem perder o caráter
@@ -333,7 +334,7 @@ function MaintenanceAlert({ vehicle }: { vehicle: any }) {
 
   const lastAck = trpc.alerts.lastAck.useQuery(
     { vehicleId: vehicle.id, type: "manutencao" },
-    { enabled: staleDays >= 3 },
+    { enabled: staleHours >= 48 },
   );
   const acknowledge = trpc.alerts.acknowledge.useMutation({
     onSuccess: () => {
@@ -351,9 +352,11 @@ function MaintenanceAlert({ vehicle }: { vehicle: any }) {
     dismissLog.mutate({ vehicleId: vehicle.id, type: "manutencao", daysStale: staleDays });
   };
 
-  if (staleDays < 3 || staleDays <= dismissedDays) return null;
+  // Manutenção é recomendada só após 48h; antes disso o card já mostra
+  // "Desatualizado" mas sem o banner.
+  if (staleHours < 48 || staleDays <= dismissedDays) return null;
 
-  const severe = staleDays > 7;
+  const severe = staleHours >= 72; // ≥72h: provável que não volte sem intervenção
   const box = severe ? "from-red-50 to-orange-50 border-red-200" : "from-amber-50 to-orange-50 border-amber-200";
   const iconBox = severe ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600";
   const h = severe ? "text-red-900" : "text-amber-900";
@@ -380,11 +383,13 @@ function MaintenanceAlert({ vehicle }: { vehicle: any }) {
               <Wrench className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0 pr-6">
-              <h4 className={`font-bold text-sm ${h}`}>Rastreador há {staleDays} dias sem posicionar</h4>
+              <h4 className={`font-bold text-sm ${h}`}>
+                {severe ? `Rastreador há ${staleDays} dias sem comunicar` : "Rastreador sem comunicar há mais de 48h"}
+              </h4>
               <p className={`text-xs ${p} mt-0.5`}>
                 {severe
-                  ? "Seu veículo pode estar SEM PROTEÇÃO. Recomendamos uma manutenção o quanto antes para voltar a rastrear."
-                  : "Faz alguns dias que não recebemos a posição. Pode ser sinal ou energia — vamos verificar juntos?"}
+                  ? "Sem uma intervenção técnica, é provável que o rastreador não volte a funcionar. Agende a manutenção o quanto antes."
+                  : "Seu veículo pode estar sem proteção. Recomendamos agendar uma manutenção."}
               </p>
             </div>
           </div>
@@ -524,15 +529,16 @@ function VehicleCard({
     ? new Date(vehicle.lastSignalAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })
     : null;
 
-  // Tracker freshness — never show "Online" for a stale fix (safety/CS).
+  // Frescor do rastreador (regra GO): < 24h = Online; ≥ 24h = Desatualizado;
+  // ≥ 72h fica em vermelho (crítico).
   const lastSignalMs = vehicle.lastSignalAt ? new Date(vehicle.lastSignalAt).getTime() : 0;
-  const ageMin = lastSignalMs ? (Date.now() - lastSignalMs) / 60000 : Infinity;
+  const ageH = lastSignalMs ? (Date.now() - lastSignalMs) / 3600000 : Infinity;
   const sig =
     vehicle.trackerStatus !== "online"
       ? { label: "Offline", bg: "bg-red-50", dot: "bg-red-400", text: "text-red-500", stale: true }
-      : ageMin > 60 * 24
+      : ageH >= 72
       ? { label: "Desatualizado", bg: "bg-red-50", dot: "bg-red-400", text: "text-red-500", stale: true }
-      : ageMin > 60
+      : ageH >= 24
       ? { label: "Desatualizado", bg: "bg-amber-50", dot: "bg-amber-500", text: "text-amber-600", stale: true }
       : { label: "Online", bg: "bg-green-50", dot: "bg-green-500 pulse-online", text: "text-green-600", stale: false };
 
