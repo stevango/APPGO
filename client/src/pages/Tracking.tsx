@@ -10,6 +10,7 @@ import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicl
 import { getTrackerStatus } from "@/lib/trackerStatus";
 import DistanceToVehicle from "@/components/DistanceToVehicle";
 import { useDeviceCoords } from "@/lib/deviceLocation";
+import StatusLegend from "@/components/StatusLegend";
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] || c));
 
@@ -485,16 +486,8 @@ export default function Tracking() {
                     <p className="text-[10px] text-gray-400">{vehicle.lastAddress || "Buscando endereço..."}</p>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-0.5">
-                  {(() => {
-                    const st = getTrackerStatus(vehicle.lastSignalAt);
-                    return (
-                      <div className="flex items-center gap-1">
-                        <div className={`w-2 h-2 rounded-full ${st.dot}`} />
-                        <span className={`text-[10px] font-semibold ${st.text}`}>{st.label}</span>
-                      </div>
-                    );
-                  })()}
+                <div className="flex flex-col items-end gap-1">
+                  <StatusLegend status={getTrackerStatus(vehicle.lastSignalAt)} size="sm" />
                   <span className={`text-[10px] ${getTrackerModeColor(vehicle.trackerMode)}`}>
                     {getTrackerModeLabel(vehicle.trackerMode)}
                   </span>

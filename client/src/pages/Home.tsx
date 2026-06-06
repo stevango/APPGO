@@ -16,6 +16,7 @@ import { getTrackerStatus } from "@/lib/trackerStatus";
 import DistanceToVehicle from "@/components/DistanceToVehicle";
 import ActivationChecklist from "@/components/ActivationChecklist";
 import CampaignBanner from "@/components/CampaignBanner";
+import StatusLegend from "@/components/StatusLegend";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicles } from "@/lib/activeVehicle";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -695,10 +696,7 @@ function VehicleCard({
                 {vehicle.brand} {vehicle.model}
               </h3>
               <div className="flex flex-col items-end gap-1.5 shrink-0">
-                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${sig.bg} shadow-sm ring-1 ring-black/[0.03]`}>
-                  <div className={`w-2 h-2 rounded-full ${sig.dot}`} />
-                  <span className={`text-[11px] font-semibold ${sig.text}`}>{sig.label}</span>
-                </div>
+                <StatusLegend status={sig} />
                 {(isBatteryCritical || isBatteryWarning) && (
                   <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full shadow-sm ${
                     isBatteryCritical ? "bg-red-50" : "bg-amber-50"
