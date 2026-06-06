@@ -6,6 +6,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import * as db from "./db";
+import { decryptSecret } from "./crypto";
 import { hashPassword, verifyPassword, generateEmailOpenId, issueSessionCookie } from "./auth";
 import { rateLimit, getClientIp } from "./rateLimit";
 import { seedDemoVehicle, tickDemoVehicle } from "./demo";
@@ -24,7 +25,7 @@ type Go360Result<T> = { ok: true; data: T } | { ok: false; reason: "no_token" | 
  * returned as { ok:false } so the app degrades gracefully instead of breaking.
  */
 async function withGo360Token<T>(ctx: any, fn: (token: string) => Promise<T>): Promise<Go360Result<T>> {
-  const token = ctx?.user?.go360Token as string | undefined;
+  const token = go360TokenOf(ctx);
   if (!token) return { ok: false, reason: "no_token" };
   try {
     return { ok: true, data: await fn(token) };
@@ -46,6 +47,11 @@ function enforceRateLimit(key: string, max: number, windowMs: number) {
       message: `Muitas tentativas. Tente novamente em ${minutes} min.`,
     });
   }
+}
+
+/** Token GO360 do usuário, descriptografado (lê valores cifrados e legados). */
+function go360TokenOf(ctx: any): string | undefined {
+  return decryptSecret((ctx?.user as any)?.go360Token) ?? undefined;
 }
 
 /** Garante que o veículo pertence ao usuário autenticado (anti-IDOR). */
@@ -295,7 +301,7 @@ export const appRouter = router({
     equipamento: protectedProcedure.query(({ ctx }) => withGo360Token(ctx, go360Equipamento)),
     // Re-sync the customer's vehicles/equipment from GO360 into our app.
     syncEquipment: protectedProcedure.mutation(async ({ ctx }) => {
-      const token = (ctx.user as any)?.go360Token as string | undefined;
+      const token = go360TokenOf(ctx);
       if (!token) return { ok: false, synced: 0 } as const;
       try {
         const r = await syncGo360Equipment(ctx.user.id, token);
@@ -312,7 +318,7 @@ export const appRouter = router({
     historico: protectedProcedure
       .input(z.object({ vehicleId: z.number(), desde: z.string().optional(), ate: z.string().optional(), limit: z.number().min(1).max(500).optional() }))
       .query(async ({ ctx, input }) => {
-        const token = (ctx.user as any)?.go360Token as string | undefined;
+        const token = go360TokenOf(ctx);
         const vehicle = await db.getVehicleById(input.vehicleId);
         const ativoId = (vehicle as any)?.go360AtivoId as string | undefined;
         if (!token || !ativoId || vehicle?.userId !== ctx.user.id) return { ok: false as const, points: [] };
@@ -355,7 +361,7 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         enforceRateLimit(`go360-veic:${ctx.user.id}`, 15, 60 * 60 * 1000);
-        const token = (ctx.user as any)?.go360Token as string | undefined;
+        const token = go360TokenOf(ctx);
         const vehicle = await assertVehicleOwner(ctx, input.vehicleId);
         const veiculoId = (vehicle as any)?.go360AtivoId as string | undefined;
         if (!token || !veiculoId) return { ok: false as const, reason: "no_go360" as const };
@@ -393,7 +399,7 @@ export const appRouter = router({
       .input(z.object({ nome: z.string().max(120).optional(), email: z.string().email().optional() }))
       .mutation(async ({ ctx, input }) => {
         enforceRateLimit(`go360-perfil:${ctx.user.id}`, 10, 60 * 60 * 1000);
-        const token = (ctx.user as any)?.go360Token as string | undefined;
+        const token = go360TokenOf(ctx);
         if (!token) return { ok: false as const, reason: "no_go360" as const };
         try {
           await go360UpdatePerfil(token, input);

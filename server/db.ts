@@ -4,6 +4,7 @@ import { InsertUser, users, vehicles, geofences, notifications, occurrences, blo
 import type { InsertTrip, InsertShareLink, InsertEmergencyContact, EmergencyContact } from "../drizzle/schema";
 import type { InsertVehicle, InsertGeofence, InsertOccurrence, InsertNotification } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { encryptSecret } from "./crypto";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -137,7 +138,7 @@ export async function upsertGo360User(input: { clienteId: string; name?: string 
 export async function setUserGo360Token(userId: number, token: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(users).set({ go360Token: token }).where(eq(users.id, userId));
+  await db.update(users).set({ go360Token: encryptSecret(token) }).where(eq(users.id, userId));
 }
 
 /** Upsert a vehicle synced from GO360 (matched by user + plate). */
@@ -1068,6 +1069,28 @@ export async function markBillingReminderSent(userId: number) {
   const db = await getDb();
   if (!db) return;
   await db.update(users).set({ lastBillingReminderAt: new Date() }).where(eq(users.id, userId));
+}
+
+// --- Reengajamento: usuários inativos há vários dias ---
+export type InactiveUser = { userId: number; name: string | null };
+
+export async function getInactiveUsersForNudge(days: number, cooldownMs: number): Promise<InactiveUser[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const cutoff = new Date(Date.now() - days * 86400000);
+  const coolCutoff = new Date(Date.now() - cooldownMs);
+  const rows = await db.select({ id: users.id, name: users.name, lastSignedIn: users.lastSignedIn, lastEngagementAt: users.lastEngagementAt })
+    .from(users)
+    .where(lt(users.lastSignedIn, cutoff));
+  return rows
+    .filter((u) => !u.lastEngagementAt || new Date(u.lastEngagementAt) < coolCutoff)
+    .map((u) => ({ userId: u.id, name: u.name }));
+}
+
+export async function markEngagementNudgeSent(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ lastEngagementAt: new Date() }).where(eq(users.id, userId));
 }
 
 // --- Manutenção: rastreadores sem posicionar há muitos dias ---

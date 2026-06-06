@@ -17,6 +17,7 @@ export const users = mysqlTable("users", {
   go360ClienteId: varchar("go360ClienteId", { length: 64 }),
   go360Token: text("go360Token"),
   lastBillingReminderAt: timestamp("lastBillingReminderAt"),
+  lastEngagementAt: timestamp("lastEngagementAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

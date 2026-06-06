@@ -1,5 +1,6 @@
 import { sendOverdueReminders } from "./billing";
 import { sendMaintenanceReminders } from "./maintenance";
+import { sendEngagementNudges } from "./engagement";
 
 // In-process daily jobs. The HTTP cron endpoints (/api/cron/*) still exist for
 // manual/external triggering, but this runs automatically on any host that
@@ -22,6 +23,12 @@ async function runDailyJobs() {
     console.log("[Scheduler] maintenance-reminders", maintenance);
   } catch (e) {
     console.error("[Scheduler] maintenance-reminders failed", e);
+  }
+  try {
+    const engagement = await sendEngagementNudges();
+    console.log("[Scheduler] engagement-nudges", engagement);
+  } catch (e) {
+    console.error("[Scheduler] engagement-nudges failed", e);
   }
 }
 
