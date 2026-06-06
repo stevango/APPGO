@@ -4,6 +4,7 @@ import { MapPin, Clock, Gauge, Wifi, WifiOff, Car } from "lucide-react";
 import L from "leaflet";
 import { MapView, createDot, createCircle } from "@/components/Map";
 import { useRef, useEffect } from "react";
+import GoMark from "@/components/GoMark";
 
 export default function SharedView() {
   const params = useParams<{ token: string }>();
@@ -71,7 +72,7 @@ export default function SharedView() {
       {/* Header com branding GO */}
       <div className="bg-gradient-to-r from-[#243FF7] to-[#1a2fd4] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-xl font-bold">Go<span className="text-[#E2FF04]">!</span></span>
+          <GoMark height={22} />
           <span className="text-xs text-white/70">Localização compartilhada</span>
         </div>
         <div className="flex items-center gap-1 bg-white/10 rounded-full px-3 py-1">

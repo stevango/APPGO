@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Shield, Wrench, MapPin, Clock, Car, Zap } from "lucide-react";
+import GoMark from "./GoMark";
 
 const SPLASH_MESSAGES = [
   {
@@ -69,9 +70,7 @@ export function SplashScreen({ onFinish, duration = 2500 }: SplashScreenProps) {
     >
       {/* Logo GO */}
       <div className="absolute top-12 left-1/2 -translate-x-1/2">
-        <span className="text-2xl font-black text-white tracking-tight">
-          Go<span className="text-[#E2FF04]">!</span>
-        </span>
+        <GoMark height={32} />
       </div>
 
       {/* Ícone central com glow */}
@@ -136,9 +135,7 @@ export function LoadingSplash() {
     <div className="fixed inset-0 z-[9999] bg-[#243FF7] flex flex-col items-center justify-center">
       {/* Logo GO */}
       <div className="absolute top-12 left-1/2 -translate-x-1/2">
-        <span className="text-2xl font-black text-white tracking-tight">
-          Go<span className="text-[#E2FF04]">!</span>
-        </span>
+        <GoMark height={32} />
       </div>
 
       <div className={`flex flex-col items-center transition-opacity duration-300 ${fade ? "opacity-100" : "opacity-0"}`}>

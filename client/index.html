@@ -23,7 +23,8 @@
            mostrar tela branca no carregamento/refresh. É substituído quando o
            app monta dentro de #root. -->
       <div id="boot-loader" style="position:fixed;inset:0;background:#243FF7;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Inter,system-ui,-apple-system,sans-serif;z-index:99999">
-        <div style="font-size:30px;font-weight:900;color:#fff;letter-spacing:-.02em">Go<span style="color:#E2FF04">!</span></div>
+        <img src="/logo-go.png" alt="GO" style="height:40px;width:auto;object-fit:contain" onerror="this.outerHTML='&lt;div style=&quot;font-size:30px;font-weight:900;color:#fff;letter-spacing:-.02em&quot;&gt;Go&lt;span style=&quot;color:#E2FF04&quot;&gt;!&lt;/span&gt;&lt;/div&gt;'" />
+
         <div style="margin-top:22px;width:140px;height:4px;background:rgba(255,255,255,.15);border-radius:999px;overflow:hidden;position:relative">
           <div style="position:absolute;top:0;bottom:0;width:42%;background:#E2FF04;border-radius:999px;animation:goBoot 1.1s ease-in-out infinite"></div>
         </div>

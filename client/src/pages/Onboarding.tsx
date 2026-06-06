@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { Shield, MapPin, Bell, Zap, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import GoMark from "@/components/GoMark";
 
 type Mode = "login" | "register";
 
@@ -56,9 +57,7 @@ export default function Onboarding() {
       <div className="relative z-10 flex flex-col flex-1 px-6 pt-14 pb-10">
         {/* Logo */}
         <div className="flex items-center justify-center mb-6">
-          <div className="text-6xl font-black text-white tracking-tight">
-            Go<span className="text-[#E2FF04]">!</span>
-          </div>
+          <GoMark height={72} />
         </div>
 
         {/* Tagline */}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Shield, Wrench, MapPin, Clock, Zap } from "lucide-react";
+import GoMark from "./GoMark";
 
 /**
  * Branded page-transition loader (Suspense fallback while a lazy route chunk
@@ -24,9 +25,7 @@ export default function PageLoader() {
     <div className="fixed inset-0 z-[9999] bg-[#243FF7] flex flex-col items-center justify-center">
       {/* Logo GO */}
       <div className="absolute top-12 left-1/2 -translate-x-1/2">
-        <span className="text-2xl font-black text-white tracking-tight">
-          Go<span className="text-[#E2FF04]">!</span>
-        </span>
+        <GoMark height={32} />
       </div>
 
       {/* Ícone central com glow */}
