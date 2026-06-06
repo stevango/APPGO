@@ -35,6 +35,7 @@ const Contract = lazy(() => import("./pages/Contract"));
 const Jornada = lazy(() => import("./pages/Jornada"));
 const AdminVehicleImages = lazy(() => import("./pages/AdminVehicleImages"));
 const VehicleDetails = lazy(() => import("./pages/VehicleDetails"));
+const FichaTecnica = lazy(() => import("./pages/FichaTecnica"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function AuthenticatedApp() {
@@ -55,6 +56,7 @@ function AuthenticatedApp() {
           <Route path="/share" component={ShareLocation} />
           <Route path="/vehicles" component={VehicleSelector} />
           <Route path="/vehicle/:id" component={VehicleDetails} />
+          <Route path="/ficha/:id" component={FichaTecnica} />
           <Route path="/vehicle-care" component={VehicleCare} />
           <Route path="/payment" component={PaymentManagement} />
           <Route path="/payment/history" component={PaymentHistory} />

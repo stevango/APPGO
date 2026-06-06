@@ -138,7 +138,7 @@ export default function VehicleDetails() {
       {/* Ficha técnica (página pública da GO360) */}
       <button
         onClick={() => {
-          if (vehicle.fichaUrl) window.open(vehicle.fichaUrl, "_blank", "noopener,noreferrer");
+          if (vehicle.fichaUrl) setLocation(`/ficha/${vehicle.id}`);
           else toast("Ficha técnica chegando em breve, direto da GO360. 🚗");
         }}
         className="mt-3 w-full go-card p-4 flex items-center gap-3 text-left go-btn-active"
