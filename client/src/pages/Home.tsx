@@ -101,6 +101,9 @@ export default function Home() {
         </button>
       </div>
 
+      {/* Resumo da frota (visão diária) — só com mais de um equipamento */}
+      {!isLoading && vehicles && vehicles.length > 1 && <FleetSummary vehicles={vehicles} />}
+
       {/* TOP banner: recurring-card discount for everyone NOT on recurring card */}
       {(!openInvoices.data || openInvoices.data.count === 0) &&
         (!currentMethod.data || currentMethod.data.type !== "recurring_card") && (
@@ -497,6 +500,41 @@ function Bell({ className }: { className?: string }) {
       <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
       <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
     </svg>
+  );
+}
+
+// Resumo da frota: visão rápida do estado de todos os equipamentos. Dá um
+// motivo de "bater o olho" todo dia (retenção).
+function FleetSummary({ vehicles }: { vehicles: any[] }) {
+  const [, setLocation] = useLocation();
+  let online = 0, standby = 0, offline = 0;
+  for (const v of vehicles) {
+    const k = getTrackerStatus(v.lastSignalAt).key;
+    if (k === "online") online++;
+    else if (k === "standby") standby++;
+    else offline++;
+  }
+  const needAttention = standby + offline;
+  return (
+    <button
+      onClick={() => setLocation("/vehicles")}
+      className="w-full mb-4 go-card p-3.5 flex items-center gap-2 text-left go-btn-active"
+    >
+      <span className="text-[13px] font-bold text-[#111111] mr-1">Sua frota</span>
+      <span className="flex items-center gap-1 text-[12px] font-semibold text-green-600">
+        <span className="w-2 h-2 rounded-full bg-green-500" />{online}
+      </span>
+      <span className="flex items-center gap-1 text-[12px] font-semibold text-amber-600">
+        <span className="w-2 h-2 rounded-full bg-amber-500" />{standby}
+      </span>
+      <span className="flex items-center gap-1 text-[12px] font-semibold text-red-500">
+        <span className="w-2 h-2 rounded-full bg-red-400" />{offline}
+      </span>
+      <span className="ml-auto text-[11px] font-medium text-gray-400">
+        {needAttention > 0 ? `${needAttention} precisa(m) de atenção` : "tudo em dia ✓"}
+      </span>
+      <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
+    </button>
   );
 }
 
