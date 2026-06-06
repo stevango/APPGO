@@ -2,6 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ChevronLeft, User, Car, CreditCard, Shield, Bell,
   HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature, MapPin, Route, Images
@@ -35,6 +36,7 @@ export default function Profile() {
   const [showSpeedConfig, setShowSpeedConfig] = useState(false);
   const [showLanguageConfig, setShowLanguageConfig] = useState(false);
   const [speedLimit, setSpeedLimit] = useState<number>(120);
+  const [speedTarget, setSpeedTarget] = useState<number | "all">("all");
   const [speedSaving, setSpeedSaving] = useState(false);
   const { language, setLanguage, t } = useLanguage();
   const { permission, isSubscribed, isLoading: pushLoading, subscribe, unsubscribe, isSupported } = usePushNotifications();
@@ -132,17 +134,18 @@ export default function Profile() {
   const demoEnabled = demoStatus.data?.enabled ?? false;
   const demoPending = enableDemo.isPending || disableDemo.isPending;
 
-  const setSpeedLimitMutation = trpc.vehicles.setSpeedLimit.useMutation({
-    onSuccess: () => {
-      toast.success("Limite de velocidade atualizado!");
-      setShowSpeedConfig(false);
-      setSpeedSaving(false);
-    },
-    onError: () => {
-      toast.error("Erro ao salvar limite de velocidade");
-      setSpeedSaving(false);
-    },
-  });
+  const onSpeedSaved = () => {
+    utils.vehicles.list.invalidate();
+    toast.success("Limite de velocidade atualizado!");
+    setShowSpeedConfig(false);
+    setSpeedSaving(false);
+  };
+  const onSpeedError = () => {
+    toast.error("Erro ao salvar limite de velocidade");
+    setSpeedSaving(false);
+  };
+  const setSpeedLimitMutation = trpc.vehicles.setSpeedLimit.useMutation({ onSuccess: onSpeedSaved, onError: onSpeedError });
+  const setSpeedLimitAllMutation = trpc.vehicles.setSpeedLimitAll.useMutation({ onSuccess: onSpeedSaved, onError: onSpeedError });
 
   const planLabels: Record<string, string> = {
     basico: "Básico",
@@ -156,28 +159,31 @@ export default function Profile() {
   // and only makes sense for vehicles.
   const activeId = useActiveVehicleId();
   const vehicle = pickActiveVehicle(vehicles, activeId);
-  const speedLimitApplies = isVehicleAsset(vehicle?.iconType);
+  // Veículos (rastreadores de carro/moto) elegíveis para regra de velocidade.
+  const speedVehicles = (vehicles ?? []).filter((v) => isVehicleAsset(v.iconType));
+  const speedLimitApplies = speedVehicles.length > 0;
 
   function handleOpenSpeedConfig() {
-    if (vehicle) {
-      setSpeedLimit(vehicle.speedLimit || 120);
-      setShowSpeedConfig(true);
-    }
+    const target = vehicle && isVehicleAsset(vehicle.iconType) ? vehicle.id : (speedVehicles[0]?.id ?? "all");
+    setSpeedTarget(target);
+    const ref = speedVehicles.find((v) => v.id === target);
+    setSpeedLimit(ref?.speedLimit || vehicle?.speedLimit || 120);
+    setShowSpeedConfig(true);
   }
 
   function handleSaveSpeedLimit() {
-    if (!vehicle) return;
     setSpeedSaving(true);
-    setSpeedLimitMutation.mutate({
-      vehicleId: vehicle.id,
-      speedLimit,
-    });
+    if (speedTarget === "all") {
+      setSpeedLimitAllMutation.mutate({ speedLimit });
+    } else {
+      setSpeedLimitMutation.mutate({ vehicleId: speedTarget, speedLimit });
+    }
   }
 
   const menuItems = [
     { icon: Car, label: t("my_vehicles"), sublabel: `${vehicles?.length || 0} equipamento(s)`, action: () => setLocation("/vehicles") },
     ...(speedLimitApplies
-      ? [{ icon: Gauge, label: "Limite de velocidade", sublabel: `${vehicle?.model || "Veículo"} • ${vehicle?.speedLimit || 120} km/h`, action: handleOpenSpeedConfig }]
+      ? [{ icon: Gauge, label: "Limite de velocidade", sublabel: `Alerta de excesso • ${speedVehicles.length} veículo(s)`, action: handleOpenSpeedConfig }]
       : []),
     { icon: Globe, label: t("language"), sublabel: LANGUAGE_LABELS[language], action: () => setShowLanguageConfig(true) },
     { icon: CreditCard, label: "Pagamento", sublabel: "Alterar forma de pagamento", action: () => setLocation("/payment") },
@@ -674,28 +680,47 @@ export default function Profile() {
       )}
 
       {/* Speed Limit Configuration Sheet */}
-      {showSpeedConfig && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
+      {showSpeedConfig && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setShowSpeedConfig(false)}
           />
           {/* Sheet */}
-          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-6 pb-8 animate-in slide-in-from-bottom duration-300">
-            {/* Handle */}
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-11 h-11 bg-[#243FF7]/10 rounded-xl flex items-center justify-center">
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 max-h-[88vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-11 h-11 bg-[#243FF7]/10 rounded-xl flex items-center justify-center shrink-0">
                 <Gauge className="w-5 h-5 text-[#243FF7]" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h3 className="text-lg font-bold text-[#111111]">Limite de Velocidade</h3>
-                <p className="text-xs text-gray-500">
-                  {vehicle ? `${vehicle.brand ? vehicle.brand + " " : ""}${vehicle.model} • ${vehicle.plate}` : "Receba alertas ao ultrapassar o limite"}
-                </p>
+                <p className="text-xs text-gray-500">Receba alertas ao ultrapassar o limite</p>
               </div>
+            </div>
+
+            {/* Selecionar a qual veículo aplicar */}
+            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Aplicar em</p>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 mb-5">
+              <button
+                onClick={() => setSpeedTarget("all")}
+                className={`shrink-0 px-3 py-2 rounded-xl text-[13px] font-semibold border-2 go-btn-active ${
+                  speedTarget === "all" ? "border-[#243FF7] bg-[#243FF7] text-white" : "border-gray-100 bg-white text-gray-600"
+                }`}
+              >
+                Todos ({speedVehicles.length})
+              </button>
+              {speedVehicles.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => { setSpeedTarget(v.id); setSpeedLimit(v.speedLimit || 120); }}
+                  className={`shrink-0 px-3 py-2 rounded-xl text-[13px] font-semibold border-2 go-btn-active whitespace-nowrap max-w-[160px] truncate ${
+                    speedTarget === v.id ? "border-[#243FF7] bg-[#243FF7] text-white" : "border-gray-100 bg-white text-gray-600"
+                  }`}
+                >
+                  {v.model || v.plate}
+                </button>
+              ))}
             </div>
 
             {/* Speed Display */}
@@ -757,12 +782,13 @@ export default function Profile() {
               ) : (
                 <span className="flex items-center gap-2">
                   <Check className="w-4 h-4" />
-                  Salvar limite
+                  {speedTarget === "all" ? `Aplicar a todos (${speedVehicles.length})` : "Salvar limite"}
                 </span>
               )}
             </Button>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

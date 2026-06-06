@@ -508,6 +508,12 @@ export const appRouter = router({
       await db.updateVehicleSpeedLimit(input.vehicleId, input.speedLimit);
       return { success: true };
     }),
+    setSpeedLimitAll: protectedProcedure.input(z.object({
+      speedLimit: z.number().min(20).max(200),
+    })).mutation(async ({ ctx, input }) => {
+      await db.updateAllVehicleSpeedLimits(ctx.user.id, input.speedLimit);
+      return { success: true };
+    }),
     setIconType: protectedProcedure.input(z.object({
       vehicleId: z.number(),
       iconType: z.string().min(1).max(32),

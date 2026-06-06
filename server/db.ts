@@ -409,6 +409,13 @@ export async function updateVehicleSpeedLimit(vehicleId: number, speedLimit: num
   await db.update(vehicles).set({ speedLimit }).where(eq(vehicles.id, vehicleId));
 }
 
+/** Aplica o mesmo limite de velocidade a todos os veículos do usuário. */
+export async function updateAllVehicleSpeedLimits(userId: number, speedLimit: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(vehicles).set({ speedLimit }).where(eq(vehicles.userId, userId));
+}
+
 export async function updateVehicleIconType(vehicleId: number, userId: number, iconType: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
