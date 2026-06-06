@@ -1,11 +1,12 @@
 import { trpc } from "@/lib/trpc";
 import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, ChevronDown, Gauge, Compass, Battery, Satellite, Zap, Power, Activity, AlertTriangle, Layers, Check } from "lucide-react";
 import { useLocation } from "wouter";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import L from "leaflet";
 import { MapView, createAssetMarker, updateAssetMarker, createPolyline, fitToPoints } from "@/components/Map";
 import { getAssetIcon, isVehicleAsset } from "@/lib/assetIcons";
-import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
+import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicles } from "@/lib/activeVehicle";
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] || c));
 
@@ -44,9 +45,10 @@ export default function Tracking() {
   const [showAll, setShowAll] = useState(false);
   const [showSwitcher, setShowSwitcher] = useState(false);
   const [panelExpanded, setPanelExpanded] = useState(false);
-  const { data: vehicles } = trpc.vehicles.list.useQuery(undefined, {
+  const { data: vehiclesRaw } = trpc.vehicles.list.useQuery(undefined, {
     refetchInterval: 10000,
   });
+  const vehicles = useMemo(() => dedupeVehicles(vehiclesRaw), [vehiclesRaw]);
   const activeVehicleId = useActiveVehicleId();
   const vehicle = pickActiveVehicle(vehicles, activeVehicleId);
 
@@ -80,14 +82,19 @@ export default function Tracking() {
       if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; markerVehicleId.current = null; }
       return;
     }
-    if (!vehicle?.lastLatitude || !vehicle?.lastLongitude) return;
-    const lat = parseFloat(String(vehicle.lastLatitude));
-    const lng = parseFloat(String(vehicle.lastLongitude));
-
-    // Asset switched → drop the old marker so a new one is built.
-    if (markerRef.current && markerVehicleId.current !== vehicle.id) {
+    // Trocou de equipamento → remove o marcador antigo (mesmo que o novo não
+    // tenha posição), senão o mapa fica mostrando o veículo anterior.
+    if (markerRef.current && markerVehicleId.current !== vehicle?.id) {
       markerRef.current.remove();
       markerRef.current = null;
+      markerVehicleId.current = null;
+    }
+    const lat = vehicle?.lastLatitude != null ? parseFloat(String(vehicle.lastLatitude)) : NaN;
+    const lng = vehicle?.lastLongitude != null ? parseFloat(String(vehicle.lastLongitude)) : NaN;
+    if (!vehicle || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+      // Sem posição: garante que não fica marcador velho na tela.
+      if (markerRef.current) { markerRef.current.remove(); markerRef.current = null; markerVehicleId.current = null; }
+      return;
     }
 
     if (!markerRef.current) {
@@ -250,9 +257,9 @@ export default function Tracking() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="relative h-[100dvh] bg-gray-50 overflow-hidden">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-md border-b border-gray-100">
+      <div className="absolute top-0 left-0 right-0 z-20 bg-white border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <button onClick={() => setLocation("/")} className="go-btn-active">
@@ -302,10 +309,10 @@ export default function Tracking() {
       </div>
 
       {/* Tracker switcher sheet — change the active equipment without leaving the map */}
-      {showSwitcher && vehicles && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
+      {showSwitcher && vehicles && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-end justify-center">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowSwitcher(false)} />
-          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-5 pb-8 max-h-[70vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-5 pb-8 max-h-[75vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
             <h3 className="text-lg font-bold text-[#111111] mb-3">Trocar rastreador</h3>
             <div className="space-y-2">
@@ -333,13 +340,38 @@ export default function Tracking() {
               })}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* Map */}
-      <div className="flex-1 pt-14">
+      <div className="absolute inset-0 z-0">
         <MapView onMapReady={handleMapReady} className="w-full h-full" />
       </div>
+
+      {/* Sem posição: aviso claro em vez de mostrar o mapa no centro errado */}
+      {!showAll && vehicle && !(vehicle.lastLatitude != null && vehicle.lastLongitude != null
+        && Number.isFinite(parseFloat(String(vehicle.lastLatitude)))) && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center px-8 pointer-events-none">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-5 text-center max-w-xs pointer-events-auto">
+            <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-3">
+              <MapPin className="w-6 h-6 text-amber-500" />
+            </div>
+            <p className="font-bold text-[#111111] text-[15px]">Sem localização disponível</p>
+            <p className="text-[13px] text-gray-500 mt-1 leading-relaxed">
+              Este equipamento ainda não enviou uma posição. Assim que o rastreador comunicar, ela aparece aqui no mapa.
+            </p>
+            {vehicles && vehicles.length > 1 && (
+              <button
+                onClick={() => setShowSwitcher(true)}
+                className="mt-3 text-[13px] font-semibold text-[#243FF7] go-btn-active"
+              >
+                Trocar equipamento
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Speed Alert Banner */}
       {isOverSpeed && vehicle && (

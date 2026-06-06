@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
 import { isVehicleAsset, getAssetIcon } from "@/lib/assetIcons";
 import { getVehicleImageUrl } from "@/lib/vehicleImage";
-import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
+import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicles } from "@/lib/activeVehicle";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 
@@ -25,9 +25,10 @@ const BATTERY_BACKUP_CRITICAL = 3.2;
 export default function Home() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const { data: vehicles, isLoading } = trpc.vehicles.list.useQuery(undefined, {
+  const { data: vehiclesRaw, isLoading } = trpc.vehicles.list.useQuery(undefined, {
     refetchInterval: 15000,
   });
+  const vehicles = useMemo(() => dedupeVehicles(vehiclesRaw), [vehiclesRaw]);
   const [alertDismissed, setAlertDismissed] = useState(false);
   const openInvoices = trpc.payment.openSummary.useQuery();
   const currentMethod = trpc.payment.getCurrent.useQuery();

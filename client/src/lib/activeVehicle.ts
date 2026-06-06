@@ -41,3 +41,24 @@ export function pickActiveVehicle<T extends { id: number }>(
   if (!vehicles || vehicles.length === 0) return undefined;
   return vehicles.find((v) => v.id === activeId) ?? vehicles[0];
 }
+
+/**
+ * Remove veículos duplicados (mesmo id ou mesma placa) que a sincronização do
+ * GO360 pode trazer em linhas separadas — evita seleção marcando vários e a
+ * contagem errada de equipamentos.
+ */
+export function dedupeVehicles<T extends { id: number; plate?: string | null }>(list: T[] | undefined): T[] {
+  if (!list) return [];
+  const seenId = new Set<number>();
+  const seenPlate = new Set<string>();
+  const out: T[] = [];
+  for (const v of list) {
+    const plate = String(v.plate ?? "").toUpperCase().replace(/[\s-]/g, "");
+    if (seenId.has(v.id)) continue;
+    if (plate && plate !== "SEMPLACA" && seenPlate.has(plate)) continue;
+    seenId.add(v.id);
+    if (plate) seenPlate.add(plate);
+    out.push(v);
+  }
+  return out;
+}
