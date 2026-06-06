@@ -2,7 +2,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
-  ChevronDown, Plus, Check, Pencil, Car, ChevronLeft, Info
+  ChevronDown, Plus, Check, Pencil, Car, ChevronLeft, Info, RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
@@ -16,6 +16,15 @@ export default function VehicleSelector() {
   const [editMode, setEditMode] = useState(false);
   const [iconPickerFor, setIconPickerFor] = useState<number | null>(null);
   const activeId = useActiveVehicleId();
+
+  const go360 = trpc.go360.status.useQuery();
+  const resync = trpc.go360.syncEquipment.useMutation({
+    onSuccess: (r: any) => {
+      utils.vehicles.list.invalidate();
+      toast.success(r?.ok ? "Dados e fotos atualizados!" : "Não foi possível atualizar agora.");
+    },
+    onError: () => toast.error("Não foi possível atualizar agora."),
+  });
 
   const setIconType = trpc.vehicles.setIconType.useMutation({
     onSuccess: () => {
@@ -40,12 +49,25 @@ export default function VehicleSelector() {
           <ChevronDown className="w-6 h-6 text-[#343C42]" />
         </button>
         <h1 className="text-lg font-bold text-[#111111]">Equipamentos</h1>
-        <button
-          onClick={() => setEditMode(!editMode)}
-          className="text-sm font-semibold text-[#243FF7] go-btn-active px-2 py-1 rounded-lg"
-        >
-          {editMode ? "Pronto" : "Editar"}
-        </button>
+        <div className="flex items-center gap-1">
+          {go360.data?.enabled && (
+            <button
+              onClick={() => resync.mutate()}
+              disabled={resync.isPending}
+              className="go-btn-active p-1.5 rounded-lg disabled:opacity-50"
+              aria-label="Atualizar dados e fotos"
+              title="Atualizar dados e fotos"
+            >
+              <RefreshCw className={`w-5 h-5 text-[#243FF7] ${resync.isPending ? "animate-spin" : ""}`} />
+            </button>
+          )}
+          <button
+            onClick={() => setEditMode(!editMode)}
+            className="text-sm font-semibold text-[#243FF7] go-btn-active px-2 py-1 rounded-lg"
+          >
+            {editMode ? "Pronto" : "Editar"}
+          </button>
+        </div>
       </div>
 
       {/* Vehicle List */}
