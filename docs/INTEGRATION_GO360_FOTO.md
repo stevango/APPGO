@@ -86,6 +86,23 @@ pública com a ficha técnica. O app lê esse campo (aceita `ficha_publica_url`,
 `fichaPublicaUrl`, `ficha_url`, `ficha_tecnica_url`) e abre direto no card
 "Ficha técnica do veículo". Sem o link, o card mostra "Em breve".
 
+## Edição dos dados pelo cliente (escrita) — precisa de endpoint
+
+Para o cliente editar a ficha no app e salvar no GO360, exponham um endpoint de
+escrita na App API (autenticado pelo token do usuário):
+
+```
+PATCH /api/app/equipamento
+Authorization: Bearer <token do cliente>
+body: { "ativoId": "<id>", "campos": { "cor": "...", "placa": "...", "chassi": "...",
+        "renavam": "...", "marca": "...", "modelo": "...", "ano_fabricacao": 2025,
+        "ano_modelo": 2025, "combustivel": "FLEX" } }
+```
+
+- Respondam 2xx ao gravar; 4xx em validação (placa/chassi/renavam).
+- Enquanto não existir, o app mostra "Edição estará disponível em breve" — já
+  está tudo pronto do nosso lado para conectar assim que o PATCH responder.
+
 ## Como validar
 Use o probe (já existente), que mostra a resposta crua do `/equipamento`:
 

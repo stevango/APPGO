@@ -1,22 +1,93 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { ChevronLeft, Copy, Car, MapPin, FileText } from "lucide-react";
+import { ChevronLeft, Copy, Car, MapPin, FileText, Pencil, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
 import { isVehicleAsset } from "@/lib/assetIcons";
 import { getVehicleImageUrl } from "@/lib/vehicleImage";
+
+const EDIT_FIELDS: Array<{ key: string; label: string; numeric?: boolean }> = [
+  { key: "marca", label: "Marca" },
+  { key: "modelo", label: "Modelo" },
+  { key: "cor", label: "Cor" },
+  { key: "placa", label: "Placa" },
+  { key: "anoFabricacao", label: "Ano de fabricação", numeric: true },
+  { key: "anoModelo", label: "Ano do modelo", numeric: true },
+  { key: "chassi", label: "Chassi" },
+  { key: "renavam", label: "Renavam", numeric: true },
+  { key: "combustivel", label: "Combustível" },
+];
 
 export default function VehicleDetails() {
   const [, params] = useRoute("/vehicle/:id");
   const [, setLocation] = useLocation();
   const id = Number(params?.id);
+  const utils = trpc.useUtils();
   const { data: vehicles, isLoading } = trpc.vehicles.list.useQuery();
   const vehicle = vehicles?.find((v) => v.id === id);
   const [imgOk, setImgOk] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<Record<string, string>>({});
+
+  const go360 = trpc.go360.status.useQuery();
+  const updateMut = trpc.go360.updateEquipamento.useMutation({
+    onSuccess: (res: any) => {
+      if (res?.ok) {
+        utils.vehicles.list.invalidate();
+        setEditing(false);
+        toast.success("Dados atualizados!");
+      } else if (res?.reason === "unavailable") {
+        toast("Edição estará disponível em breve (aguardando a GO360 liberar).");
+      } else {
+        toast("Edição indisponível para este equipamento.");
+      }
+    },
+    onError: (e) => toast.error(e.message || "Não foi possível salvar."),
+  });
 
   const goBack = () => (window.history.length > 1 ? window.history.back() : setLocation("/"));
+
+  const openEdit = () => {
+    if (!vehicle) return;
+    setForm({
+      marca: vehicle.brand ?? "",
+      modelo: vehicle.model ?? "",
+      cor: vehicle.color ?? "",
+      placa: vehicle.plate ?? "",
+      anoFabricacao: vehicle.anoFabricacao != null ? String(vehicle.anoFabricacao) : "",
+      anoModelo: vehicle.anoModelo != null ? String(vehicle.anoModelo) : (vehicle.year != null ? String(vehicle.year) : ""),
+      chassi: vehicle.chassi ?? "",
+      renavam: vehicle.renavam ?? "",
+      combustivel: vehicle.fuel ?? "",
+    });
+    setEditing(true);
+  };
+
+  const saveEdit = () => {
+    if (!vehicle) return;
+    const patch: Record<string, any> = {};
+    const cur: Record<string, any> = {
+      marca: vehicle.brand ?? "", modelo: vehicle.model ?? "", cor: vehicle.color ?? "", placa: vehicle.plate ?? "",
+      anoFabricacao: vehicle.anoFabricacao ?? "", anoModelo: vehicle.anoModelo ?? vehicle.year ?? "",
+      chassi: vehicle.chassi ?? "", renavam: vehicle.renavam ?? "", combustivel: vehicle.fuel ?? "",
+    };
+    for (const f of EDIT_FIELDS) {
+      const raw = (form[f.key] ?? "").trim();
+      if (f.numeric) {
+        const n = raw === "" ? undefined : Number(raw);
+        if (n !== undefined && String(n) !== String(cur[f.key])) patch[f.key] = n;
+      } else if (raw !== String(cur[f.key] ?? "")) {
+        patch[f.key] = raw;
+      }
+    }
+    if (Object.keys(patch).length === 0) { setEditing(false); return; }
+    if (patch.chassi && patch.chassi.length !== 17) { toast.error("Chassi deve ter 17 caracteres."); return; }
+    updateMut.mutate({ vehicleId: vehicle.id, patch });
+  };
 
   if (isLoading) {
     return (
@@ -65,7 +136,15 @@ export default function VehicleDetails() {
         <button onClick={goBack} className="go-btn-active">
           <ChevronLeft className="w-6 h-6 text-[#343C42]" />
         </button>
-        <h1 className="text-lg font-bold text-[#111111]">Detalhes do veículo</h1>
+        <h1 className="text-lg font-bold text-[#111111] flex-1">Detalhes do veículo</h1>
+        {go360.data?.enabled && (vehicle as any).go360AtivoId && isVehicleAsset(vehicle.iconType) && (
+          <button
+            onClick={openEdit}
+            className="flex items-center gap-1 text-[13px] font-semibold text-[#243FF7] bg-[#243FF7]/8 rounded-full px-3 py-1.5 go-btn-active"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Editar
+          </button>
+        )}
       </div>
 
       {/* Hero */}
@@ -166,8 +245,47 @@ export default function VehicleDetails() {
       })()}
 
       <p className="text-[11px] text-gray-400 mt-4 leading-relaxed px-1">
-        Dados fornecidos pelo cadastro do veículo. Encontrou algo errado? Fale com a gente pelo suporte.
+        Dados fornecidos pelo cadastro do veículo. Encontrou algo errado? Toque em Editar para corrigir.
       </p>
+
+      {/* Modal de edição (grava no GO360) */}
+      {editing && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setEditing(false)} />
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-5 max-h-[88vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-[#111111]">Editar dados</h3>
+              <button onClick={() => setEditing(false)} aria-label="Fechar" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center go-btn-active">
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            <div className="space-y-3">
+              {EDIT_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <label className="text-[11px] font-semibold text-gray-400">{f.label}</label>
+                  <input
+                    value={form[f.key] ?? ""}
+                    inputMode={f.numeric ? "numeric" : "text"}
+                    onChange={(e) => setForm((s) => ({ ...s, [f.key]: f.numeric ? e.target.value.replace(/\D/g, "") : e.target.value }))}
+                    className="w-full mt-1 border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#243FF7]"
+                  />
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
+              As alterações são enviadas para a GO360. Campos oficiais (placa, chassi, renavam) podem passar por validação.
+            </p>
+            <Button
+              className="w-full mt-4 bg-[#243FF7] hover:bg-[#1e35d6]"
+              onClick={saveEdit}
+              disabled={updateMut.isPending}
+            >
+              {updateMut.isPending ? "Salvando..." : <span className="flex items-center gap-2"><Check className="w-4 h-4" /> Salvar alterações</span>}
+            </Button>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }

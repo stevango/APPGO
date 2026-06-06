@@ -191,6 +191,18 @@ export async function upsertGo360Vehicle(userId: number, data: {
   }
 }
 
+/** Atualiza campos editáveis do veículo localmente (após gravar no GO360). */
+export async function updateVehicleFields(vehicleId: number, fields: Record<string, unknown>) {
+  const db = await getDb();
+  if (!db) return;
+  const clean: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(fields)) {
+    if (v !== undefined) clean[k] = v;
+  }
+  if (Object.keys(clean).length === 0) return;
+  await db.update(vehicles).set(clean as any).where(eq(vehicles.id, vehicleId));
+}
+
 export async function setUserAddress(userId: number, data: { address: string; lat?: string | null; lng?: string | null }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

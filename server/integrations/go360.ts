@@ -21,7 +21,7 @@ export function go360Enabled(): boolean {
 
 async function go360Request<T = any>(
   path: string,
-  opts: { method?: "GET" | "POST"; token?: string; body?: unknown } = {},
+  opts: { method?: "GET" | "POST" | "PATCH" | "PUT"; token?: string; body?: unknown } = {},
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (opts.body) headers["Content-Type"] = "application/json";
@@ -55,6 +55,15 @@ export function go360Login(email: string, senha: string): Promise<Go360LoginResp
 
 export function go360FirstAccess(input: { email: string; senhaTemp: string; novaSenha: string; aceites: string[] }): Promise<any> {
   return go360Request("/auth/primeiro-acesso", { method: "POST", body: input });
+}
+
+/**
+ * Atualiza dados do veículo no GO360 (edição pelo cliente). Depende de a GO360
+ * expor escrita: PATCH /equipamento  body: { ativoId, campos: {...} }.
+ * Enquanto não existir, retorna erro (o app degrada com aviso).
+ */
+export function go360UpdateEquipamento(token: string, ativoId: string, campos: Record<string, unknown>) {
+  return go360Request("/equipamento", { method: "PATCH", token, body: { ativoId, campos } });
 }
 
 export const go360Me = (token: string) => go360Request("/me", { token });
