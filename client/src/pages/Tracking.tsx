@@ -4,10 +4,12 @@ import { useLocation } from "wouter";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import FullScreenModal from "@/components/FullScreenModal";
 import L from "leaflet";
-import { MapView, createAssetMarker, updateAssetMarker, createPolyline, fitToPoints } from "@/components/Map";
+import { MapView, createAssetMarker, updateAssetMarker, createPolyline, fitToPoints, createDot } from "@/components/Map";
 import { getAssetIcon, isVehicleAsset } from "@/lib/assetIcons";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicles } from "@/lib/activeVehicle";
 import { getTrackerStatus } from "@/lib/trackerStatus";
+import DistanceToVehicle from "@/components/DistanceToVehicle";
+import { useDeviceCoords } from "@/lib/deviceLocation";
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] || c));
 
@@ -59,6 +61,8 @@ export default function Tracking() {
   );
 
   const mapRef = useRef<L.Map | null>(null);
+  const meMarkerRef = useRef<L.CircleMarker | null>(null);
+  const deviceCoords = useDeviceCoords();
   const markerRef = useRef<L.Marker | null>(null);
   const markerVehicleId = useRef<number | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
@@ -174,6 +178,23 @@ export default function Tracking() {
       polylineRef.current = null;
     }
   }, [showRoute]);
+
+  // Marca a localização do usuário (GPS do celular) no mapa, quando disponível.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+    if (!deviceCoords) {
+      if (meMarkerRef.current) { meMarkerRef.current.remove(); meMarkerRef.current = null; }
+      return;
+    }
+    const pos = { lat: deviceCoords.lat, lng: deviceCoords.lng };
+    if (meMarkerRef.current) {
+      meMarkerRef.current.setLatLng([pos.lat, pos.lng]);
+    } else {
+      meMarkerRef.current = createDot(map, pos, { fill: "#0ea5e9", color: "#ffffff", radius: 8 });
+      meMarkerRef.current.bindPopup("Você está aqui");
+    }
+  }, [deviceCoords, mapReady]);
 
   // Demo mode: drive the simulated vehicle in real time while this screen is open.
   const utils = trpc.useUtils();
@@ -465,17 +486,23 @@ export default function Tracking() {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-0.5">
-                  <div className="flex items-center gap-1">
-                    <div className={`w-2 h-2 rounded-full ${vehicle.trackerStatus === "online" ? "bg-green-500 animate-pulse" : "bg-red-400"}`} />
-                    <span className={`text-[10px] font-semibold ${vehicle.trackerStatus === "online" ? "text-green-600" : "text-red-500"}`}>
-                      {vehicle.trackerStatus === "online" ? "Online" : "Offline"}
-                    </span>
-                  </div>
+                  {(() => {
+                    const st = getTrackerStatus(vehicle.lastSignalAt);
+                    return (
+                      <div className="flex items-center gap-1">
+                        <div className={`w-2 h-2 rounded-full ${st.dot}`} />
+                        <span className={`text-[10px] font-semibold ${st.text}`}>{st.label}</span>
+                      </div>
+                    );
+                  })()}
                   <span className={`text-[10px] ${getTrackerModeColor(vehicle.trackerMode)}`}>
                     {getTrackerModeLabel(vehicle.trackerMode)}
                   </span>
                 </div>
               </div>
+
+              {/* Distância até você (GPS do celular) */}
+              <DistanceToVehicle vehicle={vehicle} stale={getTrackerStatus(vehicle.lastSignalAt).stale} className="!mt-0 mb-3" />
 
               {/* Quick metrics row */}
               <div className="grid grid-cols-4 gap-2">
