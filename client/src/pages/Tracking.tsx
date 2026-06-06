@@ -318,7 +318,7 @@ export default function Tracking() {
             <div className="space-y-2">
               {vehicles.map((v) => {
                 const Icon = getAssetIcon(v.iconType);
-                const active = v.id === vehicle?.id;
+                const active = vehicle != null && v.id != null && v.id === vehicle.id;
                 return (
                   <button
                     key={v.id}

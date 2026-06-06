@@ -243,7 +243,7 @@ export default function Home() {
           <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 pb-1">
             {vehicles.map((v) => {
               const Icon = getAssetIcon(v.iconType);
-              const active = v.id === vehicle?.id;
+              const active = vehicle != null && v.id != null && v.id === vehicle.id;
               return (
                 <button
                   key={v.id}
