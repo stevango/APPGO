@@ -67,6 +67,7 @@ import { registerPushSubscription, unregisterPushSubscription, sendPushToUser } 
 import { reverseGeocode, searchAddress } from "./geocode";
 import { processTelemetry } from "./telemetry";
 import { go360Enabled, go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada, go360FirstAccess, syncGo360Equipment, go360Historico, go360UpdateEquipamento, go360UpdatePerfil } from "./integrations/go360";
+import { cacadorEnabled, sendOcorrenciaToCacador, mapTipoOcorrencia } from "./integrations/cacador";
 
 export const appRouter = router({
   system: systemRouter,
@@ -748,6 +749,8 @@ export const appRouter = router({
       longitude: z.string().optional(),
       address: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
+      enforceRateLimit(`occurrence:${ctx.user.id}`, 10, 60 * 60 * 1000);
+      const vehicle = await assertVehicleOwner(ctx, input.vehicleId);
       const protocol = `GO${Date.now().toString(36).toUpperCase()}${nanoid(4).toUpperCase()}`;
       await db.createOccurrence({
         userId: ctx.user.id,
@@ -759,6 +762,32 @@ export const appRouter = router({
         longitude: input.longitude,
         address: input.address,
       });
+
+      // Encaminha para o Caçador / Olho de Deus (quarentena → caçadores).
+      let cacador: any = { ok: false, reason: "disabled" };
+      if (cacadorEnabled()) {
+        cacador = await sendOcorrenciaToCacador({
+          externalId: protocol,
+          tipoOcorrencia: mapTipoOcorrencia(input.type),
+          placa: vehicle.plate,
+          modelo: vehicle.model || "Veículo",
+          cor: vehicle.color ?? undefined,
+          chassis: (vehicle as any).chassi ?? undefined,
+          latitude: input.latitude ? Number(input.latitude) : undefined,
+          longitude: input.longitude ? Number(input.longitude) : undefined,
+          endereco: input.address ?? vehicle.lastAddress ?? undefined,
+          descricao: input.description ?? undefined,
+          dataOcorrencia: new Date().toISOString(),
+          cliente: {
+            nome: ctx.user.name ?? undefined,
+            documento: (ctx.user as any).cpf ?? undefined,
+            telefone: (ctx.user as any).phone ?? undefined,
+            email: ctx.user.email ?? undefined,
+          },
+        }).catch((e: any) => ({ ok: false, error: String(e?.message || e) }));
+        if (!cacador.ok) console.warn("[Cacador] envio falhou", cacador.error);
+      }
+
       // Create notification
       await db.createNotification({
         userId: ctx.user.id,
@@ -772,12 +801,12 @@ export const appRouter = router({
       try {
         centralNotified = await notifyOwner({
           title: `🚨 ALERTA: ${input.type.toUpperCase()} - Protocolo ${protocol}`,
-          content: `Ocorrência de ${input.type} registrada pelo cliente ${ctx.user.name || ctx.user.openId}.\nVeículo ID: ${input.vehicleId}\nDescrição: ${input.description || 'Não informada'}\nProtocolo: ${protocol}`,
+          content: `Ocorrência de ${input.type} registrada pelo cliente ${ctx.user.name || ctx.user.openId}.\nVeículo: ${vehicle.plate} (${vehicle.model})\nDescrição: ${input.description || 'Não informada'}\nProtocolo: ${protocol}\nCaçador: ${cacador.ok ? `quarentena #${cacador.quarentenaId} (${cacador.status})` : 'não enviado'}`,
         });
       } catch (e) {
         console.warn('[Occurrences] Failed to notify central:', e);
       }
-      return { success: true, protocol, centralNotified };
+      return { success: true, protocol, centralNotified, cacador: { sent: !!cacador.ok, status: cacador.status ?? null } };
     }),
   }),
 
