@@ -200,6 +200,19 @@
   animation: loading-bar linear forwards;
 }
 
+/* Indeterminate bar — slides back and forth while a page chunk loads */
+@keyframes loading-indeterminate {
+  0% { left: -40%; width: 40%; }
+  50% { left: 30%; width: 55%; }
+  100% { left: 100%; width: 40%; }
+}
+.animate-loading-indeterminate {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  animation: loading-indeterminate 1.1s ease-in-out infinite;
+}
+
 /* Smooth gradient shimmer for skeleton loading */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
