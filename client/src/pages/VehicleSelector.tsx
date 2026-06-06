@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
-  ChevronDown, Plus, Check, Pencil, Car, ChevronLeft, Info, RefreshCw
+  ChevronDown, Plus, Check, Pencil, Car, ChevronLeft, Info, RefreshCw, X
 } from "lucide-react";
 import { toast } from "sonner";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
@@ -183,44 +184,50 @@ export default function VehicleSelector() {
         </button>
       </div>
 
-      {/* Icon picker sheet */}
-      {iconPickerFor !== null && (() => {
+      {/* Icon picker — tela cheia com X (tudo visível, sem cortar atrás da nav) */}
+      {iconPickerFor !== null && createPortal((() => {
         const current = vehicles?.find(v => v.id === iconPickerFor);
         return (
-          <div className="fixed inset-0 z-50 flex items-end justify-center">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIconPickerFor(null)} />
-            <div className="relative w-full max-w-md bg-white rounded-t-3xl p-5 pb-8 max-h-[80vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
-              <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
-              <h3 className="text-lg font-bold text-[#111111] mb-1">Escolha o ícone</h3>
-              <p className="text-xs text-gray-500 mb-5">Selecione o que melhor representa seu bem.</p>
-
-              {ASSET_GROUPS.map((group) => (
-                <div key={group} className="mb-5">
-                  <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">{group}</p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {ASSET_ICONS.filter(a => a.group === group).map(({ key, label, Icon }) => {
-                      const active = (current?.iconType ?? "car") === key;
-                      return (
-                        <button
-                          key={key}
-                          disabled={setIconType.isPending}
-                          onClick={() => setIconType.mutate({ vehicleId: iconPickerFor, iconType: key })}
-                          className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition-all go-btn-active ${
-                            active ? "border-[#243FF7] bg-[#243FF7]/5" : "border-gray-100 bg-gray-50"
-                          }`}
-                        >
-                          <Icon className={`w-6 h-6 ${active ? "text-[#243FF7]" : "text-gray-500"}`} />
-                          <span className={`text-[10px] font-medium ${active ? "text-[#243FF7]" : "text-gray-500"}`}>{label}</span>
-                        </button>
-                      );
-                    })}
+          <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in duration-150">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="text-lg font-bold text-[#111111]">Escolha o ícone</h3>
+                <p className="text-xs text-gray-500">Selecione o que melhor representa seu bem.</p>
+              </div>
+              <button onClick={() => setIconPickerFor(null)} aria-label="Fechar" className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center go-btn-active shrink-0">
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5">
+              <div className="max-w-md mx-auto">
+                {ASSET_GROUPS.map((group) => (
+                  <div key={group} className="mb-5">
+                    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">{group}</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {ASSET_ICONS.filter(a => a.group === group).map(({ key, label, Icon }) => {
+                        const active = (current?.iconType ?? "car") === key;
+                        return (
+                          <button
+                            key={key}
+                            disabled={setIconType.isPending}
+                            onClick={() => setIconType.mutate({ vehicleId: iconPickerFor, iconType: key })}
+                            className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border-2 transition-all go-btn-active ${
+                              active ? "border-[#243FF7] bg-[#243FF7]/5" : "border-gray-100 bg-gray-50"
+                            }`}
+                          >
+                            <Icon className={`w-6 h-6 ${active ? "text-[#243FF7]" : "text-gray-500"}`} />
+                            <span className={`text-[10px] font-medium ${active ? "text-[#243FF7]" : "text-gray-500"}`}>{label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         );
-      })()}
+      })(), document.body)}
 
     </div>
   );
