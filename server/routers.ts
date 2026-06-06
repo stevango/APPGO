@@ -817,6 +817,7 @@ export const appRouter = router({
 
   summary: router({
     drive: protectedProcedure.query(({ ctx }) => db.getDriveSummary(ctx.user.id)),
+    score: protectedProcedure.query(({ ctx }) => db.getDrivingScore(ctx.user.id)),
   }),
 
   sos: router({

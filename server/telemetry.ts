@@ -127,6 +127,24 @@ export async function ingestTelemetry(body: Record<string, any>): Promise<{ ok: 
   const vehicle = await db.getVehicleBySerial(String(serial));
   if (!vehicle) return { ok: false, error: "dispositivo não cadastrado" };
 
+  // Evento de comportamento (frenagem/aceleração/excesso) → alimenta o Score.
+  const eventType = body.event ?? body.evento ?? body.eventType;
+  if (eventType) {
+    const sevRaw = String(body.severity ?? body.severidade ?? "media").toLowerCase();
+    const severity = (["leve", "media", "alta"].includes(sevRaw) ? sevRaw : "media") as "leve" | "media" | "alta";
+    const at = body.eventAt ?? body.event_at ?? body.eventoEm;
+    await db.insertDrivingEvent({
+      vehicleId: vehicle.id,
+      type: String(eventType),
+      severity,
+      latitude: body.latitude != null ? String(body.latitude ?? body.lat) : null,
+      longitude: body.longitude != null ? String(body.longitude ?? body.lng) : null,
+      speed: body.speed != null ? Number(body.speed) : null,
+      eventAt: at ? new Date(String(at)) : new Date(),
+    });
+    return { ok: true, vehicleId: vehicle.id };
+  }
+
   const num = (v: any) => (v === undefined || v === null || v === "" ? undefined : Number(v));
   const str = (v: any) => (v === undefined || v === null ? undefined : String(v));
   const bool = (v: any) =>

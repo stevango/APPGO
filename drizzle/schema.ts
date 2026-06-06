@@ -465,3 +465,21 @@ export const vehicleModelImages = mysqlTable("vehicleModelImages", {
 
 export type VehicleModelImage = typeof vehicleModelImages.$inferSelect;
 export type InsertVehicleModelImage = typeof vehicleModelImages.$inferInsert;
+
+// Eventos de comportamento de direção (telemetria GO360) — base do Score.
+export const drivingEvents = mysqlTable("drivingEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  vehicleId: int("vehicleId").notNull(),
+  type: varchar("type", { length: 40 }).notNull(), // frenagem_brusca | aceleracao_brusca | curva_brusca | excesso_velocidade
+  severity: mysqlEnum("severity", ["leve", "media", "alta"]).default("media"),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
+  speed: int("speed"),
+  eventAt: timestamp("eventAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => ({
+  vehicleIdx: index("drivingEvents_vehicleId_idx").on(t.vehicleId),
+}));
+
+export type DrivingEvent = typeof drivingEvents.$inferSelect;
+export type InsertDrivingEvent = typeof drivingEvents.$inferInsert;

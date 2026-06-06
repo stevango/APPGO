@@ -111,6 +111,9 @@ export default function Home() {
       {/* Resumo de uso (aparece só com trajetos reais) */}
       <DriveSummaryCard />
 
+      {/* Score de direção (aparece quando há eventos/telemetria) */}
+      <DrivingScoreCard />
+
       {/* TOP banner: recurring-card discount for everyone NOT on recurring card */}
       {(!openInvoices.data || openInvoices.data.count === 0) &&
         (!currentMethod.data || currentMethod.data.type !== "recurring_card") && (
@@ -507,6 +510,33 @@ function Bell({ className }: { className?: string }) {
       <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
       <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
     </svg>
+  );
+}
+
+// Score de direção (0–100). Aparece quando há eventos/telemetria de direção.
+function DrivingScoreCard() {
+  const { data } = trpc.summary.score.useQuery(undefined, { staleTime: 60000 });
+  if (!data) return null;
+  const score = data.score;
+  const tone = score >= 80 ? { t: "text-green-600", bg: "bg-green-500", label: "Excelente" }
+    : score >= 60 ? { t: "text-amber-600", bg: "bg-amber-500", label: "Bom" }
+    : { t: "text-red-500", bg: "bg-red-500", label: "Atenção" };
+  return (
+    <div className="w-full mb-4 go-card p-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Score de direção</p>
+        <span className={`text-[11px] font-bold ${tone.t}`}>{tone.label}</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <p className={`text-3xl font-extrabold ${tone.t} leading-none`}>{score}<span className="text-sm font-medium text-gray-400">/100</span></p>
+        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div className={`h-full ${tone.bg} rounded-full transition-all`} style={{ width: `${score}%` }} />
+        </div>
+      </div>
+      <p className="text-[11px] text-gray-400 mt-2">
+        {data.events} evento(s) em {data.km} km nos últimos 30 dias
+      </p>
+    </div>
   );
 }
 

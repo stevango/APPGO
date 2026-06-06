@@ -1121,7 +1121,56 @@ export async function markEngagementNudgeSent(userId: number) {
 }
 
 // --- Manutenção: rastreadores sem posicionar há muitos dias ---
-import { notificationLog, alertAcks, vehicleModelImages } from "../drizzle/schema";
+import { notificationLog, alertAcks, vehicleModelImages, drivingEvents } from "../drizzle/schema";
+
+/** Registra um evento de comportamento de direção (telemetria GO360). */
+export async function insertDrivingEvent(data: {
+  vehicleId: number; type: string; severity?: "leve" | "media" | "alta";
+  latitude?: string | null; longitude?: string | null; speed?: number | null; eventAt?: Date;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(drivingEvents).values({
+    vehicleId: data.vehicleId,
+    type: data.type,
+    severity: data.severity ?? "media",
+    latitude: data.latitude ?? null,
+    longitude: data.longitude ?? null,
+    speed: data.speed ?? null,
+    eventAt: data.eventAt ?? new Date(),
+  } as any);
+}
+
+/**
+ * Score de direção (0–100) dos últimos 30 dias, a partir dos eventos de
+ * comportamento normalizados pela distância. Retorna null quando ainda não há
+ * dados (sem eventos e sem km) — aí o card nem aparece.
+ */
+export async function getDrivingScore(userId: number): Promise<{ score: number; events: number; km: number } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const vs = await db.select({ id: vehicles.id }).from(vehicles)
+    .where(and(eq(vehicles.userId, userId), eq(vehicles.isDemo, false)));
+  const ids = vs.map((v) => v.id);
+  if (ids.length === 0) return null;
+  const since = new Date(Date.now() - 30 * 86400000);
+  const [evs, tps] = await Promise.all([
+    db.select().from(drivingEvents).where(and(inArray(drivingEvents.vehicleId, ids), gte(drivingEvents.eventAt, since))),
+    db.select().from(trips).where(and(inArray(trips.vehicleId, ids), gte(trips.startedAt, since))),
+  ]);
+  const km = tps.reduce((s, t) => s + (parseFloat(String(t.distanceKm ?? 0)) || 0), 0);
+  if (evs.length === 0 && km <= 0) return null; // sem dados ainda
+  const weight = (sev: string | null) => (sev === "alta" ? 10 : sev === "leve" ? 2 : 5);
+  const penalty = evs.reduce((s, e) => s + weight(e.severity), 0);
+  let score: number;
+  if (km >= 20) {
+    score = 100 - penalty / (km / 100); // penalidade por 100 km
+  } else {
+    score = 100 - penalty; // pouca distância → penalidade bruta
+  }
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  return { score, events: evs.length, km: Math.round(km * 10) / 10 };
+}
 
 // --- Biblioteca de imagens de modelos (cache por marca|modelo|ano) ---
 /** Busca a imagem de um modelo: ano exato > sem ano (genérico) > qualquer. */
