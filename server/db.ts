@@ -642,6 +642,40 @@ export async function getVehicleTrips(vehicleId: number, limit = 30) {
   return db.select().from(trips).where(eq(trips.vehicleId, vehicleId)).orderBy(desc(trips.startedAt)).limit(limit);
 }
 
+function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+/** Km percorridos somando as posições do histórico (fallback quando não há trips). */
+async function kmFromRouteHistory(ids: number[], since: Date, startOfToday: Date): Promise<{ week: number; today: number }> {
+  const db = await getDb();
+  if (!db) return { week: 0, today: 0 };
+  const pts = await db.select({ vehicleId: routeHistory.vehicleId, latitude: routeHistory.latitude, longitude: routeHistory.longitude, recordedAt: routeHistory.recordedAt })
+    .from(routeHistory)
+    .where(and(inArray(routeHistory.vehicleId, ids), gte(routeHistory.recordedAt, since)))
+    .orderBy(routeHistory.vehicleId, routeHistory.recordedAt)
+    .limit(20000);
+  let week = 0, today = 0;
+  let prev: { vId: number; lat: number; lng: number } | null = null;
+  for (const p of pts) {
+    const lat = parseFloat(String(p.latitude)), lng = parseFloat(String(p.longitude));
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    if (prev && prev.vId === p.vehicleId) {
+      const d = haversineKm({ lat: prev.lat, lng: prev.lng }, { lat, lng });
+      if (d < 200) { // ignora saltos absurdos (GPS ruim)
+        week += d;
+        if (p.recordedAt && new Date(p.recordedAt) >= startOfToday) today += d;
+      }
+    }
+    prev = { vId: p.vehicleId, lat, lng };
+  }
+  return { week, today };
+}
+
 /** Resumo de uso (km) do usuário: hoje e últimos 7 dias. */
 export async function getDriveSummary(userId: number) {
   const empty = { kmToday: 0, kmWeek: 0, tripsToday: 0, tripsWeek: 0 };
@@ -660,6 +694,11 @@ export async function getDriveSummary(userId: number) {
     const km = parseFloat(String(t.distanceKm ?? 0)) || 0;
     kmWeek += km; tripsWeek++;
     if (new Date(t.startedAt) >= startOfToday) { kmToday += km; tripsToday++; }
+  }
+  // Sem trips com distância → estima pelas posições recebidas (telemetria GO360).
+  if (kmWeek <= 0) {
+    const rh = await kmFromRouteHistory(ids, weekAgo, startOfToday);
+    kmWeek = rh.week; kmToday = rh.today;
   }
   return {
     kmToday: Math.round(kmToday * 10) / 10,
@@ -1177,7 +1216,11 @@ export async function getDrivingScore(userId: number): Promise<{ score: number; 
     db.select().from(drivingEvents).where(and(inArray(drivingEvents.vehicleId, ids), gte(drivingEvents.eventAt, since))),
     db.select().from(trips).where(and(inArray(trips.vehicleId, ids), gte(trips.startedAt, since))),
   ]);
-  const km = tps.reduce((s, t) => s + (parseFloat(String(t.distanceKm ?? 0)) || 0), 0);
+  let km = tps.reduce((s, t) => s + (parseFloat(String(t.distanceKm ?? 0)) || 0), 0);
+  if (km <= 0) {
+    const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+    km = (await kmFromRouteHistory(ids, since, startOfToday)).week;
+  }
   if (evs.length === 0 && km <= 0) return null; // sem dados ainda
   const weight = (sev: string | null) => (sev === "alta" ? 10 : sev === "leve" ? 2 : 5);
   const penalty = evs.reduce((s, e) => s + weight(e.severity), 0);
