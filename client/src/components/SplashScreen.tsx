@@ -1,6 +1,18 @@
 import { useState, useEffect } from "react";
 import { Shield, Wrench, MapPin, Clock, Car, Zap } from "lucide-react";
 import GoMark from "./GoMark";
+import { useCampaignTheme } from "@/lib/campaignTheme";
+
+function SeasonalSlogan() {
+  const c = useCampaignTheme();
+  return (
+    <p className="absolute bottom-8 text-white/30 text-xs font-medium">
+      {c.vigente && c.slogan
+        ? `${c.icone ? c.icone + " " : ""}${c.slogan}`
+        : "GO Direction — Tecnologia que protege."}
+    </p>
+  );
+}
 
 const SPLASH_MESSAGES = [
   {
@@ -102,9 +114,7 @@ export function SplashScreen({ onFinish, duration = 2500 }: SplashScreenProps) {
       </div>
 
       {/* Slogan */}
-      <p className="absolute bottom-8 text-white/30 text-xs font-medium">
-        GO Direction — Tecnologia que protege.
-      </p>
+      <SeasonalSlogan />
     </div>
   );
 }
@@ -162,9 +172,7 @@ export function LoadingSplash() {
         <div className="w-6 h-6 border-2 border-white/20 border-t-[#E2FF04] rounded-full animate-spin" />
       </div>
 
-      <p className="absolute bottom-8 text-white/30 text-xs font-medium">
-        GO Direction — Tecnologia que protege.
-      </p>
+      <SeasonalSlogan />
     </div>
   );
 }

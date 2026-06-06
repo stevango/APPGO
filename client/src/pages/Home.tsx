@@ -15,6 +15,7 @@ import { getVehicleImageUrl } from "@/lib/vehicleImage";
 import { getTrackerStatus } from "@/lib/trackerStatus";
 import DistanceToVehicle from "@/components/DistanceToVehicle";
 import ActivationChecklist from "@/components/ActivationChecklist";
+import CampaignBanner from "@/components/CampaignBanner";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicles } from "@/lib/activeVehicle";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -101,6 +102,9 @@ export default function Home() {
           <NotificationBadge />
         </button>
       </div>
+
+      {/* Faixa sazonal (sincronizada com a GO360) — some fora de campanha */}
+      <CampaignBanner />
 
       {/* Resumo da frota (visão diária) — só com mais de um equipamento */}
       {!isLoading && vehicles && vehicles.length > 1 && <FleetSummary vehicles={vehicles} />}

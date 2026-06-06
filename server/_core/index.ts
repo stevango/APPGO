@@ -14,6 +14,7 @@ import { sendMaintenanceReminders } from "../maintenance";
 import { startScheduler } from "../scheduler";
 import { ingestTelemetry } from "../telemetry";
 import { go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada } from "../integrations/go360";
+import { getCampaignTheme } from "../integrations/campanhas";
 import { sdk } from "./sdk";
 import * as db from "../db";
 
@@ -199,6 +200,22 @@ async function startServer() {
     } catch (e) {
       console.error("[Widget] summary failed", e);
       res.status(500).json({ error: "failed" });
+    }
+  });
+
+  // ---- Tema de campanha vigente (sazonal, compartilhado com a GO360) --------
+  //   GET /api/campanhas/tema-vigente   (público, sem auth, cache 5min)
+  // Proxy same-origin do endpoint público da GO360 — evita CORS no app e
+  // permite trocar a URL upstream por env sem rebuild do cliente.
+  app.get("/api/campanhas/tema-vigente", async (_req, res) => {
+    try {
+      const theme = await getCampaignTheme();
+      res.setHeader("Cache-Control", "public, max-age=300");
+      res.json(theme);
+    } catch (e) {
+      console.error("[Campanhas] tema-vigente failed", e);
+      res.setHeader("Cache-Control", "public, max-age=60");
+      res.json({ vigente: false });
     }
   });
 

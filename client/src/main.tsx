@@ -7,6 +7,7 @@ import App from "./App";
 import { LanguageProvider } from "./contexts/LanguageContext";
 import { TRPC_URL } from "./lib/apiBase";
 import { initNative } from "./lib/native";
+import { initCampaignTheme } from "./lib/campaignTheme";
 import "./index.css";
 
 // Deploy novo → chunk antigo some. O Vite dispara este evento ao falhar o
@@ -71,3 +72,6 @@ createRoot(document.getElementById("root")!).render(
 
 // Initialize native (iOS/Android) behaviors; no-op on the web.
 void initNative();
+
+// Tema sazonal compartilhado com a GO360 (cor/slogan/ícone do dia). Best-effort.
+initCampaignTheme();

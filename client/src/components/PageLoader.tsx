@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Shield, Wrench, MapPin, Clock, Zap } from "lucide-react";
 import GoMark from "./GoMark";
+import { useCampaignTheme } from "@/lib/campaignTheme";
 
 /**
  * Branded page-transition loader (Suspense fallback while a lazy route chunk
@@ -18,6 +19,7 @@ const MESSAGES = [
 export default function PageLoader() {
   const [message] = useState(() => MESSAGES[Math.floor(Math.random() * MESSAGES.length)]);
   const Icon = message.icon;
+  const campaign = useCampaignTheme();
 
   // Renderiza no body (portal) para não ficar preso no wrapper de transição
   // (.page-enter usa transform), que deixava o loader desbotado e sem cobrir a tela.
@@ -49,9 +51,11 @@ export default function PageLoader() {
         </div>
       </div>
 
-      {/* Slogan */}
+      {/* Slogan (sazonal quando há campanha vigente) */}
       <p className="absolute bottom-8 text-white/30 text-xs font-medium">
-        GO Direction — Tecnologia que protege.
+        {campaign.vigente && campaign.slogan
+          ? `${campaign.icone ? campaign.icone + " " : ""}${campaign.slogan}`
+          : "GO Direction — Tecnologia que protege."}
       </p>
     </div>,
     document.body,
