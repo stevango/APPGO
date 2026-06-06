@@ -2,8 +2,9 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
-  ChevronDown, Plus, Check, Pencil, Car, ChevronLeft, Info, RefreshCw
+  Plus, Check, Pencil, Car, ChevronLeft, Info, RefreshCw
 } from "lucide-react";
+import { goBack } from "@/lib/nav";
 import FullScreenModal from "@/components/FullScreenModal";
 import { toast } from "sonner";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
@@ -48,8 +49,8 @@ export default function VehicleSelector() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-4 flex items-center justify-between sticky top-0 z-10">
-        <button onClick={() => setLocation("/")} className="go-btn-active p-1">
-          <ChevronDown className="w-6 h-6 text-[#343C42]" />
+        <button onClick={() => goBack(setLocation, "/profile")} className="go-btn-active p-1" aria-label="Voltar">
+          <ChevronLeft className="w-6 h-6 text-[#343C42]" />
         </button>
         <h1 className="text-lg font-bold text-[#111111]">Equipamentos</h1>
         <div className="flex items-center gap-1">

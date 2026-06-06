@@ -8,7 +8,8 @@ import {
   Download, Copy, ExternalLink, Filter, ChevronLeft, ChevronRight,
   FileText, Calendar, CreditCard, QrCode, RefreshCw, Banknote
 } from "lucide-react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
+import { goBack } from "@/lib/nav";
 
 type StatusFilter = "all" | "paid" | "pending" | "overdue" | "cancelled";
 
@@ -64,6 +65,7 @@ const FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
 ];
 
 export default function PaymentHistory() {
+  const [, setLocation] = useLocation();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -114,11 +116,13 @@ export default function PaymentHistory() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3">
         <div className="flex items-center gap-3">
-          <Link href="/payment">
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors active:scale-95">
-              <ArrowLeft className="w-5 h-5 text-gray-700" />
-            </button>
-          </Link>
+          <button
+            onClick={() => goBack(setLocation, "/profile")}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors active:scale-95"
+            aria-label="Voltar"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
+          </button>
           <div>
             <h1 className="font-semibold text-gray-900">Histórico de Pagamentos</h1>
             <p className="text-xs text-gray-500">Suas faturas e boletos</p>

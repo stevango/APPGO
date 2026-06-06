@@ -783,7 +783,7 @@ export default function Profile() {
             </div>
 
             {/* Presets */}
-            <div className="grid grid-cols-6 gap-2 mb-6">
+            <div className="grid grid-cols-6 gap-2 mb-5">
               {speedPresets.map((preset) => (
                 <button
                   key={preset}
@@ -797,6 +797,17 @@ export default function Profile() {
                   {preset}
                 </button>
               ))}
+            </div>
+
+            {/* Como funciona (transparência + preenche o espaço) */}
+            <div className="bg-[#243FF7]/5 border border-[#243FF7]/10 rounded-2xl p-4 flex items-start gap-3">
+              <div className="w-8 h-8 bg-[#243FF7]/10 rounded-lg flex items-center justify-center shrink-0">
+                <Gauge className="w-4 h-4 text-[#243FF7]" />
+              </div>
+              <p className="text-[12px] text-gray-600 leading-relaxed">
+                Quando o veículo ultrapassar <span className="font-semibold text-[#243FF7]">{speedLimit} km/h</span>,
+                você recebe um alerta no app (e por push, se ativado). Use o controle ou os atalhos para ajustar.
+              </p>
             </div>
         </FullScreenModal>
       )}
