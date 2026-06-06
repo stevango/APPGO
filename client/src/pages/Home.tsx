@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
 import { isVehicleAsset, getAssetIcon } from "@/lib/assetIcons";
 import { getVehicleImageUrl } from "@/lib/vehicleImage";
+import { getTrackerStatus } from "@/lib/trackerStatus";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicles } from "@/lib/activeVehicle";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -529,16 +530,8 @@ function VehicleCard({
     ? new Date(vehicle.lastSignalAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit" })
     : null;
 
-  // Status do rastreador por tempo sem comunicar (regra GO): < 24h Online;
-  // 24h–72h Standby; ≥ 72h Offline.
-  const lastSignalMs = vehicle.lastSignalAt ? new Date(vehicle.lastSignalAt).getTime() : 0;
-  const ageH = lastSignalMs ? (Date.now() - lastSignalMs) / 3600000 : Infinity;
-  const sig =
-    ageH >= 72
-      ? { label: "Offline", bg: "bg-red-50", dot: "bg-red-400", text: "text-red-500", stale: true }
-      : ageH >= 24
-      ? { label: "Standby", bg: "bg-amber-50", dot: "bg-amber-500", text: "text-amber-600", stale: true }
-      : { label: "Online", bg: "bg-green-50", dot: "bg-green-500 pulse-online", text: "text-green-600", stale: false };
+  // Status do rastreador por tempo sem comunicar (helper compartilhado).
+  const sig = getTrackerStatus(vehicle.lastSignalAt);
 
   const isVeh = isVehicleAsset(vehicle.iconType);
   const [, setLocation] = useLocation();

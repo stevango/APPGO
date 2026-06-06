@@ -7,6 +7,7 @@ import L from "leaflet";
 import { MapView, createAssetMarker, updateAssetMarker, createPolyline, fitToPoints } from "@/components/Map";
 import { getAssetIcon, isVehicleAsset } from "@/lib/assetIcons";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicles } from "@/lib/activeVehicle";
+import { getTrackerStatus } from "@/lib/trackerStatus";
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c] || c));
 
@@ -274,9 +275,17 @@ export default function Tracking() {
                 {vehicle?.model || "Rastreamento"}
                 {vehicles && vehicles.length > 1 && <ChevronDown className="w-4 h-4 text-gray-400" />}
               </h1>
-              {vehicle && (
-                <p className="text-[10px] text-gray-500 font-mono">{vehicle.plate} • {vehicle.trackerModel || "ST3xx"}</p>
-              )}
+              {vehicle && (() => {
+                const st = getTrackerStatus(vehicle.lastSignalAt);
+                return (
+                  <p className="text-[10px] text-gray-500 font-mono flex items-center gap-1.5">
+                    <span className={`inline-flex items-center gap-1 ${st.text} font-sans font-semibold not-italic`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}
+                    </span>
+                    <span className="text-gray-300">•</span> {vehicle.plate}
+                  </p>
+                );
+              })()}
             </button>
           </div>
           <div className="flex items-center gap-2">
@@ -335,7 +344,14 @@ export default function Tracking() {
                     </div>
                     <div className="flex-1 min-w-0 text-left">
                       <p className="font-bold text-sm text-[#111111] truncate">{v.brand ? v.brand + " " : ""}{v.model}</p>
-                      <p className="text-xs text-gray-400 font-mono">{v.plate}</p>
+                      <div className="flex items-center gap-1.5">
+                        {(() => {
+                          const st = getTrackerStatus(v.lastSignalAt);
+                          return <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${st.text}`}><span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}</span>;
+                        })()}
+                        <span className="text-gray-300 text-[10px]">•</span>
+                        <span className="text-xs text-gray-400 font-mono">{v.plate}</span>
+                      </div>
                     </div>
                     {active && <Check className="w-5 h-5 text-[#243FF7] shrink-0" />}
                   </button>

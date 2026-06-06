@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
+import { getTrackerStatus } from "@/lib/trackerStatus";
 import { ASSET_ICONS, ASSET_GROUPS, isVehicleAsset } from "@/lib/assetIcons";
 import { useActiveVehicleId, setActiveVehicleId } from "@/lib/activeVehicle";
 
@@ -104,6 +105,15 @@ export default function VehicleSelector() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
+                    {(() => {
+                      const st = getTrackerStatus(vehicle.lastSignalAt);
+                      return (
+                        <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full ${st.bg} mb-1`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
+                          <span className={`text-[10px] font-semibold ${st.text}`}>{st.label}</span>
+                        </div>
+                      );
+                    })()}
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
                       {vehicle.model || "Equipamento"}
                     </p>
