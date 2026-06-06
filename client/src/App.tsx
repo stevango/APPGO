@@ -34,6 +34,7 @@ const Legal = lazy(() => import("./pages/Legal"));
 const Contract = lazy(() => import("./pages/Contract"));
 const Jornada = lazy(() => import("./pages/Jornada"));
 const AdminVehicleImages = lazy(() => import("./pages/AdminVehicleImages"));
+const VehicleDetails = lazy(() => import("./pages/VehicleDetails"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function AuthenticatedApp() {
@@ -53,6 +54,7 @@ function AuthenticatedApp() {
           <Route path="/trip-history" component={TripHistory} />
           <Route path="/share" component={ShareLocation} />
           <Route path="/vehicles" component={VehicleSelector} />
+          <Route path="/vehicle/:id" component={VehicleDetails} />
           <Route path="/vehicle-care" component={VehicleCare} />
           <Route path="/payment" component={PaymentManagement} />
           <Route path="/payment/history" component={PaymentHistory} />

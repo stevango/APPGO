@@ -6,7 +6,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
-import VehicleDetailsSheet from "@/components/VehicleDetailsSheet";
 import { ASSET_ICONS, ASSET_GROUPS, isVehicleAsset } from "@/lib/assetIcons";
 import { useActiveVehicleId, setActiveVehicleId } from "@/lib/activeVehicle";
 
@@ -16,7 +15,6 @@ export default function VehicleSelector() {
   const utils = trpc.useUtils();
   const [editMode, setEditMode] = useState(false);
   const [iconPickerFor, setIconPickerFor] = useState<number | null>(null);
-  const [detailsFor, setDetailsFor] = useState<number | null>(null);
   const activeId = useActiveVehicleId();
 
   const setIconType = trpc.vehicles.setIconType.useMutation({
@@ -99,7 +97,7 @@ export default function VehicleSelector() {
                     )}
                     {isVehicleAsset(vehicle.iconType) && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); setDetailsFor(vehicle.id); }}
+                        onClick={(e) => { e.stopPropagation(); setLocation(`/vehicle/${vehicle.id}`); }}
                         className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-[#243FF7] bg-[#243FF7]/8 rounded-full px-2.5 py-1 go-btn-active"
                       >
                         <Info className="w-3 h-3" /> Ver todos os dados
@@ -192,13 +190,6 @@ export default function VehicleSelector() {
         );
       })()}
 
-      {/* Detalhes completos do veículo */}
-      {detailsFor !== null && (
-        <VehicleDetailsSheet
-          vehicle={vehicles?.find(x => x.id === detailsFor)}
-          onClose={() => setDetailsFor(null)}
-        />
-      )}
     </div>
   );
 }

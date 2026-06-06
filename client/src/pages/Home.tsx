@@ -12,7 +12,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
 import { isVehicleAsset, getAssetIcon } from "@/lib/assetIcons";
 import { getVehicleImageUrl } from "@/lib/vehicleImage";
-import VehicleDetailsSheet from "@/components/VehicleDetailsSheet";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -537,10 +536,10 @@ function VehicleCard({
       : { label: "Online", bg: "bg-green-50", dot: "bg-green-500 pulse-online", text: "text-green-600", stale: false };
 
   const isVeh = isVehicleAsset(vehicle.iconType);
+  const [, setLocation] = useLocation();
 
   // Render do modelo (estilo BYD). Some out gracefully se a imagem falhar.
   const [imgOk, setImgOk] = useState(true);
-  const [showDetails, setShowDetails] = useState(false);
   const imgUrl = getVehicleImageUrl(vehicle);
   const showHero = !!imgUrl && imgOk;
 
@@ -708,7 +707,7 @@ function VehicleCard({
       {/* Ver mais sobre meu veículo (somente veículos) */}
       {isVeh && (
         <span
-          onClick={(e) => { e.stopPropagation(); setShowDetails(true); }}
+          onClick={(e) => { e.stopPropagation(); setLocation(`/vehicle/${vehicle.id}`); }}
           className="mt-3 w-full flex items-center justify-center gap-1.5 text-[12px] font-semibold text-[#243FF7] bg-[#243FF7]/[0.06] rounded-xl py-2.5 go-btn-active"
         >
           <Info className="w-3.5 h-3.5" /> Ver mais sobre meu veículo
@@ -726,7 +725,6 @@ function VehicleCard({
         </span>
       </div>
     </button>
-    {showDetails && <VehicleDetailsSheet vehicle={vehicle} onClose={() => setShowDetails(false)} />}
     </>
   );
 }
