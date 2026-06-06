@@ -144,8 +144,11 @@ async function startServer() {
       const id = Number(req.params.vehicleId);
       const vehicles = await db.getUserVehicles(user.id);
       const vehicle = vehicles.find((v) => v.id === id);
-      const url = (vehicle as any)?.fichaUrl as string | undefined;
-      if (!url || !/^https?:\/\//.test(url)) { res.status(404).send("Ficha não disponível."); return; }
+      const raw = (vehicle as any)?.fichaUrl as string | undefined;
+      if (!raw || !/^https?:\/\//.test(raw)) { res.status(404).send("Ficha não disponível."); return; }
+      // Servimos por HTTPS; busca e referências precisam ser HTTPS (evita Mixed Content).
+      const url = raw.replace(/^http:\/\//i, "https://");
+      const host = new URL(url).host;
 
       const upstream = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 GOApp", Accept: "text/html,*/*" } });
       const ct = upstream.headers.get("content-type") || "text/html; charset=utf-8";
@@ -156,8 +159,10 @@ async function startServer() {
 
       if (ct.includes("text/html")) {
         let html = await upstream.text();
-        const baseTag = `<base href="${url}">`; // assets/links relativos resolvem na origem
+        const baseTag = `<base href="${url}">`; // assets/links relativos resolvem na origem (https)
         html = /<head[^>]*>/i.test(html) ? html.replace(/<head[^>]*>/i, (m) => m + baseTag) : baseTag + html;
+        // Sobe os assets http→https do mesmo host (senão o navegador bloqueia por Mixed Content).
+        html = html.split(`http://${host}`).join(`https://${host}`);
         res.status(upstream.status).send(html);
       } else {
         const buf = Buffer.from(await upstream.arrayBuffer());
