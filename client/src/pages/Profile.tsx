@@ -2,7 +2,6 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { useState } from "react";
-import { createPortal } from "react-dom";
 import {
   ChevronLeft, User, Car, CreditCard, Shield, Bell,
   HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature, MapPin, Route, Images, Pencil, X
@@ -360,11 +359,11 @@ export default function Profile() {
       </button>
 
       {showRetention && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowRetention(false)} />
-          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-6 pb-8 max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-
+        <FullScreenModal
+          title={retStep === "reason" ? "Antes de você ir" : retStep === "offer" ? "Uma oferta pra você" : "Excluir conta"}
+          onClose={() => setShowRetention(false)}
+        >
+          <div>
             {retStep === "reason" && (
               <>
                 <h3 className="text-lg font-bold text-[#111111]">Que pena que você quer ir 😢</h3>
@@ -433,7 +432,7 @@ export default function Profile() {
               </>
             )}
           </div>
-        </div>
+        </FullScreenModal>
       )}
 
       {/* App Version */}
@@ -441,73 +440,42 @@ export default function Profile() {
         GO Direction v1.0.0
       </p>
 
-      {/* Language Selection Sheet */}
+      {/* Language Selection */}
       {showLanguageConfig && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowLanguageConfig(false)}
-          />
-          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-6 pb-8 animate-in slide-in-from-bottom duration-300">
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-11 h-11 bg-[#243FF7]/10 rounded-xl flex items-center justify-center">
-                <Globe className="w-5 h-5 text-[#243FF7]" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#111111]">{t("language")}</h3>
-                <p className="text-xs text-gray-500">Selecione o idioma do app</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {(["pt", "en", "es"] as Language[]).map((lang) => (
-                <button
-                  key={lang}
-                  onClick={() => { setLanguage(lang); setShowLanguageConfig(false); toast.success(LANGUAGE_LABELS[lang]); }}
-                  className={`w-full flex items-center gap-3 px-4 py-4 rounded-xl transition-all go-btn-active ${
-                    language === lang
-                      ? "bg-[#243FF7]/10 border-2 border-[#243FF7]"
-                      : "bg-gray-50 border-2 border-transparent hover:bg-gray-100"
-                  }`}
-                >
-                  <span className="text-2xl">
-                    {lang === "pt" ? "🇧🇷" : lang === "en" ? "🇺🇸" : "🇪🇸"}
-                  </span>
-                  <div className="flex-1 text-left">
-                    <p className="text-sm font-semibold text-[#111111]">{LANGUAGE_LABELS[lang]}</p>
-                    <p className="text-xs text-gray-400">
-                      {lang === "pt" ? "Português do Brasil" : lang === "en" ? "United States English" : "Español Latinoamérica"}
-                    </p>
-                  </div>
-                  {language === lang && (
-                    <Check className="w-5 h-5 text-[#243FF7]" />
-                  )}
-                </button>
-              ))}
-            </div>
+        <FullScreenModal title={t("language")} subtitle="Selecione o idioma do app" onClose={() => setShowLanguageConfig(false)}>
+          <div className="space-y-2">
+            {(["pt", "en", "es"] as Language[]).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => { setLanguage(lang); setShowLanguageConfig(false); toast.success(LANGUAGE_LABELS[lang]); }}
+                className={`w-full flex items-center gap-3 px-4 py-4 rounded-xl transition-all go-btn-active ${
+                  language === lang
+                    ? "bg-[#243FF7]/10 border-2 border-[#243FF7]"
+                    : "bg-gray-50 border-2 border-transparent hover:bg-gray-100"
+                }`}
+              >
+                <span className="text-2xl">
+                  {lang === "pt" ? "🇧🇷" : lang === "en" ? "🇺🇸" : "🇪🇸"}
+                </span>
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-semibold text-[#111111]">{LANGUAGE_LABELS[lang]}</p>
+                  <p className="text-xs text-gray-400">
+                    {lang === "pt" ? "Português do Brasil" : lang === "en" ? "United States English" : "Español Latinoamérica"}
+                  </p>
+                </div>
+                {language === lang && (
+                  <Check className="w-5 h-5 text-[#243FF7]" />
+                )}
+              </button>
+            ))}
           </div>
-        </div>
+        </FullScreenModal>
       )}
 
-      {/* Push Notifications Configuration Sheet */}
+      {/* Push Notifications Configuration */}
       {showPushConfig && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowPushConfig(false)}
-          />
-          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-6 pb-8 animate-in slide-in-from-bottom duration-300">
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-11 h-11 bg-[#243FF7]/10 rounded-xl flex items-center justify-center">
-                <Bell className="w-5 h-5 text-[#243FF7]" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#111111]">Notificações Push</h3>
-                <p className="text-xs text-gray-500">Receba alertas no celular em tempo real</p>
-              </div>
-            </div>
-
+        <FullScreenModal title="Notificações Push" subtitle="Receba alertas no celular em tempo real" onClose={() => setShowPushConfig(false)}>
+          <div>
             {!isSupported ? (
               iosNeedsInstall ? (
                 <div className="bg-[#243FF7]/5 border border-[#243FF7]/20 rounded-xl p-4 mb-4">
@@ -615,111 +583,83 @@ export default function Profile() {
               </>
             )}
           </div>
-        </div>
+        </FullScreenModal>
       )}
 
-      {/* Address sheet */}
+      {/* Address */}
       {showAddress && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAddress(false)} />
-          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-6 pb-8 min-h-[55vh] animate-in slide-in-from-bottom duration-300">
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-11 h-11 bg-[#243FF7]/10 rounded-xl flex items-center justify-center">
-                <MapPin className="w-5 h-5 text-[#243FF7]" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-[#111111]">Meu endereço</h3>
-                <p className="text-xs text-gray-500">Busque por CEP ou endereço</p>
+        <FullScreenModal title="Meu endereço" subtitle="Busque por CEP ou endereço" onClose={() => setShowAddress(false)}>
+          {userAddress && (
+            <div className="mb-4 bg-gray-50 rounded-xl p-3 flex items-start gap-2">
+              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                <p className="text-[11px] text-gray-400">Endereço atual</p>
+                <p className="text-sm text-gray-700">{userAddress}</p>
               </div>
             </div>
+          )}
 
-            {userAddress && (
-              <div className="mb-4 bg-gray-50 rounded-xl p-3 flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
-                <div className="min-w-0">
-                  <p className="text-[11px] text-gray-400">Endereço atual</p>
-                  <p className="text-sm text-gray-700">{userAddress}</p>
-                </div>
-              </div>
-            )}
+          <AddressSearch
+            autoFocus
+            placeholder="Digite o CEP ou endereço..."
+            onSelect={(lat, lng, label) =>
+              setAddressMutation.mutate({ address: label, lat: String(lat), lng: String(lng) })
+            }
+          />
 
-            <AddressSearch
-              autoFocus
-              placeholder="Digite o CEP ou endereço..."
-              onSelect={(lat, lng, label) =>
-                setAddressMutation.mutate({ address: label, lat: String(lat), lng: String(lng) })
-              }
-            />
-
-            {setAddressMutation.isPending && (
-              <p className="text-xs text-gray-400 mt-3 flex items-center gap-1.5">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Salvando...
-              </p>
-            )}
-          </div>
-        </div>
+          {setAddressMutation.isPending && (
+            <p className="text-xs text-gray-400 mt-3 flex items-center gap-1.5">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Salvando...
+            </p>
+          )}
+        </FullScreenModal>
       )}
 
-      {/* Feedback / rating sheet */}
+      {/* Feedback / rating */}
       {showFeedback && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowFeedback(false)} />
-          <div className="relative w-full max-w-md bg-white rounded-t-3xl p-6 pb-8 animate-in slide-in-from-bottom duration-300">
-            <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
-            {feedbackSent ? (
-              <div className="text-center py-6">
-                <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Check className="w-8 h-8 text-green-500" />
-                </div>
-                <h3 className="text-lg font-bold text-[#111111]">Obrigado! 💙</h3>
-                <p className="text-sm text-gray-500 mt-1">Sua opinião ajuda o GO a melhorar cada vez mais.</p>
-                <Button
-                  className="w-full h-12 mt-6 bg-[#243FF7] text-white font-semibold rounded-xl go-btn-active"
-                  onClick={() => { setShowFeedback(false); setFeedbackSent(false); setRating(0); setFeedbackMsg(""); }}
-                >
-                  Fechar
-                </Button>
+        <FullScreenModal title="Avaliar o app" subtitle="Sua nota e sugestões nos ajudam a melhorar" onClose={() => setShowFeedback(false)}>
+          {feedbackSent ? (
+            <div className="text-center py-6">
+              <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check className="w-8 h-8 text-green-500" />
               </div>
-            ) : (
-              <>
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="w-11 h-11 bg-[#243FF7]/10 rounded-xl flex items-center justify-center">
-                    <Star className="w-5 h-5 text-[#243FF7]" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-[#111111]">Avaliar o app</h3>
-                    <p className="text-xs text-gray-500">Sua nota e sugestões nos ajudam a melhorar</p>
-                  </div>
-                </div>
+              <h3 className="text-lg font-bold text-[#111111]">Obrigado! 💙</h3>
+              <p className="text-sm text-gray-500 mt-1">Sua opinião ajuda o GO a melhorar cada vez mais.</p>
+              <Button
+                className="w-full h-12 mt-6 bg-[#243FF7] text-white font-semibold rounded-xl go-btn-active"
+                onClick={() => { setShowFeedback(false); setFeedbackSent(false); setRating(0); setFeedbackMsg(""); }}
+              >
+                Fechar
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-center gap-2 mb-5">
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <button key={n} onClick={() => setRating(n)} className="go-btn-active" aria-label={`${n} estrelas`}>
+                    <Star className={`w-9 h-9 ${n <= rating ? "text-[#E2FF04] fill-[#E2FF04]" : "text-gray-300"}`} />
+                  </button>
+                ))}
+              </div>
 
-                <div className="flex items-center justify-center gap-2 mb-5">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <button key={n} onClick={() => setRating(n)} className="go-btn-active" aria-label={`${n} estrelas`}>
-                      <Star className={`w-9 h-9 ${n <= rating ? "text-[#E2FF04] fill-[#E2FF04]" : "text-gray-300"}`} />
-                    </button>
-                  ))}
-                </div>
+              <textarea
+                value={feedbackMsg}
+                onChange={(e) => setFeedbackMsg(e.target.value)}
+                placeholder="Conte o que achou ou sugira uma melhoria (opcional)"
+                rows={4}
+                className="w-full rounded-xl border border-gray-200 p-3 text-sm outline-none focus:ring-2 focus:ring-[#243FF7]/30 resize-none"
+              />
 
-                <textarea
-                  value={feedbackMsg}
-                  onChange={(e) => setFeedbackMsg(e.target.value)}
-                  placeholder="Conte o que achou ou sugira uma melhoria (opcional)"
-                  rows={4}
-                  className="w-full rounded-xl border border-gray-200 p-3 text-sm outline-none focus:ring-2 focus:ring-[#243FF7]/30 resize-none"
-                />
-
-                <Button
-                  className="w-full h-12 mt-4 bg-[#243FF7] text-white font-semibold rounded-xl go-btn-active disabled:opacity-50"
-                  disabled={rating === 0 || feedbackMutation.isPending}
-                  onClick={() => feedbackMutation.mutate({ rating, message: feedbackMsg.trim() || undefined })}
-                >
-                  {feedbackMutation.isPending ? "Enviando..." : "Enviar avaliação"}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+              <Button
+                className="w-full h-12 mt-4 bg-[#243FF7] text-white font-semibold rounded-xl go-btn-active disabled:opacity-50"
+                disabled={rating === 0 || feedbackMutation.isPending}
+                onClick={() => feedbackMutation.mutate({ rating, message: feedbackMsg.trim() || undefined })}
+              >
+                {feedbackMutation.isPending ? "Enviando..." : "Enviar avaliação"}
+              </Button>
+            </>
+          )}
+        </FullScreenModal>
       )}
 
       {/* Editar perfil (tela cheia com X; nav continua visível) */}
@@ -764,29 +704,32 @@ export default function Profile() {
         </FullScreenModal>
       )}
 
-      {/* Speed Limit Configuration Sheet */}
-      {showSpeedConfig && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowSpeedConfig(false)}
-          />
-          {/* Sheet */}
-          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 max-h-[88vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-11 h-11 bg-[#243FF7]/10 rounded-xl flex items-center justify-center shrink-0">
-                <Gauge className="w-5 h-5 text-[#243FF7]" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-bold text-[#111111]">Limite de Velocidade</h3>
-                <p className="text-xs text-gray-500">Receba alertas ao ultrapassar o limite</p>
-              </div>
-              <button onClick={() => setShowSpeedConfig(false)} aria-label="Fechar" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center go-btn-active shrink-0">
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
-            </div>
-
+      {/* Speed Limit Configuration */}
+      {showSpeedConfig && (
+        <FullScreenModal
+          title="Limite de Velocidade"
+          subtitle="Receba alertas ao ultrapassar o limite"
+          onClose={() => setShowSpeedConfig(false)}
+          footer={
+            <Button
+              className="w-full h-12 bg-[#243FF7] hover:bg-[#1a2fd6] text-white font-semibold rounded-xl go-btn-active"
+              onClick={handleSaveSpeedLimit}
+              disabled={speedSaving}
+            >
+              {speedSaving ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Salvando...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  {speedTarget === "all" ? `Aplicar a todos (${speedVehicles.length})` : "Salvar limite"}
+                </span>
+              )}
+            </Button>
+          }
+        >
             {/* Selecionar a qual veículo aplicar */}
             <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Aplicar em</p>
             <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 mb-5">
@@ -855,28 +798,7 @@ export default function Profile() {
                 </button>
               ))}
             </div>
-
-            {/* Save Button */}
-            <Button
-              className="w-full h-12 bg-[#243FF7] hover:bg-[#1a2fd6] text-white font-semibold rounded-xl go-btn-active"
-              onClick={handleSaveSpeedLimit}
-              disabled={speedSaving}
-            >
-              {speedSaving ? (
-                <span className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Salvando...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Check className="w-4 h-4" />
-                  {speedTarget === "all" ? `Aplicar a todos (${speedVehicles.length})` : "Salvar limite"}
-                </span>
-              )}
-            </Button>
-          </div>
-        </div>,
-        document.body,
+        </FullScreenModal>
       )}
     </div>
   );

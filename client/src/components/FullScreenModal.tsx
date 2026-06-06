@@ -19,10 +19,11 @@ export default function FullScreenModal({
   footer?: React.ReactNode;
 }) {
   return createPortal(
-    // Para acima da navegação inferior (que continua visível na tela).
+    // Para acima da navegação inferior (que continua visível, incluindo o botão
+    // SOS que é mais alto que a barra).
     <div
       className="fixed inset-x-0 top-0 z-[100] bg-white flex flex-col animate-in fade-in duration-150"
-      style={{ bottom: "calc(68px + env(safe-area-inset-bottom))" }}
+      style={{ bottom: "calc(84px + env(safe-area-inset-bottom))" }}
     >
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100 shrink-0">
         <div className="min-w-0">
