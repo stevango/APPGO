@@ -135,9 +135,12 @@ export default function VehicleDetails() {
         <ChevronLeft className="w-4 h-4 text-gray-300 rotate-180" />
       </button>
 
-      {/* Ficha técnica (chega pela GO360) */}
+      {/* Ficha técnica (página pública da GO360) */}
       <button
-        onClick={() => toast("Ficha técnica chegando em breve, direto da GO360. 🚗")}
+        onClick={() => {
+          if (vehicle.fichaUrl) window.open(vehicle.fichaUrl, "_blank", "noopener,noreferrer");
+          else toast("Ficha técnica chegando em breve, direto da GO360. 🚗");
+        }}
         className="mt-3 w-full go-card p-4 flex items-center gap-3 text-left go-btn-active"
       >
         <div className="w-10 h-10 rounded-xl bg-[#243FF7]/8 flex items-center justify-center shrink-0">
@@ -146,9 +149,13 @@ export default function VehicleDetails() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-[13px] font-semibold text-[#111111]">Ficha técnica do veículo</p>
-            <span className="text-[9px] font-bold text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">EM BREVE</span>
+            {!vehicle.fichaUrl && (
+              <span className="text-[9px] font-bold text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">EM BREVE</span>
+            )}
           </div>
-          <p className="text-[11px] text-gray-400 truncate">Motor, potência, consumo e mais — via GO360</p>
+          <p className="text-[11px] text-gray-400 truncate">
+            {vehicle.fichaUrl ? "Motor, potência, consumo e mais" : "Motor, potência, consumo e mais — via GO360"}
+          </p>
         </div>
         <ChevronLeft className="w-4 h-4 text-gray-300 rotate-180" />
       </button>

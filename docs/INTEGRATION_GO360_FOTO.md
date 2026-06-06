@@ -55,6 +55,13 @@ Também funciona se a foto vier dentro de `equipamento` (campos `imagem`/`foto`/
 - Se a GO360 **não** mandar a foto, o app tenta preencher pela biblioteca
   própria (cache por marca|modelo|ano). O link da GO360 sempre tem prioridade.
 
+## Ficha técnica (página pública)
+
+A GO360 também expõe, por veículo, `ficha_publica_url` — link de uma página
+pública com a ficha técnica. O app lê esse campo (aceita `ficha_publica_url`,
+`fichaPublicaUrl`, `ficha_url`, `ficha_tecnica_url`) e abre direto no card
+"Ficha técnica do veículo". Sem o link, o card mostra "Em breve".
+
 ## Como validar
 Use o probe (já existente), que mostra a resposta crua do `/equipamento`:
 
