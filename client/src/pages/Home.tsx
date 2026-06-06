@@ -6,12 +6,13 @@ import {
   Car, Signal, Battery, Wifi, ChevronRight, BatteryWarning, X, Gauge, Share2, Power,
   Home as HomeIcon, Heart, PawPrint, DollarSign, Building2, Users, MessageCircle, Phone,
   Wallet, Headphones, Gift, Zap, Smartphone, Truck, Bike, Anchor, Music, Package, Caravan, CreditCard,
-  ShieldCheck, History
+  ShieldCheck, History, Info
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
 import { isVehicleAsset, getAssetIcon } from "@/lib/assetIcons";
 import { getVehicleImageUrl } from "@/lib/vehicleImage";
+import VehicleDetailsSheet from "@/components/VehicleDetailsSheet";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle } from "@/lib/activeVehicle";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -539,6 +540,7 @@ function VehicleCard({
 
   // Render do modelo (estilo BYD). Some out gracefully se a imagem falhar.
   const [imgOk, setImgOk] = useState(true);
+  const [showDetails, setShowDetails] = useState(false);
   const imgUrl = getVehicleImageUrl(vehicle);
   const showHero = !!imgUrl && imgOk;
 
@@ -559,6 +561,7 @@ function VehicleCard({
   const batteryTone = isBatteryCritical ? "danger" : isBatteryWarning ? "warning" : "default";
 
   return (
+    <>
     <button
       onClick={onPress}
       className={`w-full go-card p-5 text-left transition-transform active:scale-[0.99] ${
@@ -702,8 +705,18 @@ function VehicleCard({
         </div>
       </div>
 
+      {/* Ver mais sobre meu veículo (somente veículos) */}
+      {isVeh && (
+        <span
+          onClick={(e) => { e.stopPropagation(); setShowDetails(true); }}
+          className="mt-3 w-full flex items-center justify-center gap-1.5 text-[12px] font-semibold text-[#243FF7] bg-[#243FF7]/[0.06] rounded-xl py-2.5 go-btn-active"
+        >
+          <Info className="w-3.5 h-3.5" /> Ver mais sobre meu veículo
+        </span>
+      )}
+
       {/* Clear call-to-action */}
-      <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
+      <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
         <span className={`text-[11px] font-medium ${sig.stale ? sig.text : "text-gray-400"}`}>
           {sig.stale ? `Sem atualização ${timeSinceSignal}` : `Atualizado ${timeSinceSignal}`}
         </span>
@@ -713,6 +726,8 @@ function VehicleCard({
         </span>
       </div>
     </button>
+    {showDetails && <VehicleDetailsSheet vehicle={vehicle} onClose={() => setShowDetails(false)} />}
+    </>
   );
 }
 

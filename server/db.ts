@@ -1043,12 +1043,29 @@ export async function getModelImages(filter?: { make?: string; model?: string })
   return q.orderBy(desc(vehicleModelImages.updatedAt)).limit(500);
 }
 
+/**
+ * Acrescenta/atualiza um parâmetro de versão na URL. Como a curadoria às vezes
+ * troca a IMAGEM mantendo o MESMO link (ex.: remover o fundo → PNG), isso força
+ * o navegador/CDN a baixar a versão nova em vez de exibir a do cache.
+ */
+function withCacheBust(url: string): string {
+  const v = Date.now().toString(36);
+  try {
+    const u = new URL(url);
+    u.searchParams.set("v", v);
+    return u.toString();
+  } catch {
+    return url + (url.includes("?") ? "&" : "?") + "v=" + v;
+  }
+}
+
 export async function updateModelImageById(id: number, imageUrl: string) {
   const db = await getDb();
   if (!db) return;
+  const busted = withCacheBust(imageUrl);
   const rows = await db.select().from(vehicleModelImages).where(eq(vehicleModelImages.id, id)).limit(1);
-  await db.update(vehicleModelImages).set({ imageUrl, source: "manual" }).where(eq(vehicleModelImages.id, id));
-  if (rows[0]) await applyModelImageToVehicles(rows[0].make, rows[0].model, imageUrl);
+  await db.update(vehicleModelImages).set({ imageUrl: busted, source: "manual" }).where(eq(vehicleModelImages.id, id));
+  if (rows[0]) await applyModelImageToVehicles(rows[0].make, rows[0].model, busted);
 }
 
 /**
@@ -1076,22 +1093,25 @@ export async function upsertModelImage(data: {
 }) {
   const db = await getDb();
   if (!db) return;
+  const source = data.source ?? "manual";
+  // Curadoria manual: cache-bust para refletir troca de imagem no mesmo link.
+  const finalUrl = source === "manual" ? withCacheBust(data.imageUrl) : data.imageUrl;
   const existing = await db.select().from(vehicleModelImages)
     .where(and(eq(vehicleModelImages.make, data.make), eq(vehicleModelImages.model, data.model)));
   const match = existing.find((r) => r.year === data.year);
   if (match) {
     await db.update(vehicleModelImages)
-      .set({ imageUrl: data.imageUrl, source: data.source ?? "manual" })
+      .set({ imageUrl: finalUrl, source })
       .where(eq(vehicleModelImages.id, match.id));
   } else {
     await db.insert(vehicleModelImages).values({
       make: data.make, model: data.model, year: data.year,
-      imageUrl: data.imageUrl, source: data.source ?? "manual",
+      imageUrl: finalUrl, source,
     });
   }
   // Curadoria manual reflete imediatamente nos veículos já cadastrados.
-  if ((data.source ?? "manual") === "manual") {
-    await applyModelImageToVehicles(data.make, data.model, data.imageUrl);
+  if (source === "manual") {
+    await applyModelImageToVehicles(data.make, data.model, finalUrl);
   }
 }
 

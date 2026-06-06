@@ -197,38 +197,66 @@ export function MapView({
     let current = BASEMAPS.find((b) => b.id === savedId) ?? BASEMAPS[0];
     let layer = makeLayer(current).addTo(map);
 
-    // Controle para o usuário escolher o tipo de mapa (canto superior direito).
+    // Seletor de tipo de mapa: botão de camadas que abre um menu limpo (com fechar).
     const SwitcherControl = L.Control.extend({
       options: { position: "topright" as L.ControlPosition },
       onAdd: function () {
-        const wrap = L.DomUtil.create("div");
-        wrap.style.cssText =
-          "display:flex;flex-wrap:wrap;gap:4px;padding:4px;margin:8px;background:rgba(255,255,255,.95);border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.18);max-width:220px;";
-        const buttons: HTMLButtonElement[] = [];
-        const restyle = () => buttons.forEach((btn, i) => {
+        const root = L.DomUtil.create("div");
+        root.style.cssText = "margin:10px;position:relative;";
+
+        const toggle = L.DomUtil.create("button", "", root) as HTMLButtonElement;
+        toggle.type = "button";
+        toggle.setAttribute("aria-label", "Tipo de mapa");
+        toggle.style.cssText = "width:40px;height:40px;border:0;border-radius:12px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.18);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;";
+        toggle.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#243FF7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>';
+
+        const panel = L.DomUtil.create("div", "", root);
+        panel.style.cssText = "position:absolute;top:48px;right:0;background:#fff;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.2);padding:8px;display:none;min-width:172px;";
+
+        const head = L.DomUtil.create("div", "", panel);
+        head.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:2px 6px 8px;";
+        const title = L.DomUtil.create("span", "", head);
+        title.textContent = "Tipo de mapa";
+        title.style.cssText = "font-size:12px;font-weight:700;color:#9aa0a6;";
+        const closeBtn = L.DomUtil.create("button", "", head) as HTMLButtonElement;
+        closeBtn.type = "button";
+        closeBtn.setAttribute("aria-label", "Fechar");
+        closeBtn.style.cssText = "border:0;background:transparent;cursor:pointer;padding:2px;display:flex;";
+        closeBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa0a6" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+        const ICONS: Record<string, string> = { padrao: "🗺️", satelite: "🛰️", claro: "☀️", escuro: "🌙" };
+        const items: HTMLButtonElement[] = [];
+        const render = () => items.forEach((it, i) => {
           const active = BASEMAPS[i].id === current.id;
-          btn.style.cssText =
-            `border:0;cursor:pointer;font-size:11px;font-weight:700;padding:6px 9px;border-radius:8px;transition:.15s;${
-              active ? "background:#243FF7;color:#fff;" : "background:#f1f3f5;color:#444;"}`;
+          it.style.cssText = `display:flex;align-items:center;gap:10px;width:100%;border:0;cursor:pointer;font-size:13px;font-weight:600;padding:9px 10px;border-radius:9px;text-align:left;margin-top:2px;${active ? "background:#243FF7;color:#fff;" : "background:transparent;color:#222;"}`;
         });
+        const setOpen = (o: boolean) => { panel.style.display = o ? "block" : "none"; };
+
         BASEMAPS.forEach((b) => {
-          const btn = L.DomUtil.create("button", "", wrap) as HTMLButtonElement;
-          btn.type = "button";
-          btn.textContent = b.label;
-          btn.onclick = () => {
-            if (b.id === current.id) return;
-            map.removeLayer(layer);
-            current = b;
-            layer = makeLayer(b).addTo(map);
-            try { localStorage.setItem(MAP_TYPE_KEY, b.id); } catch { /* ignore */ }
-            restyle();
+          const it = L.DomUtil.create("button", "", panel) as HTMLButtonElement;
+          it.type = "button";
+          it.innerHTML = `<span style="font-size:15px">${ICONS[b.id] || "🗺️"}</span><span>${b.label}</span>`;
+          it.onclick = () => {
+            if (b.id !== current.id) {
+              map.removeLayer(layer);
+              current = b;
+              layer = makeLayer(b).addTo(map);
+              try { localStorage.setItem(MAP_TYPE_KEY, b.id); } catch { /* ignore */ }
+            }
+            render();
+            setOpen(false);
           };
-          buttons.push(btn);
+          items.push(it);
         });
-        restyle();
-        L.DomEvent.disableClickPropagation(wrap);
-        L.DomEvent.disableScrollPropagation(wrap);
-        return wrap;
+        render();
+
+        toggle.onclick = () => setOpen(panel.style.display !== "block");
+        closeBtn.onclick = () => setOpen(false);
+        map.on("click", () => setOpen(false));
+
+        L.DomEvent.disableClickPropagation(root);
+        L.DomEvent.disableScrollPropagation(root);
+        return root;
       },
     });
     map.addControl(new SwitcherControl());
