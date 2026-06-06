@@ -47,6 +47,15 @@ function enforceRateLimit(key: string, max: number, windowMs: number) {
     });
   }
 }
+
+/** Garante que o veículo pertence ao usuário autenticado (anti-IDOR). */
+async function assertVehicleOwner(ctx: any, vehicleId: number) {
+  const v = await db.getVehicleById(vehicleId);
+  if (!v || v.userId !== ctx.user.id) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Recurso não pertence ao usuário." });
+  }
+  return v;
+}
 import { notifyOwner } from "./_core/notification";
 import { registerPushSubscription, unregisterPushSubscription, sendPushToUser } from "./pushService";
 import { reverseGeocode, searchAddress } from "./geocode";
@@ -344,11 +353,9 @@ export const appRouter = router({
         }),
       }))
       .mutation(async ({ ctx, input }) => {
+        enforceRateLimit(`go360-veic:${ctx.user.id}`, 15, 60 * 60 * 1000);
         const token = (ctx.user as any)?.go360Token as string | undefined;
-        const vehicle = await db.getVehicleById(input.vehicleId);
-        if (!vehicle || vehicle.userId !== ctx.user.id) {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Veículo não pertence ao usuário." });
-        }
+        const vehicle = await assertVehicleOwner(ctx, input.vehicleId);
         const veiculoId = (vehicle as any)?.go360AtivoId as string | undefined;
         if (!token || !veiculoId) return { ok: false as const, reason: "no_go360" as const };
 
@@ -384,6 +391,7 @@ export const appRouter = router({
     updatePerfil: protectedProcedure
       .input(z.object({ nome: z.string().max(120).optional(), email: z.string().email().optional() }))
       .mutation(async ({ ctx, input }) => {
+        enforceRateLimit(`go360-perfil:${ctx.user.id}`, 10, 60 * 60 * 1000);
         const token = (ctx.user as any)?.go360Token as string | undefined;
         if (!token) return { ok: false as const, reason: "no_go360" as const };
         try {
@@ -505,8 +513,8 @@ export const appRouter = router({
     list: protectedProcedure.query(async ({ ctx }) => {
       return db.getUserVehicles(ctx.user.id);
     }),
-    get: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
-      return db.getVehicleById(input.id);
+    get: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ ctx, input }) => {
+      return assertVehicleOwner(ctx, input.id);
     }),
     create: protectedProcedure.input(z.object({
       plate: z.string(),
@@ -533,6 +541,7 @@ export const appRouter = router({
       speed: z.number().optional(),
       heading: z.number().optional(),
     })).mutation(async ({ ctx, input }) => {
+      await assertVehicleOwner(ctx, input.vehicleId);
       await db.updateVehiclePosition(input.vehicleId, {
         latitude: input.latitude,
         longitude: input.longitude,
@@ -569,13 +578,15 @@ export const appRouter = router({
       trackerSerial: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
       const { vehicleId, ...data } = input;
+      await assertVehicleOwner(ctx, vehicleId);
       await processTelemetry(ctx.user.id, vehicleId, data);
       return { success: true };
     }),
     setSpeedLimit: protectedProcedure.input(z.object({
       vehicleId: z.number(),
       speedLimit: z.number().min(20).max(200),
-    })).mutation(async ({ input }) => {
+    })).mutation(async ({ ctx, input }) => {
+      await assertVehicleOwner(ctx, input.vehicleId);
       await db.updateVehicleSpeedLimit(input.vehicleId, input.speedLimit);
       return { success: true };
     }),
@@ -600,12 +611,12 @@ export const appRouter = router({
       ipAddress: z.string().optional(),
       userAgent: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
+      enforceRateLimit(`block:${ctx.user.id}`, 6, 60 * 60 * 1000); // 6/h
+      const vehicle = await assertVehicleOwner(ctx, input.vehicleId);
       // Exigir aceite dos termos para bloquear
       if (input.action === "block" && !input.termsAccepted) {
-        throw new Error("Você deve aceitar os termos de responsabilidade para bloquear o veículo.");
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Você deve aceitar os termos de responsabilidade para bloquear o veículo." });
       }
-      // Buscar dados atuais do veículo para registrar no log
-      const vehicle = await db.getVehicleById(input.vehicleId);
       const blocked = input.action === "block";
       await db.updateVehicleBlock(input.vehicleId, blocked);
       const logResult = await db.createBlockLog({
@@ -690,7 +701,9 @@ export const appRouter = router({
       });
       return { success: true };
     }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      const fence = await db.getGeofenceById(input.id);
+      if (!fence || fence.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
       await db.deleteGeofence(input.id);
       return { success: true };
     }),
@@ -700,7 +713,9 @@ export const appRouter = router({
     list: protectedProcedure.query(async ({ ctx }) => {
       return db.getUserNotifications(ctx.user.id);
     }),
-    markRead: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    markRead: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      const n = await db.getNotificationById(input.id);
+      if (!n || n.userId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN" });
       await db.markNotificationRead(input.id);
       return { success: true };
     }),
@@ -759,7 +774,8 @@ export const appRouter = router({
     list: protectedProcedure.input(z.object({
       vehicleId: z.number(),
       limit: z.number().optional(),
-    })).query(async ({ input }) => {
+    })).query(async ({ ctx, input }) => {
+      await assertVehicleOwner(ctx, input.vehicleId);
       return db.getVehicleRouteHistory(input.vehicleId, input.limit || 50);
     }),
   }),
@@ -768,17 +784,22 @@ export const appRouter = router({
     list: protectedProcedure.input(z.object({
       vehicleId: z.number(),
       limit: z.number().optional(),
-    })).query(async ({ input }) => {
+    })).query(async ({ ctx, input }) => {
+      await assertVehicleOwner(ctx, input.vehicleId);
       return db.getVehicleTrips(input.vehicleId, input.limit || 30);
     }),
-    get: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
-      return db.getTripById(input.id);
+    get: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ ctx, input }) => {
+      const trip = await db.getTripById(input.id);
+      if (!trip) throw new TRPCError({ code: "NOT_FOUND" });
+      await assertVehicleOwner(ctx, trip.vehicleId);
+      return trip;
     }),
     getRoutePoints: protectedProcedure.input(z.object({
       vehicleId: z.number(),
       startedAt: z.date(),
       endedAt: z.date(),
-    })).query(async ({ input }) => {
+    })).query(async ({ ctx, input }) => {
+      await assertVehicleOwner(ctx, input.vehicleId);
       return db.getTripRoutePoints(input.vehicleId, input.startedAt, input.endedAt);
     }),
   }),

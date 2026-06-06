@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, decimal } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json, decimal, index } from "drizzle-orm/mysql-core";
 
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
@@ -73,7 +73,10 @@ export const vehicles = mysqlTable("vehicles", {
   speedLimit: int("speedLimit").default(120),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (t) => ({
+  userIdx: index("vehicles_userId_idx").on(t.userId),
+  serialIdx: index("vehicles_trackerSerial_idx").on(t.trackerSerial),
+}));
 
 export const geofences = mysqlTable("geofences", {
   id: int("id").autoincrement().primaryKey(),
@@ -89,7 +92,10 @@ export const geofences = mysqlTable("geofences", {
   alertOnExit: boolean("alertOnExit").default(true),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (t) => ({
+  userIdx: index("geofences_userId_idx").on(t.userId),
+  vehicleIdx: index("geofences_vehicleId_idx").on(t.vehicleId),
+}));
 
 export const occurrences = mysqlTable("occurrences", {
   id: int("id").autoincrement().primaryKey(),
@@ -116,7 +122,9 @@ export const notifications = mysqlTable("notifications", {
   message: text("message"),
   read: boolean("read").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (t) => ({
+  userIdx: index("notifications_userId_idx").on(t.userId),
+}));
 
 export const blockLogs = mysqlTable("blockLogs", {
   id: int("id").autoincrement().primaryKey(),
@@ -153,7 +161,9 @@ export const routeHistory = mysqlTable("routeHistory", {
   heading: int("heading").default(0),
   address: text("address"),
   recordedAt: timestamp("recordedAt").defaultNow().notNull(),
-});
+}, (t) => ({
+  vehicleIdx: index("routeHistory_vehicleId_idx").on(t.vehicleId),
+}));
 
 export const trips = mysqlTable("trips", {
   id: int("id").autoincrement().primaryKey(),
@@ -170,7 +180,9 @@ export const trips = mysqlTable("trips", {
   maxSpeed: int("maxSpeed").default(0),
   avgSpeed: int("avgSpeed").default(0),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (t) => ({
+  vehicleIdx: index("trips_vehicleId_idx").on(t.vehicleId),
+}));
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;

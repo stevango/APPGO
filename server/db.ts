@@ -331,6 +331,13 @@ export async function createGeofence(geofence: InsertGeofence) {
   return db.insert(geofences).values(geofence);
 }
 
+export async function getGeofenceById(geofenceId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const r = await db.select().from(geofences).where(eq(geofences.id, geofenceId)).limit(1);
+  return r[0];
+}
+
 export async function deleteGeofence(geofenceId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -443,6 +450,13 @@ export async function updateVehicleIconType(vehicleId: number, userId: number, i
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(vehicles).set({ iconType }).where(and(eq(vehicles.id, vehicleId), eq(vehicles.userId, userId)));
+}
+
+export async function getNotificationById(notificationId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const r = await db.select().from(notifications).where(eq(notifications.id, notificationId)).limit(1);
+  return r[0];
 }
 
 export async function markNotificationRead(notificationId: number) {

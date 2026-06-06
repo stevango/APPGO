@@ -13,6 +13,7 @@ import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
 import { isVehicleAsset, getAssetIcon } from "@/lib/assetIcons";
 import { getVehicleImageUrl } from "@/lib/vehicleImage";
 import { getTrackerStatus } from "@/lib/trackerStatus";
+import DistanceToVehicle from "@/components/DistanceToVehicle";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicles } from "@/lib/activeVehicle";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -701,6 +702,9 @@ function VehicleCard({
           </span>
         </div>
       </div>
+
+      {/* Distância do usuário até o equipamento (GPS do celular) */}
+      {isVeh && <DistanceToVehicle vehicle={vehicle} stale={sig.stale} />}
 
       {/* Ver mais sobre meu veículo (somente veículos) */}
       {isVeh && (
