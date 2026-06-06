@@ -19,12 +19,11 @@ export default function FullScreenModal({
   footer?: React.ReactNode;
 }) {
   return createPortal(
-    // Tela cheia, mas ABAIXO da navegação (z-40 < nav z-50): a barra inferior
-    // renderiza por cima e fica intacta, igual a uma página normal. O
-    // paddingBottom reserva a altura da nav para o conteúdo/rodapé não ficarem
-    // sob ela.
+    // Tela cheia OPACA cobrindo a página (z-100). A navegação fica acima (z-120,
+    // ver MobileLayout) e sempre íntegra. O paddingBottom reserva a altura da nav
+    // para o conteúdo/rodapé não ficarem sob ela.
     <div
-      className="fixed inset-0 z-40 bg-white flex flex-col animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in duration-150"
       style={{ paddingBottom: "calc(68px + env(safe-area-inset-bottom))" }}
     >
       <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100 shrink-0">

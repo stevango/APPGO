@@ -34,7 +34,7 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
       </main>
 
       {/* Bottom Navigation Bar - Frosted glass effect */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100/80 pb-safe z-50 shadow-[0_-2px_20px_oklch(0_0_0/0.04)]">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100/80 pb-safe z-[120] shadow-[0_-2px_20px_oklch(0_0_0/0.04)]">
         <div className="max-w-md mx-auto flex items-center justify-around h-[68px] px-1">
           {navItems.map((item) => {
             const isActive = location === item.path;
