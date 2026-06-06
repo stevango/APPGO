@@ -93,13 +93,27 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
   };
 
   // GO360 can return duplicate rows for the same plate (one with tracker, one
-  // without). Keep one per plate, preferring the entry that has the tracker.
+  // with the vehicle data/photo). Merge them: keep the tracker row as base and
+  // fill any empty field (imagem, ficha, chassi, marca...) from the other row —
+  // assim não perdemos a foto quando ela vem na linha sem rastreador.
+  const fillEmpty = (base: any, extra: any) => {
+    const out: any = { ...base };
+    for (const k of Object.keys(extra || {})) {
+      const bv = out[k];
+      if (bv === undefined || bv === null || bv === "") out[k] = extra[k];
+    }
+    return out;
+  };
   const byPlate = new Map<string, any>();
   for (const v of veiculos) {
     const plate = String(pick(v, "placa", "plate") ?? "").toUpperCase();
     const key = plate || pick(trackerOf(v), "id_tracker", "imei") || String(byPlate.size);
     const prev = byPlate.get(key);
-    if (!prev || (hasTracker(v) && !hasTracker(prev))) byPlate.set(key, v);
+    if (!prev) { byPlate.set(key, v); continue; }
+    // base = a que tem rastreador; preenche os vazios com a outra.
+    const base = hasTracker(v) && !hasTracker(prev) ? v : prev;
+    const extra = base === v ? prev : v;
+    byPlate.set(key, fillEmpty(base, extra));
   }
 
   for (const v of Array.from(byPlate.values())) {
