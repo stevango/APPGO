@@ -68,6 +68,7 @@ import { reverseGeocode, searchAddress } from "./geocode";
 import { processTelemetry } from "./telemetry";
 import { go360Enabled, go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada, go360FirstAccess, syncGo360Equipment, go360Historico, go360UpdateEquipamento, go360UpdatePerfil } from "./integrations/go360";
 import { cacadorEnabled, sendOcorrenciaToCacador, mapTipoOcorrencia } from "./integrations/cacador";
+import { getMonitoramento } from "./integrations/monitoramento";
 
 export const appRouter = router({
   system: systemRouter,
@@ -285,6 +286,19 @@ export const appRouter = router({
   }),
 
   // Real customer data proxied from the GO360 portal API (when enabled).
+  // Status oficial do rastreador, mantido pela GO360 (não duplicamos a régua).
+  // Gated por dono do veículo — não é um proxy aberto.
+  monitoring: router({
+    status: protectedProcedure
+      .input(z.object({ vehicleId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        const v = await assertVehicleOwner(ctx, input.vehicleId);
+        const id = v.trackerSerial || v.plate || (v as any).chassi;
+        if (!id) return null;
+        return getMonitoramento(id);
+      }),
+  }),
+
   go360: router({
     status: publicProcedure.query(() => ({ enabled: go360Enabled() })),
     firstAccess: publicProcedure

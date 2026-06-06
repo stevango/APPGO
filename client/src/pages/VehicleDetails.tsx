@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
 import { isVehicleAsset } from "@/lib/assetIcons";
 import { getVehicleImageUrl } from "@/lib/vehicleImage";
+import { getTrackerStatus } from "@/lib/trackerStatus";
 
 // Placa e chassi NÃO são editáveis (chaves contratuais B2B no GO360).
 const EDIT_FIELDS: Array<{ key: string; label: string; numeric?: boolean; max?: number }> = [
@@ -35,6 +36,11 @@ export default function VehicleDetails() {
   const [form, setForm] = useState<Record<string, string>>({});
 
   const go360 = trpc.go360.status.useQuery();
+  // Status oficial do rastreador (régua mantida pela GO360; cai na régua local se indisponível)
+  const monitoring = trpc.monitoring.status.useQuery(
+    { vehicleId: id },
+    { enabled: Number.isFinite(id) && id > 0, staleTime: 60000, retry: false },
+  );
   const updateMut = trpc.go360.updateEquipamento.useMutation({
     onSuccess: (res: any) => {
       if (res?.ok) {
@@ -172,6 +178,35 @@ export default function VehicleDetails() {
           <AssetTag label={vehicle.plate} size="md" />
         )}
       </div>
+
+      {/* Status oficial do rastreador (fonte: GO360) */}
+      {(() => {
+        const m = monitoring.data;
+        const local = getTrackerStatus(vehicle.lastSignalAt);
+        const cor = m?.rotulo?.cor || (local.key === "online" ? "#16a34a" : local.key === "standby" ? "#d97706" : "#ef4444");
+        const label = m?.rotulo?.label || local.label;
+        const descricao = m?.rotulo?.descricao;
+        const horas = m?.horasSemComunicar;
+        return (
+          <div className="go-card p-4 mb-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cor }} />
+                <span className="text-[15px] font-bold truncate" style={{ color: cor }}>{label}</span>
+              </div>
+              <span className="text-[10px] font-medium text-gray-400 shrink-0">
+                {m ? "via GO360" : "estimado"}
+              </span>
+            </div>
+            {descricao && <p className="text-[13px] text-gray-600 leading-snug mt-1.5">{descricao}</p>}
+            {typeof horas === "number" && (
+              <p className="text-[12px] text-gray-400 mt-1">
+                Sem comunicar há {horas < 1 ? "menos de 1h" : `${Math.round(horas)}h`}.
+              </p>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Ficha */}
       <div className="go-card p-4">
