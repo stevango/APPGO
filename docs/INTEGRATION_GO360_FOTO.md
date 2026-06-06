@@ -55,7 +55,31 @@ Também funciona se a foto vier dentro de `equipamento` (campos `imagem`/`foto`/
 - Se a GO360 **não** mandar a foto, o app tenta preencher pela biblioteca
   própria (cache por marca|modelo|ano). O link da GO360 sempre tem prioridade.
 
-## Ficha técnica (página pública)
+## Ficha técnica — DADOS em JSON (preferido)
+
+Em vez de um link de página (que é o app autenticado e não embuta), envie os
+**dados** da ficha em cada veículo do `/api/app/equipamento`, num campo `ficha`
+(aceitamos também `ficha_tecnica`, `especificacoes`, `specs`, `dados_tecnicos`).
+O app renderiza uma tela nativa, sem iframe e sem login.
+
+Formato livre (chave→valor). Pode ser plano ou agrupado:
+
+```jsonc
+{
+  "placa": "QOP2H92",
+  "ficha": {
+    "Motor": { "Cilindrada": "999 cm³", "Potência": "77 cv", "Torque": "10,2 kgfm", "Combustível": "Flex" },
+    "Transmissão": { "Câmbio": "Manual 5 marchas", "Tração": "Dianteira" },
+    "Desempenho": { "Velocidade máxima": "168 km/h", "0–100 km/h": "11,9 s", "Consumo cidade": "11,4 km/l" },
+    "Dimensões": { "Comprimento": "4.295 mm", "Porta-malas": "460 L", "Tanque": "41 L" }
+  }
+}
+```
+
+As chaves viram títulos automaticamente (humanizadas). Objetos aninhados viram
+seções; valores simples viram linhas.
+
+## Ficha técnica (página pública) — alternativa
 
 A GO360 também expõe, por veículo, `ficha_publica_url` — link de uma página
 pública com a ficha técnica. O app lê esse campo (aceita `ficha_publica_url`,

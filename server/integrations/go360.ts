@@ -176,6 +176,9 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
     // Página pública da ficha técnica (GO360 expõe por veículo no /equipamento).
     const fichaRaw = pick(v, "ficha_publica_url", "fichaPublicaUrl", "ficha_url", "fichaUrl", "ficha_tecnica_url", "fichaTecnicaUrl") ?? pick(eq, "ficha_publica_url", "fichaPublicaUrl") ?? null;
     const fichaUrl = fichaRaw && String(fichaRaw).startsWith("http") ? String(fichaRaw) : null;
+    // Dados da ficha técnica (objeto/JSON) para render nativo.
+    const fichaData =
+      pick(v, "ficha", "ficha_tecnica", "fichaTecnica", "especificacoes", "especificações", "specs", "dados_tecnicos", "dadosTecnicos", "datasheet") ?? null;
 
     await db.upsertGo360Vehicle(userId, {
       plate: String(pick(v, "placa", "plate") ?? serial ?? "SEM-PLACA").toUpperCase(),
@@ -194,6 +197,7 @@ export async function syncGo360Equipment(userId: number, token: string): Promise
       go360AtivoId: pick(eq, "id", "ativo_id", "ativoId") ? String(pick(eq, "id", "ativo_id", "ativoId")) : null,
       imageUrl,
       fichaUrl,
+      fichaData: fichaData && typeof fichaData === "object" ? fichaData : null,
       trackerStatus,
       latitude: lat != null ? String(lat) : null,
       longitude: lng != null ? String(lng) : null,

@@ -65,6 +65,7 @@ export const vehicles = mysqlTable("vehicles", {
   go360AtivoId: varchar("go360AtivoId", { length: 64 }),
   imageUrl: varchar("imageUrl", { length: 500 }),  // render do modelo (estilo app de montadora)
   fichaUrl: varchar("fichaUrl", { length: 600 }),  // página pública da ficha técnica (GO360)
+  fichaData: json("fichaData"),                     // dados da ficha técnica (specs) — render nativo
   simStatus: mysqlEnum("simStatus", ["active", "inactive", "no_signal"]).default("active"),
   simSignal: int("simSignal").default(0),
   lastGpsAt: timestamp("lastGpsAt").defaultNow(),
