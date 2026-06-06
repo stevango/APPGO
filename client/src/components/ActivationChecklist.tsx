@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Bell, Phone, Shield, Check, X, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
@@ -12,7 +13,22 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
  */
 export default function ActivationChecklist() {
   const [, setLocation] = useLocation();
-  const { isSupported, isSubscribed, subscribe } = usePushNotifications();
+  const { isSupported, isSubscribed, isLoading, subscribe, permission } = usePushNotifications();
+
+  const activatePush = async () => {
+    if (permission === "denied") {
+      toast.error("Notificações bloqueadas. Vamos ver como reativar.");
+      setLocation("/profile");
+      return;
+    }
+    const ok = await subscribe();
+    if (ok) toast.success("Notificações ativadas! 🔔");
+    else {
+      // No iOS precisa instalar o app; sem VAPID/suporte também cai aqui.
+      toast("Vamos configurar suas notificações no Perfil.");
+      setLocation("/profile");
+    }
+  };
   const contacts = trpc.emergencyContacts.list.useQuery();
   const geos = trpc.geofences.list.useQuery();
   const [dismissed, setDismissed] = useState(() => {
@@ -26,7 +42,7 @@ export default function ActivationChecklist() {
   const hasGeo = (geos.data?.length ?? 0) > 0;
 
   const steps = [
-    !pushDone && { key: "push", icon: Bell, label: "Ativar notificações", desc: "Alertas em tempo real", action: () => subscribe() },
+    !pushDone && { key: "push", icon: Bell, label: isLoading ? "Ativando..." : "Ativar notificações", desc: "Alertas em tempo real", action: activatePush },
     !hasContact && { key: "contact", icon: Phone, label: "Contato de emergência", desc: "Acionado num SOS", action: () => setLocation("/emergency-contacts") },
     !hasGeo && { key: "geo", icon: Shield, label: "Criar 1ª cerca", desc: "Aviso ao sair/entrar de uma área", action: () => setLocation("/geofences") },
   ].filter(Boolean) as Array<{ key: string; icon: any; label: string; desc: string; action: () => void }>;
