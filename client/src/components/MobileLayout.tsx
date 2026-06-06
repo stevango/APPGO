@@ -72,13 +72,13 @@ export default function MobileLayout({ children }: MobileLayoutProps) {
                 )}
                 <Icon
                   className={`w-[22px] h-[22px] transition-all duration-200 ${
-                    isActive ? "text-[#243FF7]" : "text-gray-400"
+                    isActive ? "text-[#243FF7]" : "text-gray-500"
                   }`}
                   strokeWidth={isActive ? 2.5 : 1.8}
                 />
                 <span
                   className={`text-[10px] transition-all duration-200 ${
-                    isActive ? "text-[#243FF7] font-semibold" : "text-gray-400 font-medium"
+                    isActive ? "text-[#243FF7] font-semibold" : "text-gray-500 font-medium"
                   }`}
                 >
                   {item.label}

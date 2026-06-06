@@ -49,7 +49,7 @@ export default function Jornada() {
               <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-[#243FF7] to-[#1a2fd4] rounded-full transition-all" style={{ width: `${pct}%` }} />
               </div>
-              <p className="text-xs text-gray-400 mt-2">{done} de {etapas.length} etapas concluídas</p>
+              <p className="text-xs text-gray-500 mt-2">{done} de {etapas.length} etapas concluídas</p>
             </div>
 
             {/* Timeline */}
@@ -60,7 +60,7 @@ export default function Jornada() {
                   const color =
                     e.status === "concluido" ? "bg-green-500 text-white"
                       : e.status === "em_andamento" ? "bg-[#243FF7] text-white"
-                      : "bg-gray-200 text-gray-400";
+                      : "bg-gray-200 text-gray-500";
                   const Icon = e.status === "concluido" ? Check : e.status === "em_andamento" ? Clock : Circle;
                   return (
                     <div key={e.id} className="flex gap-3.5">
@@ -71,11 +71,11 @@ export default function Jornada() {
                         {!isLast && <div className={`w-0.5 flex-1 my-1 ${e.status === "concluido" ? "bg-green-400" : "bg-gray-200"}`} style={{ minHeight: 28 }} />}
                       </div>
                       <div className={`pb-6 ${isLast ? "" : ""}`}>
-                        <p className={`text-sm font-semibold ${e.status === "pendente" ? "text-gray-400" : "text-[#111111]"}`}>{e.titulo}</p>
+                        <p className={`text-sm font-semibold ${e.status === "pendente" ? "text-gray-500" : "text-[#111111]"}`}>{e.titulo}</p>
                         <p className="text-[11px] font-medium mt-0.5">
                           {e.status === "concluido" ? <span className="text-green-600">Concluído{fmt(e.desde) ? ` • ${fmt(e.desde)}` : ""}</span>
                             : e.status === "em_andamento" ? <span className="text-[#243FF7]">Em andamento</span>
-                            : <span className="text-gray-400">Pendente</span>}
+                            : <span className="text-gray-500">Pendente</span>}
                         </p>
                       </div>
                     </div>

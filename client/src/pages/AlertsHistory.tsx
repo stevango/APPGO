@@ -76,7 +76,7 @@ export default function AlertsHistory() {
                         {isAck ? "Ciência" : ch.label}
                       </span>
                       {log.delivered === false && !isAck && (
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-400">
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">
                           não entregue
                         </span>
                       )}
@@ -84,7 +84,7 @@ export default function AlertsHistory() {
                     {log.message && (
                       <p className="text-xs text-gray-500 mt-0.5 line-clamp-3">{log.message}</p>
                     )}
-                    <span className="text-[10px] text-gray-400 mt-1 block">
+                    <span className="text-[10px] text-gray-500 mt-1 block">
                       {new Date(log.createdAt).toLocaleString("pt-BR", {
                         day: "2-digit", month: "2-digit", year: "2-digit",
                         hour: "2-digit", minute: "2-digit",
@@ -102,7 +102,7 @@ export default function AlertsHistory() {
             <Bell className="w-8 h-8 text-gray-300" />
           </div>
           <h3 className="font-semibold text-gray-700 mb-1">Nenhum aviso ainda</h3>
-          <p className="text-sm text-gray-400 text-center">
+          <p className="text-sm text-gray-500 text-center">
             O histórico de avisos enviados aparecerá aqui.
           </p>
         </div>

@@ -111,7 +111,7 @@ export default function VehicleSelector() {
                     <div className="mb-1">
                       <StatusLegend status={getTrackerStatus(vehicle.lastSignalAt)} size="sm" />
                     </div>
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
                       {vehicle.model || "Equipamento"}
                     </p>
                     <div className="mt-1.5">
@@ -122,7 +122,7 @@ export default function VehicleSelector() {
                       )}
                     </div>
                     {vehicle.color && (
-                      <p className="text-xs text-gray-400 mt-1.5">{vehicle.color} {vehicle.year ? `• ${vehicle.year}` : ""}</p>
+                      <p className="text-xs text-gray-500 mt-1.5">{vehicle.color} {vehicle.year ? `• ${vehicle.year}` : ""}</p>
                     )}
                     {isVehicleAsset(vehicle.iconType) && (
                       <button
@@ -162,7 +162,7 @@ export default function VehicleSelector() {
         ) : (
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Car className="w-10 h-10 text-gray-400" />
+              <Car className="w-10 h-10 text-gray-500" />
             </div>
             <p className="text-base font-semibold text-[#111111] mb-1">Nenhum equipamento cadastrado</p>
             <p className="text-sm text-gray-500 mb-6">Adicione seu primeiro equipamento para começar</p>
@@ -196,7 +196,7 @@ export default function VehicleSelector() {
           <FullScreenModal title="Escolha o ícone" subtitle="Selecione o que melhor representa seu bem." onClose={() => setIconPickerFor(null)}>
             {ASSET_GROUPS.map((group) => (
               <div key={group} className="mb-5">
-                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">{group}</p>
+                <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2">{group}</p>
                 <div className="grid grid-cols-4 gap-2">
                   {ASSET_ICONS.filter(a => a.group === group).map(({ key, label, Icon }) => {
                     const active = (current?.iconType ?? "car") === key;

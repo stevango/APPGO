@@ -54,11 +54,11 @@ export default function Contract() {
 
               <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-[11px] text-gray-400">Emitido em</p>
+                  <p className="text-[11px] text-gray-500">Emitido em</p>
                   <p className="font-semibold text-[#111111]">{fmt(contract?.createdAt)}</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3">
-                  <p className="text-[11px] text-gray-400">Assinado em</p>
+                  <p className="text-[11px] text-gray-500">Assinado em</p>
                   <p className="font-semibold text-[#111111]">{fmt(contract?.signedAt)}</p>
                 </div>
               </div>
@@ -97,7 +97,7 @@ export default function Contract() {
             )}
 
             {/* Security note */}
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-400 pt-1">
+            <div className="flex items-center justify-center gap-1.5 text-[11px] text-gray-500 pt-1">
               <ShieldCheck className="w-3.5 h-3.5" /> Documento protegido e com validade jurídica.
             </div>
           </>

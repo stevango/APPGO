@@ -45,7 +45,7 @@ export function AddressSearch({
   return (
     <div className={cn("relative", className)}>
       <div className="bg-white rounded-xl shadow-md flex items-center px-3 h-12 border border-gray-100">
-        <Search className="w-4 h-4 text-gray-400 shrink-0" />
+        <Search className="w-4 h-4 text-gray-500 shrink-0" />
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -55,10 +55,10 @@ export function AddressSearch({
           className="flex-1 px-2 text-sm outline-none bg-transparent"
         />
         {searching ? (
-          <Loader2 className="w-4 h-4 text-gray-400 animate-spin shrink-0" />
+          <Loader2 className="w-4 h-4 text-gray-500 animate-spin shrink-0" />
         ) : query ? (
           <button onClick={clear} className="go-btn-active shrink-0" aria-label="Limpar">
-            <X className="w-4 h-4 text-gray-400" />
+            <X className="w-4 h-4 text-gray-500" />
           </button>
         ) : null}
       </div>

@@ -171,14 +171,14 @@ export default function PaymentManagement() {
                   </div>
                   <div className="text-left">
                     <p className="text-sm font-medium text-gray-800">Histórico de Faturas</p>
-                    <p className="text-xs text-gray-400">Visualizar faturas e 2ª via</p>
+                    <p className="text-xs text-gray-500">Visualizar faturas e 2ª via</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-gray-300" />
               </button>
             </Link>
 
-            <p className="text-center text-xs text-gray-400">
+            <p className="text-center text-xs text-gray-500">
               A alteração será aplicada na próxima cobrança
             </p>
           </div>
@@ -217,7 +217,7 @@ export default function PaymentManagement() {
                     <p className="text-xs text-gray-500 mt-0.5">{method.sublabel}</p>
                   </div>
                   {method.id === currentMethod?.type ? (
-                    <span className="text-xs text-gray-400">Atual</span>
+                    <span className="text-xs text-gray-500">Atual</span>
                   ) : (
                     <ChevronRight className="w-4 h-4 text-gray-300" />
                   )}
@@ -227,7 +227,7 @@ export default function PaymentManagement() {
 
             <button
               onClick={() => setStep("current")}
-              className="w-full text-center text-sm text-gray-400 hover:text-gray-600 mt-4 py-2"
+              className="w-full text-center text-sm text-gray-500 hover:text-gray-600 mt-4 py-2"
             >
               ← Voltar
             </button>
@@ -275,7 +275,7 @@ export default function PaymentManagement() {
 
               <button
                 onClick={() => handleIncentiveSelect(null)}
-                className="w-full p-4 text-center text-sm text-gray-400 hover:text-gray-600 border border-dashed border-gray-200 rounded-2xl"
+                className="w-full p-4 text-center text-sm text-gray-500 hover:text-gray-600 border border-dashed border-gray-200 rounded-2xl"
               >
                 Não quero benefício, apenas alterar
               </button>
@@ -283,7 +283,7 @@ export default function PaymentManagement() {
 
             <button
               onClick={() => setStep("select")}
-              className="w-full text-center text-sm text-gray-400 hover:text-gray-600 mt-2 py-2"
+              className="w-full text-center text-sm text-gray-500 hover:text-gray-600 mt-2 py-2"
             >
               ← Voltar
             </button>

@@ -295,7 +295,7 @@ export default function Tracking() {
             >
               <h1 className="text-base font-bold text-[#111111] flex items-center gap-1">
                 {vehicle?.model || "Rastreamento"}
-                {vehicles && vehicles.length > 1 && <ChevronDown className="w-4 h-4 text-gray-400" />}
+                {vehicles && vehicles.length > 1 && <ChevronDown className="w-4 h-4 text-gray-500" />}
               </h1>
               {vehicle && (() => {
                 const st = getTrackerStatus(vehicle.lastSignalAt);
@@ -365,7 +365,7 @@ export default function Tracking() {
                         return <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${st.text}`}><span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}</span>;
                       })()}
                       <span className="text-gray-300 text-[10px]">•</span>
-                      <span className="text-xs text-gray-400 font-mono">{v.plate}</span>
+                      <span className="text-xs text-gray-500 font-mono">{v.plate}</span>
                     </div>
                   </div>
                   {active && <Check className="w-5 h-5 text-[#243FF7] shrink-0" />}
@@ -483,7 +483,7 @@ export default function Tracking() {
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-[#111111]">{vehicle.brand} {vehicle.model}</h3>
-                    <p className="text-[10px] text-gray-400">{vehicle.lastAddress || "Buscando endereço..."}</p>
+                    <p className="text-[10px] text-gray-500">{vehicle.lastAddress || "Buscando endereço..."}</p>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
@@ -535,7 +535,7 @@ export default function Tracking() {
               <div className="px-4 pb-4 border-t border-gray-100 pt-3 space-y-4 animate-in slide-in-from-bottom-2 duration-200">
                 {/* Telemetria Section */}
                 <div>
-                  <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Telemetria</h4>
+                  <h4 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Telemetria</h4>
                   <div className="grid grid-cols-2 gap-2">
                     <InfoCard
                       icon={<Compass className="w-4 h-4 text-[#243FF7]" />}
@@ -562,7 +562,7 @@ export default function Tracking() {
 
                 {/* Energia Section */}
                 <div>
-                  <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Energia</h4>
+                  <h4 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Energia</h4>
                   <div className="grid grid-cols-2 gap-2">
                     <InfoCard
                       icon={<Battery className="w-4 h-4 text-green-500" />}
@@ -581,7 +581,7 @@ export default function Tracking() {
 
                 {/* Conectividade Section */}
                 <div>
-                  <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Conectividade</h4>
+                  <h4 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Conectividade</h4>
                   <div className="grid grid-cols-2 gap-2">
                     <InfoCard
                       icon={<Satellite className="w-4 h-4 text-blue-500" />}
@@ -600,7 +600,7 @@ export default function Tracking() {
 
                 {/* Sensores Section */}
                 <div>
-                  <h4 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Sensores</h4>
+                  <h4 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Sensores</h4>
                   <div className="grid grid-cols-3 gap-2">
                     <SensorBadge
                       label="Ignição"
@@ -622,16 +622,16 @@ export default function Tracking() {
                 <div className="bg-gray-50 rounded-xl p-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] text-gray-400 uppercase">Rastreador</p>
+                      <p className="text-[10px] text-gray-500 uppercase">Rastreador</p>
                       <p className="text-sm font-semibold text-[#111]">{vehicle.trackerModel || "ST3xx"}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] text-gray-400 uppercase">Serial</p>
+                      <p className="text-[10px] text-gray-500 uppercase">Serial</p>
                       <p className="text-xs font-mono text-gray-600">{vehicle.trackerSerial || "---"}</p>
                     </div>
                   </div>
                   <div className="mt-2 pt-2 border-t border-gray-200 flex items-center justify-between">
-                    <span className="text-[10px] text-gray-400">Última comunicação</span>
+                    <span className="text-[10px] text-gray-500">Última comunicação</span>
                     <span className="text-xs font-medium text-gray-600">
                       {vehicle.lastSignalAt
                         ? new Date(vehicle.lastSignalAt).toLocaleString("pt-BR", {
@@ -680,11 +680,11 @@ function MetricPill({ icon, value, unit, label, valueColor, alert }: {
 }) {
   return (
     <div className={`rounded-xl p-2.5 text-center ${alert ? "bg-red-50 border border-red-200 animate-pulse" : "bg-gray-50"}`}>
-      <div className={`flex items-center justify-center mb-1 ${alert ? "text-red-500" : "text-gray-400"}`}>{icon}</div>
+      <div className={`flex items-center justify-center mb-1 ${alert ? "text-red-500" : "text-gray-500"}`}>{icon}</div>
       <p className={`text-sm font-bold ${valueColor || "text-[#111]"}`}>
-        {value}<span className="text-[9px] font-normal text-gray-400 ml-0.5">{unit}</span>
+        {value}<span className="text-[9px] font-normal text-gray-500 ml-0.5">{unit}</span>
       </p>
-      <p className={`text-[9px] mt-0.5 ${alert ? "text-red-500 font-semibold" : "text-gray-400"}`}>{alert ? "EXCESSO!" : label}</p>
+      <p className={`text-[9px] mt-0.5 ${alert ? "text-red-500 font-semibold" : "text-gray-500"}`}>{alert ? "EXCESSO!" : label}</p>
     </div>
   );
 }
@@ -700,9 +700,9 @@ function InfoCard({ icon, label, value, subtitle, valueColor }: {
     <div className="bg-gray-50 rounded-xl p-3 flex items-start gap-2.5">
       <div className="mt-0.5">{icon}</div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] text-gray-400">{label}</p>
+        <p className="text-[10px] text-gray-500">{label}</p>
         <p className={`text-sm font-semibold truncate ${valueColor || "text-[#111]"}`}>{value}</p>
-        {subtitle && <p className="text-[9px] text-gray-400 mt-0.5">{subtitle}</p>}
+        {subtitle && <p className="text-[9px] text-gray-500 mt-0.5">{subtitle}</p>}
       </div>
     </div>
   );
@@ -717,7 +717,7 @@ function SensorBadge({ label, active, activeColor }: {
     <div className={`rounded-xl p-2.5 text-center border ${active ? "border-green-200 bg-green-50" : "border-gray-200 bg-gray-50"}`}>
       <div className={`w-3 h-3 rounded-full mx-auto mb-1 ${active ? (activeColor || "bg-green-500") : "bg-gray-300"}`} />
       <p className="text-[10px] font-medium text-gray-600">{label}</p>
-      <p className={`text-[9px] font-semibold ${active ? "text-green-600" : "text-gray-400"}`}>
+      <p className={`text-[9px] font-semibold ${active ? "text-green-600" : "text-gray-500"}`}>
         {active ? "Ativo" : "Inativo"}
       </p>
     </div>

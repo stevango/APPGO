@@ -37,7 +37,7 @@ export default function AdminVehicleImages() {
     return (
       <div className="px-4 pt-10 text-center">
         <p className="font-semibold text-gray-700">Acesso restrito</p>
-        <p className="text-sm text-gray-400 mt-1">Esta área é exclusiva para administradores.</p>
+        <p className="text-sm text-gray-500 mt-1">Esta área é exclusiva para administradores.</p>
         <Button variant="ghost" className="mt-4" onClick={() => setLocation("/")}>Voltar</Button>
       </div>
     );
@@ -58,7 +58,7 @@ export default function AdminVehicleImages() {
       {/* Filtro */}
       <div className="flex gap-2 mb-4">
         <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3">
-          <Search className="w-4 h-4 text-gray-400" />
+          <Search className="w-4 h-4 text-gray-500" />
           <input
             value={make} onChange={(e) => setMake(e.target.value)}
             placeholder="Montadora (ex: nissan)"
@@ -66,7 +66,7 @@ export default function AdminVehicleImages() {
           />
         </div>
         <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3">
-          <Search className="w-4 h-4 text-gray-400" />
+          <Search className="w-4 h-4 text-gray-500" />
           <input
             value={model} onChange={(e) => setModel(e.target.value)}
             placeholder="Modelo (ex: versa)"
@@ -103,7 +103,7 @@ export default function AdminVehicleImages() {
 
       {/* Lista */}
       {list.isLoading ? (
-        <p className="text-sm text-gray-400 text-center py-8">Carregando...</p>
+        <p className="text-sm text-gray-500 text-center py-8">Carregando...</p>
       ) : rows.length === 0 ? (
         <div className="flex flex-col items-center py-12 text-center">
           <ImageOff className="w-10 h-10 text-gray-300 mb-3" />
@@ -124,7 +124,7 @@ export default function AdminVehicleImages() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-[#111] capitalize">{r.make} <span className="font-semibold">{r.model}</span></p>
-                    <p className="text-xs text-gray-400 capitalize">{r.make} {r.model} {r.year ?? ""} · {r.source}</p>
+                    <p className="text-xs text-gray-500 capitalize">{r.make} {r.model} {r.year ?? ""} · {r.source}</p>
                   </div>
                   <button onClick={() => remove.mutate({ id: r.id })} className="text-red-400 go-btn-active p-1" aria-label="Remover">
                     <Trash2 className="w-4 h-4" />
@@ -136,14 +136,14 @@ export default function AdminVehicleImages() {
                     onChange={(e) => setEdits({ ...edits, [r.id]: e.target.value })}
                     className="flex-1 border border-gray-200 rounded-lg px-2.5 py-2 text-xs outline-none text-gray-600"
                   />
-                  <a href={r.imageUrl} target="_blank" rel="noreferrer" className="text-gray-400 go-btn-active p-1.5" aria-label="Abrir">
+                  <a href={r.imageUrl} target="_blank" rel="noreferrer" className="text-gray-500 go-btn-active p-1.5" aria-label="Abrir">
                     <ExternalLink className="w-4 h-4" />
                   </a>
                   <button
                     disabled={!dirty || update.isPending}
                     onClick={() => update.mutate({ id: r.id, imageUrl: current })}
                     className={`flex items-center gap-1 text-xs font-bold rounded-lg px-3 py-2 ${
-                      dirty ? "bg-[#243FF7] text-white" : "bg-gray-100 text-gray-400"
+                      dirty ? "bg-[#243FF7] text-white" : "bg-gray-100 text-gray-500"
                     }`}
                   >
                     <Save className="w-3.5 h-3.5" /> Salvar

@@ -91,7 +91,7 @@ export default function Home() {
       {/* Header - Clean and welcoming */}
       <div className="flex items-center justify-between mb-7">
         <div>
-          <p className="text-[13px] text-gray-400 font-medium">{greeting},</p>
+          <p className="text-[13px] text-gray-500 font-medium">{greeting},</p>
           <h1 className="text-[22px] font-bold text-[#111111] tracking-tight">{firstName}</h1>
         </div>
         <button
@@ -250,7 +250,7 @@ export default function Home() {
       {!isLoading && vehicles && vehicles.length > 1 && (
         <div className="mb-3">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
               Meus equipamentos ({vehicles.length})
             </p>
             <button
@@ -303,7 +303,7 @@ export default function Home() {
       {/* Quick Actions - Refined grid */}
       <div className="mt-7">
         <div className="flex items-center justify-between mb-3.5">
-          <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider">
+          <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-wider">
             Ações rápidas
           </h2>
         </div>
@@ -393,7 +393,7 @@ function MaintenanceAlert({ vehicle }: { vehicle: any }) {
         <button
           onClick={dismiss}
           aria-label="Fechar aviso"
-          className="absolute top-2 right-2 p-1 rounded-full text-gray-400 hover:text-gray-600 go-btn-active"
+          className="absolute top-2 right-2 p-1 rounded-full text-gray-500 hover:text-gray-600 go-btn-active"
         >
           <X className="w-4 h-4" />
         </button>
@@ -529,16 +529,16 @@ function DrivingScoreCard() {
   return (
     <div className="w-full mb-4 go-card p-4">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Score de direção</p>
+        <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Score de direção</p>
         <span className={`text-[11px] font-bold ${tone.t}`}>{tone.label}</span>
       </div>
       <div className="flex items-center gap-3">
-        <p className={`text-3xl font-extrabold ${tone.t} leading-none`}>{score}<span className="text-sm font-medium text-gray-400">/100</span></p>
+        <p className={`text-3xl font-extrabold ${tone.t} leading-none`}>{score}<span className="text-sm font-medium text-gray-500">/100</span></p>
         <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
           <div className={`h-full ${tone.bg} rounded-full transition-all`} style={{ width: `${score}%` }} />
         </div>
       </div>
-      <p className="text-[11px] text-gray-400 mt-2">
+      <p className="text-[11px] text-gray-500 mt-2">
         {data.events} evento(s) em {data.km} km nos últimos 30 dias
       </p>
     </div>
@@ -556,18 +556,18 @@ function DriveSummaryCard() {
       onClick={() => setLocation("/trip-history")}
       className="w-full mb-4 go-card p-4 text-left go-btn-active"
     >
-      <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Seu uso</p>
+      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Seu uso</p>
       <div className="flex items-center gap-4">
         <div className="flex-1">
-          <p className="text-2xl font-extrabold text-[#111111] leading-none">{data.kmToday} <span className="text-sm font-medium text-gray-400">km hoje</span></p>
+          <p className="text-2xl font-extrabold text-[#111111] leading-none">{data.kmToday} <span className="text-sm font-medium text-gray-500">km hoje</span></p>
         </div>
         <div className="h-8 w-px bg-gray-100" />
         <div className="flex-1">
-          <p className="text-2xl font-extrabold text-[#111111] leading-none">{data.kmWeek} <span className="text-sm font-medium text-gray-400">km na semana</span></p>
+          <p className="text-2xl font-extrabold text-[#111111] leading-none">{data.kmWeek} <span className="text-sm font-medium text-gray-500">km na semana</span></p>
         </div>
         <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
       </div>
-      <p className="text-[11px] text-gray-400 mt-2">{data.tripsWeek} trajeto(s) nos últimos 7 dias</p>
+      <p className="text-[11px] text-gray-500 mt-2">{data.tripsWeek} trajeto(s) nos últimos 7 dias</p>
     </button>
   );
 }
@@ -608,7 +608,7 @@ function FleetSummary({ vehicles }: { vehicles: any[] }) {
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="min-w-0">
           <p className="text-[14px] font-bold text-[#111111] leading-tight">Seus equipamentos</p>
-          <p className="text-[11px] text-gray-400 font-medium">
+          <p className="text-[11px] text-gray-500 font-medium">
             {total} {total === 1 ? "rastreador" : "rastreadores"}
           </p>
         </div>
@@ -792,7 +792,7 @@ function VehicleCard({
           {sig.stale ? "Sem comunicação recente" : headline}
         </span>
         {!sig.stale && isVeh && (vehicle.speed ?? 0) > 0 && (
-          <span className="text-[12px] text-gray-400 font-medium">• {vehicle.speed} km/h</span>
+          <span className="text-[12px] text-gray-500 font-medium">• {vehicle.speed} km/h</span>
         )}
       </div>
 
@@ -824,10 +824,10 @@ function VehicleCard({
         )}
       </div>
 
-      <div className="mt-3 flex items-start gap-2 text-gray-400">
+      <div className="mt-3 flex items-start gap-2 text-gray-500">
         <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" />
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-medium text-gray-400 leading-none mb-0.5">
+          <p className="text-[10px] font-medium text-gray-500 leading-none mb-0.5">
             {sig.stale ? "Última localização conhecida" : "Localização atual"}
           </p>
           <span className="text-[12px] text-gray-500 line-clamp-2 leading-tight block">
@@ -851,7 +851,7 @@ function VehicleCard({
 
       {/* Clear call-to-action */}
       <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-3">
-        <span className={`text-[11px] font-medium ${sig.stale ? sig.text : "text-gray-400"}`}>
+        <span className={`text-[11px] font-medium ${sig.stale ? sig.text : "text-gray-500"}`}>
           {sig.stale ? `Sem atualização ${timeSinceSignal}` : `Atualizado ${timeSinceSignal}`}
         </span>
         <span className="inline-flex items-center gap-1 text-[13px] font-bold text-[#243FF7] bg-[#243FF7]/8 rounded-full pl-3.5 pr-3 py-1.5">
@@ -868,13 +868,13 @@ function Metric({ icon: Icon, label, value, unit, tone = "default", muted = fals
   icon: any; label: string; value: string; unit?: string; tone?: "default" | "warning" | "danger"; muted?: boolean;
 }) {
   const text = muted ? "text-gray-500" : tone === "danger" ? "text-red-600" : tone === "warning" ? "text-amber-600" : "text-[#111111]";
-  const ic = muted ? "text-gray-400" : tone === "danger" ? "text-red-500" : tone === "warning" ? "text-amber-500" : "text-[#243FF7]";
+  const ic = muted ? "text-gray-500" : tone === "danger" ? "text-red-500" : tone === "warning" ? "text-amber-500" : "text-[#243FF7]";
   return (
     <div className="bg-gray-50 rounded-xl px-2.5 py-2.5">
       <Icon className={`w-4 h-4 ${ic} mb-1.5`} />
-      <p className="text-[10px] text-gray-400 font-medium leading-none mb-1">{label}</p>
+      <p className="text-[10px] text-gray-500 font-medium leading-none mb-1">{label}</p>
       <p className={`text-[13px] font-bold leading-none ${text}`}>
-        {value}{unit ? <span className="text-[10px] font-medium text-gray-400"> {unit}</span> : null}
+        {value}{unit ? <span className="text-[10px] font-medium text-gray-500"> {unit}</span> : null}
       </p>
     </div>
   );
@@ -887,7 +887,7 @@ function EmptyVehicleCard() {
         <Car className="w-8 h-8 text-[#243FF7]" />
       </div>
       <h3 className="font-bold text-[#111111] text-[15px] mb-1">Nenhum equipamento</h3>
-      <p className="text-[13px] text-gray-400 leading-relaxed">
+      <p className="text-[13px] text-gray-500 leading-relaxed">
         Seu equipamento aparecerá aqui após a ativação do rastreador.
       </p>
     </div>
@@ -1054,7 +1054,7 @@ function ProductsSection() {
 
   return (
     <div className="mt-8">
-      <h2 className="text-[13px] font-semibold text-gray-400 uppercase tracking-wider mb-3">
+      <h2 className="text-[13px] font-semibold text-gray-500 uppercase tracking-wider mb-3">
         Produtos GO para você
       </h2>
 

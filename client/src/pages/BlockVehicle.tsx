@@ -123,7 +123,7 @@ export default function BlockVehicle() {
             ) : !blockHistory || blockHistory.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <History className="w-8 h-8 text-gray-400" />
+                  <History className="w-8 h-8 text-gray-500" />
                 </div>
                 <p className="text-sm text-gray-500">Nenhum comando registrado</p>
               </div>
@@ -168,7 +168,7 @@ export default function BlockVehicle() {
                           <p className="text-sm font-semibold text-[#111111]">
                             {log.action === "block" ? "Bloqueio" : "Desbloqueio"}
                           </p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-gray-500">
                             {new Date(log.createdAt).toLocaleString("pt-BR")}
                           </p>
                         </div>
@@ -184,22 +184,22 @@ export default function BlockVehicle() {
                     </div>
                     <div className="border-t border-gray-50 pt-2 mt-2 space-y-1">
                       {log.ipAddress && (
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-gray-500">
                           <span className="font-medium text-gray-500">IP:</span> {log.ipAddress}
                         </p>
                       )}
                       {log.vehicleSpeed !== null && log.vehicleSpeed !== undefined && log.action === "block" && (
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-gray-500">
                           <span className="font-medium text-gray-500">Velocidade no momento:</span> {log.vehicleSpeed} km/h
                         </p>
                       )}
                       {log.termsAcceptedAt && (
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-gray-500">
                           <span className="font-medium text-gray-500">Termos aceitos:</span> {new Date(log.termsAcceptedAt).toLocaleString("pt-BR")}
                         </p>
                       )}
                       {log.reason && (
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-gray-500">
                           <span className="font-medium text-gray-500">Motivo:</span> {log.reason}
                         </p>
                       )}
@@ -457,7 +457,7 @@ function StatusStep({ label, done, active }: { label: string; done?: boolean; ac
           <div className="w-2 h-2 bg-gray-400 rounded-full" />
         )}
       </div>
-      <span className={`text-sm ${done ? "text-green-700 font-medium" : active ? "text-[#243FF7] font-medium" : "text-gray-400"}`}>
+      <span className={`text-sm ${done ? "text-green-700 font-medium" : active ? "text-[#243FF7] font-medium" : "text-gray-500"}`}>
         {label}
       </span>
     </div>

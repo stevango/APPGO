@@ -226,7 +226,7 @@ export default function Geofences() {
                       : "border-gray-100 bg-white"
                   }`}
                 >
-                  <gt.icon className={`w-5 h-5 ${type === gt.value ? "text-[#243FF7]" : "text-gray-400"}`} />
+                  <gt.icon className={`w-5 h-5 ${type === gt.value ? "text-[#243FF7]" : "text-gray-500"}`} />
                   <span className={`text-[10px] font-medium ${type === gt.value ? "text-[#243FF7]" : "text-gray-500"}`}>
                     {gt.label}
                   </span>
@@ -242,8 +242,8 @@ export default function Geofences() {
               onClick={() => setShowMap(true)}
               className="w-full h-12 rounded-xl border border-gray-200 px-4 flex items-center gap-3 text-left go-btn-active"
             >
-              <MapPin className={`w-5 h-5 ${selectedLat ? "text-[#243FF7]" : "text-gray-400"}`} />
-              <span className={`text-sm flex-1 truncate ${selectedLat ? "text-gray-800" : "text-gray-400"}`}>
+              <MapPin className={`w-5 h-5 ${selectedLat ? "text-[#243FF7]" : "text-gray-500"}`} />
+              <span className={`text-sm flex-1 truncate ${selectedLat ? "text-gray-800" : "text-gray-500"}`}>
                 {selectedAddress || "Selecionar no mapa"}
               </span>
               {selectedLat && (
@@ -366,7 +366,7 @@ export default function Geofences() {
             <Shield className="w-8 h-8 text-[#243FF7]" />
           </div>
           <h3 className="font-semibold text-gray-700 mb-1">Nenhuma cerca criada</h3>
-          <p className="text-sm text-gray-400 text-center mb-4">
+          <p className="text-sm text-gray-500 text-center mb-4">
             Crie cercas para receber alertas quando seu veículo entrar ou sair de uma área.
           </p>
           <Button

@@ -91,7 +91,7 @@ export default function Help() {
 
         {/* Suggested questions */}
         <div className="pt-1">
-          <p className="text-[11px] text-gray-400 font-medium mb-2">Perguntas frequentes</p>
+          <p className="text-[11px] text-gray-500 font-medium mb-2">Perguntas frequentes</p>
           <div className="flex flex-wrap gap-2">
             {SUGGESTED_QUESTIONS.map((q) => (
               <button
@@ -129,7 +129,7 @@ export default function Help() {
             <Send className="w-5 h-5" />
           </button>
         </form>
-        <p className="text-[10px] text-gray-400 text-center mt-2 flex items-center justify-center gap-1">
+        <p className="text-[10px] text-gray-500 text-center mt-2 flex items-center justify-center gap-1">
           <LifeBuoy className="w-3 h-3" /> Precisa falar com um humano? Use o SOS ou a Central.
         </p>
       </div>

@@ -308,7 +308,7 @@ export default function Profile() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-[#111111]">{item.label}</p>
-              <p className="text-xs text-gray-400">{item.sublabel}</p>
+              <p className="text-xs text-gray-500">{item.sublabel}</p>
             </div>
             <ChevronRight className="w-4 h-4 text-gray-300" />
           </button>
@@ -353,7 +353,7 @@ export default function Profile() {
       {/* Delete account → goes through the retention save flow first */}
       <button
         onClick={openRetention}
-        className="w-full mt-3 text-center text-xs text-gray-400 underline underline-offset-4 go-btn-active"
+        className="w-full mt-3 text-center text-xs text-gray-500 underline underline-offset-4 go-btn-active"
       >
         Cancelar / excluir minha conta
       </button>
@@ -402,7 +402,7 @@ export default function Profile() {
                 </Button>
                 <button
                   onClick={() => setRetStep("confirm")}
-                  className="w-full mt-3 text-center text-xs text-gray-400 underline underline-offset-4 go-btn-active py-1"
+                  className="w-full mt-3 text-center text-xs text-gray-500 underline underline-offset-4 go-btn-active py-1"
                 >
                   Não, quero continuar a exclusão
                 </button>
@@ -459,7 +459,7 @@ export default function Profile() {
                 </span>
                 <div className="flex-1 text-left">
                   <p className="text-sm font-semibold text-[#111111]">{LANGUAGE_LABELS[lang]}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-500">
                     {lang === "pt" ? "Português do Brasil" : lang === "en" ? "United States English" : "Español Latinoamérica"}
                   </p>
                 </div>
@@ -484,7 +484,7 @@ export default function Profile() {
                     Para receber notificações no iPhone, instale o GO na Tela de Início:
                   </p>
                   <ol className="text-xs text-gray-700 mt-2.5 space-y-1.5 list-decimal list-inside">
-                    <li>Toque em <b>Compartilhar</b> <span className="text-gray-400">(ícone ⬆️)</span> no Safari</li>
+                    <li>Toque em <b>Compartilhar</b> <span className="text-gray-500">(ícone ⬆️)</span> no Safari</li>
                     <li>Escolha <b>Adicionar à Tela de Início</b></li>
                     <li>Abra o GO pelo novo ícone e volte aqui</li>
                   </ol>
@@ -525,7 +525,7 @@ export default function Profile() {
                       </div>
                       <div className="flex-1">
                         <p className="text-xs font-medium text-[#111111]">Bateria baixa</p>
-                        <p className="text-[10px] text-gray-400">Alerta quando bateria &lt; 20%</p>
+                        <p className="text-[10px] text-gray-500">Alerta quando bateria &lt; 20%</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -534,7 +534,7 @@ export default function Profile() {
                       </div>
                       <div className="flex-1">
                         <p className="text-xs font-medium text-[#111111]">Velocidade excessiva</p>
-                        <p className="text-[10px] text-gray-400">Alerta ao ultrapassar o limite</p>
+                        <p className="text-[10px] text-gray-500">Alerta ao ultrapassar o limite</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -543,7 +543,7 @@ export default function Profile() {
                       </div>
                       <div className="flex-1">
                         <p className="text-xs font-medium text-[#111111]">Cerca eletrônica</p>
-                        <p className="text-[10px] text-gray-400">Alerta ao sair/entrar na área</p>
+                        <p className="text-[10px] text-gray-500">Alerta ao sair/entrar na área</p>
                       </div>
                     </div>
                   </div>
@@ -591,9 +591,9 @@ export default function Profile() {
         <FullScreenModal title="Meu endereço" subtitle="Busque por CEP ou endereço" onClose={() => setShowAddress(false)}>
           {userAddress && (
             <div className="mb-4 bg-gray-50 rounded-xl p-3 flex items-start gap-2">
-              <MapPin className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+              <MapPin className="w-4 h-4 text-gray-500 mt-0.5 shrink-0" />
               <div className="min-w-0">
-                <p className="text-[11px] text-gray-400">Endereço atual</p>
+                <p className="text-[11px] text-gray-500">Endereço atual</p>
                 <p className="text-sm text-gray-700">{userAddress}</p>
               </div>
             </div>
@@ -608,7 +608,7 @@ export default function Profile() {
           />
 
           {setAddressMutation.isPending && (
-            <p className="text-xs text-gray-400 mt-3 flex items-center gap-1.5">
+            <p className="text-xs text-gray-500 mt-3 flex items-center gap-1.5">
               <Loader2 className="w-3.5 h-3.5 animate-spin" /> Salvando...
             </p>
           )}
@@ -679,7 +679,7 @@ export default function Profile() {
         >
           <div className="space-y-4">
             <div>
-              <label className="text-[12px] font-semibold text-gray-400">Nome completo</label>
+              <label className="text-[12px] font-semibold text-gray-500">Nome completo</label>
               <input
                 value={profileForm.nome}
                 onChange={(e) => setProfileForm((s) => ({ ...s, nome: e.target.value }))}
@@ -688,7 +688,7 @@ export default function Profile() {
               />
             </div>
             <div>
-              <label className="text-[12px] font-semibold text-gray-400">E-mail</label>
+              <label className="text-[12px] font-semibold text-gray-500">E-mail</label>
               <input
                 type="email"
                 value={profileForm.email}
@@ -697,7 +697,7 @@ export default function Profile() {
                 placeholder="voce@email.com"
               />
             </div>
-            <p className="text-[11px] text-gray-400 leading-relaxed">
+            <p className="text-[11px] text-gray-500 leading-relaxed">
               Seu CPF não pode ser alterado. As mudanças são salvas no GO360.
             </p>
           </div>
@@ -731,7 +731,7 @@ export default function Profile() {
           }
         >
             {/* Selecionar a qual veículo aplicar */}
-            <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Aplicar em</p>
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Aplicar em</p>
             <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 mb-5">
               <button
                 onClick={() => setSpeedTarget("all")}
@@ -758,9 +758,9 @@ export default function Profile() {
             <div className="bg-gray-50 rounded-2xl p-6 mb-5 text-center">
               <p className="text-5xl font-bold text-[#111111]">
                 {speedLimit}
-                <span className="text-lg font-normal text-gray-400 ml-1">km/h</span>
+                <span className="text-lg font-normal text-gray-500 ml-1">km/h</span>
               </p>
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-gray-500 mt-2">
                 {speedLimit <= 60 ? "Zona urbana" : speedLimit <= 100 ? "Rodovia estadual" : speedLimit <= 120 ? "Rodovia federal" : "Velocidade alta"}
               </p>
             </div>
@@ -777,8 +777,8 @@ export default function Profile() {
                 className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-[#243FF7]"
               />
               <div className="flex justify-between mt-1">
-                <span className="text-[10px] text-gray-400">20 km/h</span>
-                <span className="text-[10px] text-gray-400">200 km/h</span>
+                <span className="text-[10px] text-gray-500">20 km/h</span>
+                <span className="text-[10px] text-gray-500">200 km/h</span>
               </div>
             </div>
 

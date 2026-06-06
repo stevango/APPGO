@@ -171,7 +171,7 @@ export default function VehicleDetails() {
       {/* Título + placa (placa em linha própria para não quebrar) */}
       <div className="mb-4">
         <h2 className="text-[17px] font-extrabold text-[#0f172a] leading-tight">{vehicle.brand} {vehicle.model}</h2>
-        <p className="text-xs text-gray-400 mt-0.5 mb-3">Ficha completa</p>
+        <p className="text-xs text-gray-500 mt-0.5 mb-3">Ficha completa</p>
         {isVehicleAsset(vehicle.iconType) ? (
           <LicensePlate plate={vehicle.plate} size="md" />
         ) : (
@@ -194,13 +194,13 @@ export default function VehicleDetails() {
                 <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cor }} />
                 <span className="text-[15px] font-bold truncate" style={{ color: cor }}>{label}</span>
               </div>
-              <span className="text-[10px] font-medium text-gray-400 shrink-0">
+              <span className="text-[10px] font-medium text-gray-500 shrink-0">
                 {m ? "via GO360" : "estimado"}
               </span>
             </div>
             {descricao && <p className="text-[13px] text-gray-600 leading-snug mt-1.5">{descricao}</p>}
             {typeof horas === "number" && (
-              <p className="text-[12px] text-gray-400 mt-1">
+              <p className="text-[12px] text-gray-500 mt-1">
                 Sem comunicar há {horas < 1 ? "menos de 1h" : `${Math.round(horas)}h`}.
               </p>
             )}
@@ -230,7 +230,7 @@ export default function VehicleDetails() {
                 {r.copy && (
                   <button
                     onClick={() => { navigator.clipboard?.writeText(String(r.value)); toast.success("Copiado!"); }}
-                    className="go-btn-active text-gray-400 shrink-0"
+                    className="go-btn-active text-gray-500 shrink-0"
                     aria-label={`Copiar ${r.label}`}
                   >
                     <Copy className="w-3.5 h-3.5" />
@@ -252,7 +252,7 @@ export default function VehicleDetails() {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-semibold text-[#111111]">Ver no mapa</p>
-          <p className="text-[11px] text-gray-400 truncate">{vehicle.lastAddress || "Acompanhe a localização"}</p>
+          <p className="text-[11px] text-gray-500 truncate">{vehicle.lastAddress || "Acompanhe a localização"}</p>
         </div>
         <ChevronLeft className="w-4 h-4 text-gray-300 rotate-180" />
       </button>
@@ -278,7 +278,7 @@ export default function VehicleDetails() {
                   <span className="text-[9px] font-bold text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">EM BREVE</span>
                 )}
               </div>
-              <p className="text-[11px] text-gray-400 truncate">
+              <p className="text-[11px] text-gray-500 truncate">
                 {hasFicha ? "Motor, potência, consumo e mais" : "Motor, potência, consumo e mais — via GO360"}
               </p>
             </div>
@@ -287,7 +287,7 @@ export default function VehicleDetails() {
         );
       })()}
 
-      <p className="text-[11px] text-gray-400 mt-4 leading-relaxed px-1">
+      <p className="text-[11px] text-gray-500 mt-4 leading-relaxed px-1">
         Dados fornecidos pelo cadastro do veículo. Encontrou algo errado? Toque em Editar para corrigir.
       </p>
 
@@ -305,7 +305,7 @@ export default function VehicleDetails() {
             <div className="space-y-3">
               {EDIT_FIELDS.map((f) => (
                 <div key={f.key}>
-                  <label className="text-[11px] font-semibold text-gray-400">{f.label}</label>
+                  <label className="text-[11px] font-semibold text-gray-500">{f.label}</label>
                   <input
                     value={form[f.key] ?? ""}
                     inputMode={f.numeric ? "numeric" : "text"}
@@ -315,7 +315,7 @@ export default function VehicleDetails() {
                 </div>
               ))}
             </div>
-            <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
+            <p className="text-[11px] text-gray-500 mt-3 leading-relaxed">
               As alterações são enviadas para a GO360. Campos oficiais (placa, chassi, renavam) podem passar por validação.
             </p>
             <Button

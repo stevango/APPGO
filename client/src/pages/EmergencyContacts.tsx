@@ -386,7 +386,7 @@ export default function EmergencyContacts() {
                         {!contact.isPrimary && (
                           <button
                             onClick={() => handleSetPrimary(contact.id)}
-                            className="p-2 text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors"
+                            className="p-2 text-gray-500 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg transition-colors"
                             title="Definir como favorito"
                           >
                             <Star className="w-4 h-4" />
@@ -394,14 +394,14 @@ export default function EmergencyContacts() {
                         )}
                         <button
                           onClick={() => handleEdit(contact)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                           title="Editar"
                         >
                           <Phone className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(contact.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Deletar"
                         >
                           <Trash2 className="w-4 h-4" />

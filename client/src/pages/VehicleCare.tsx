@@ -193,7 +193,7 @@ export default function VehicleCare() {
               Sim, quero informar o que aconteceu
             </Button>
 
-            <p className="text-center text-xs text-gray-400">
+            <p className="text-center text-xs text-gray-500">
               Sua segurança é nossa prioridade. Não estamos monitorando você — estamos cuidando.
             </p>
           </div>
@@ -226,7 +226,7 @@ export default function VehicleCare() {
 
             <button
               onClick={() => setStep("greeting")}
-              className="w-full text-center text-sm text-gray-400 hover:text-gray-600 mt-4 py-2"
+              className="w-full text-center text-sm text-gray-500 hover:text-gray-600 mt-4 py-2"
             >
               ← Voltar
             </button>
@@ -287,7 +287,7 @@ export default function VehicleCare() {
                   <CardContent className="p-6 text-center">
                     <MapPin className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">Nenhum ponto disponível no momento</p>
-                    <p className="text-xs text-gray-400 mt-1">Entre em contato pelo WhatsApp para agendar</p>
+                    <p className="text-xs text-gray-500 mt-1">Entre em contato pelo WhatsApp para agendar</p>
                     <Button
                       className="mt-4 bg-green-600 hover:bg-green-700 rounded-xl"
                       onClick={() => window.open("https://wa.me/5500000000000?text=Olá! Preciso agendar manutenção do rastreador", "_blank")}
@@ -317,12 +317,12 @@ export default function VehicleCare() {
                         <p className="text-xs text-gray-500 mt-0.5">{point.address}</p>
                         <div className="flex items-center gap-3 mt-2">
                           {point.phone && (
-                            <span className="flex items-center gap-1 text-xs text-gray-400">
+                            <span className="flex items-center gap-1 text-xs text-gray-500">
                               <Phone className="w-3 h-3" /> {point.phone}
                             </span>
                           )}
                           {point.openHours && (
-                            <span className="flex items-center gap-1 text-xs text-gray-400">
+                            <span className="flex items-center gap-1 text-xs text-gray-500">
                               <Clock className="w-3 h-3" /> {point.openHours}
                             </span>
                           )}

@@ -8,6 +8,7 @@ import { LanguageProvider } from "./contexts/LanguageContext";
 import { TRPC_URL } from "./lib/apiBase";
 import { initNative } from "./lib/native";
 import { initCampaignTheme } from "./lib/campaignTheme";
+import { initQueryFocus } from "./lib/queryFocus";
 import "./index.css";
 
 // Deploy novo → chunk antigo some. O Vite dispara este evento ao falhar o
@@ -27,6 +28,9 @@ if (typeof window !== "undefined") {
     if (/dynamically imported module|Importing a module script failed|Failed to fetch/i.test(msg)) reloadOnce();
   });
 }
+
+// Pausa o polling em segundo plano (bateria/dados) e revalida ao reabrir.
+initQueryFocus();
 
 const queryClient = new QueryClient();
 

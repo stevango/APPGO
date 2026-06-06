@@ -61,7 +61,7 @@ export default function ActivationChecklist() {
         <X className="w-4 h-4" />
       </button>
       <h3 className="text-sm font-bold text-[#111111]">Configure seu GO</h3>
-      <p className="text-[11px] text-gray-400 mb-3">{done} de 3 concluídos · leva 1 minuto</p>
+      <p className="text-[11px] text-gray-500 mb-3">{done} de 3 concluídos · leva 1 minuto</p>
       <div className="space-y-2">
         {steps.map((s) => {
           const Icon = s.icon;
@@ -72,7 +72,7 @@ export default function ActivationChecklist() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-semibold text-[#111111] leading-tight">{s.label}</p>
-                <p className="text-[11px] text-gray-400">{s.desc}</p>
+                <p className="text-[11px] text-gray-500">{s.desc}</p>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
             </button>

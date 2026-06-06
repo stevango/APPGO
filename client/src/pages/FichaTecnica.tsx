@@ -63,7 +63,7 @@ export default function FichaTecnica() {
         </button>
         <div className="min-w-0">
           <h1 className="text-lg font-bold text-[#111111] leading-tight">Ficha técnica</h1>
-          {vehicle && <p className="text-[11px] text-gray-400 truncate">{vehicle.brand} {vehicle.model}</p>}
+          {vehicle && <p className="text-[11px] text-gray-500 truncate">{vehicle.brand} {vehicle.model}</p>}
         </div>
       </div>
 
@@ -73,7 +73,7 @@ export default function FichaTecnica() {
             <FileText className="w-8 h-8 text-gray-300" />
           </div>
           <p className="font-semibold text-gray-700">Ficha técnica em breve</p>
-          <p className="text-sm text-gray-400 mt-1 max-w-xs">
+          <p className="text-sm text-gray-500 mt-1 max-w-xs">
             A GO360 vai disponibilizar as especificações deste veículo. Assim que chegarem, aparecem aqui.
           </p>
         </div>
@@ -105,7 +105,7 @@ export default function FichaTecnica() {
             </div>
           ))}
 
-          <p className="text-[11px] text-gray-400 mt-2 leading-relaxed px-1">
+          <p className="text-[11px] text-gray-500 mt-2 leading-relaxed px-1">
             Especificações fornecidas pela GO360 / fabricante. Valores podem variar por versão.
           </p>
         </>

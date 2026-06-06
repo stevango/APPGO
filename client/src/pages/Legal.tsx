@@ -48,7 +48,7 @@ export default function Legal() {
       <div className="px-4 py-4 space-y-5">
         {/* Documents */}
         <div>
-          <h2 className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5">Documentos</h2>
+          <h2 className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider mb-2.5">Documentos</h2>
           <div className="space-y-2.5">
             {LEGAL_DOCS.map((doc) => {
               const Icon = DOC_ICON[doc.key] || FileText;
@@ -82,7 +82,7 @@ export default function Legal() {
 
         {/* Consent history */}
         <div>
-          <h2 className="text-[12px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5">Histórico de aceites</h2>
+          <h2 className="text-[12px] font-semibold text-gray-500 uppercase tracking-wider mb-2.5">Histórico de aceites</h2>
           {consents.length === 0 ? (
             <div className="go-card p-5 text-center">
               <Clock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
@@ -98,7 +98,7 @@ export default function Legal() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-[#111111]">{CONSENT_LABEL[c.docType] || c.docType}</p>
                     <p className="text-xs text-gray-500">{fmt(c.acceptedAt)} • versão {c.version}</p>
-                    {c.ipAddress && <p className="text-[10px] text-gray-400 font-mono mt-0.5">IP {c.ipAddress}</p>}
+                    {c.ipAddress && <p className="text-[10px] text-gray-500 font-mono mt-0.5">IP {c.ipAddress}</p>}
                   </div>
                 </div>
               ))}
@@ -116,7 +116,7 @@ export default function Legal() {
             </button>
             <div className="min-w-0">
               <h1 className="text-base font-bold text-[#111111] truncate">{openDoc.title}</h1>
-              <p className="text-[11px] text-gray-400">Versão {openDoc.version} • Atualizado em {openDoc.updatedAt}</p>
+              <p className="text-[11px] text-gray-500">Versão {openDoc.version} • Atualizado em {openDoc.updatedAt}</p>
             </div>
           </div>
 

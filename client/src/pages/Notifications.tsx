@@ -138,7 +138,7 @@ export default function Notifications() {
                     <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
                       {notification.message}
                     </p>
-                    <span className="text-[10px] text-gray-400 mt-1 block">
+                    <span className="text-[10px] text-gray-500 mt-1 block">
                       {new Date(notification.createdAt).toLocaleString("pt-BR", {
                         day: "2-digit",
                         month: "2-digit",
@@ -158,7 +158,7 @@ export default function Notifications() {
             <Bell className="w-8 h-8 text-gray-300" />
           </div>
           <h3 className="font-semibold text-gray-700 mb-1">Nenhuma notificação</h3>
-          <p className="text-sm text-gray-400 text-center">
+          <p className="text-sm text-gray-500 text-center">
             Seus alertas aparecerão aqui.
           </p>
         </div>
