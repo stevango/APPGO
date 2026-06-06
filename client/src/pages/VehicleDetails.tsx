@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { ChevronLeft, Copy, Car, MapPin } from "lucide-react";
+import { ChevronLeft, Copy, Car, MapPin, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BrandMark, LicensePlate, AssetTag } from "@/lib/vehicle";
@@ -131,6 +131,24 @@ export default function VehicleDetails() {
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-semibold text-[#111111]">Ver no mapa</p>
           <p className="text-[11px] text-gray-400 truncate">{vehicle.lastAddress || "Acompanhe a localização"}</p>
+        </div>
+        <ChevronLeft className="w-4 h-4 text-gray-300 rotate-180" />
+      </button>
+
+      {/* Ficha técnica (chega pela GO360) */}
+      <button
+        onClick={() => toast("Ficha técnica chegando em breve, direto da GO360. 🚗")}
+        className="mt-3 w-full go-card p-4 flex items-center gap-3 text-left go-btn-active"
+      >
+        <div className="w-10 h-10 rounded-xl bg-[#243FF7]/8 flex items-center justify-center shrink-0">
+          <FileText className="w-5 h-5 text-[#243FF7]" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-[13px] font-semibold text-[#111111]">Ficha técnica do veículo</p>
+            <span className="text-[9px] font-bold text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">EM BREVE</span>
+          </div>
+          <p className="text-[11px] text-gray-400 truncate">Motor, potência, consumo e mais — via GO360</p>
         </div>
         <ChevronLeft className="w-4 h-4 text-gray-300 rotate-180" />
       </button>
