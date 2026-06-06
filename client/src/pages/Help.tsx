@@ -54,7 +54,9 @@ export default function Help() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    // Altura = tela menos a navegação inferior (incl. botão SOS), para a caixa
+    // "Digite sua dúvida" não ficar atrás do menu.
+    <div className="flex flex-col bg-gray-50" style={{ height: "calc(100dvh - 92px - env(safe-area-inset-bottom))" }}>
       {/* Header */}
       <div className="bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 shrink-0">
         <button onClick={() => setLocation("/profile")} className="go-btn-active">

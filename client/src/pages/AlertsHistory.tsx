@@ -22,8 +22,8 @@ export default function AlertsHistory() {
   const { data, isLoading } = trpc.alerts.history.useQuery();
 
   return (
-    <div className="px-4 pt-6 pb-4">
-      <div className="flex items-center gap-3 mb-2">
+    <div className="px-4 pb-4">
+      <div className="sticky top-0 z-30 -mx-4 px-4 pt-6 pb-3 mb-2 bg-[#F5F6FA]/90 backdrop-blur flex items-center gap-3">
         <button onClick={() => setLocation("/notifications")} className="go-btn-active">
           <ChevronLeft className="w-6 h-6 text-[#343C42]" />
         </button>
