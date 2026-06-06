@@ -281,3 +281,63 @@
     animation: none;
   }
 }
+
+/* ============================================================
+   Acessibilidade (deficiência visual e auditiva)
+   ============================================================ */
+
+/* Tamanho de texto / zoom da interface (visão reduzida).
+   Usa `zoom` para escalar TODA a UI proporcionalmente — inclui textos com
+   tamanho fixo em px e os modais (portais filhos do body). */
+html[data-font-scale="large"] body { zoom: 1.12; }
+html[data-font-scale="xlarge"] body { zoom: 1.25; }
+
+/* Reduzir animações (vestibular/visual) — via preferência manual.
+   (A media query prefers-reduced-motion acima cobre o automático.) */
+html.a11y-reduce-motion *,
+html.a11y-reduce-motion *::before,
+html.a11y-reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+html.a11y-reduce-motion .page-enter,
+html.a11y-reduce-motion .stagger-item {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Alto contraste — escurece textos secundários e reforça bordas para quem tem
+   baixa visão. */
+html.a11y-contrast .text-gray-300,
+html.a11y-contrast .text-gray-400,
+html.a11y-contrast .text-gray-500 { color: #1f2937 !important; }
+html.a11y-contrast .text-gray-600 { color: #111827 !important; }
+html.a11y-contrast .border-gray-50,
+html.a11y-contrast .border-gray-100,
+html.a11y-contrast .border-gray-200 { border-color: #6b7280 !important; }
+/* Reforça o foco do teclado/leitor de tela. */
+html.a11y-contrast :focus-visible {
+  outline: 3px solid #243FF7 !important;
+  outline-offset: 2px !important;
+}
+
+/* Foco visível consistente para navegação por teclado/switch control. */
+:focus-visible {
+  outline: 2px solid #243FF7;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Conteúdo só para leitores de tela. */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

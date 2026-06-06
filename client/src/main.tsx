@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { AccessibilityProvider } from "./contexts/AccessibilityContext";
 import { TRPC_URL } from "./lib/apiBase";
 import { initNative } from "./lib/native";
 import { initCampaignTheme } from "./lib/campaignTheme";
@@ -68,7 +69,9 @@ createRoot(document.getElementById("root")!).render(
   <trpc.Provider client={trpcClient} queryClient={queryClient}>
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
-        <App />
+        <AccessibilityProvider>
+          <App />
+        </AccessibilityProvider>
       </LanguageProvider>
     </QueryClientProvider>
   </trpc.Provider>

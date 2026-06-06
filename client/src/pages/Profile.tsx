@@ -4,10 +4,11 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import {
   ChevronLeft, User, Car, CreditCard, Shield, Bell,
-  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature, MapPin, Route, Images, Pencil, X
+  HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature, MapPin, Route, Images, Pencil, X, Accessibility
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import FullScreenModal from "@/components/FullScreenModal";
+import AccessibilityPanel from "@/components/AccessibilityPanel";
 import { AddressSearch } from "@/components/AddressSearch";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -35,6 +36,7 @@ export default function Profile() {
   const { data: vehicles } = trpc.vehicles.list.useQuery();
   const [showSpeedConfig, setShowSpeedConfig] = useState(false);
   const [showLanguageConfig, setShowLanguageConfig] = useState(false);
+  const [showA11y, setShowA11y] = useState(false);
   const [speedLimit, setSpeedLimit] = useState<number>(120);
   const [speedTarget, setSpeedTarget] = useState<number | "all">("all");
   const [speedSaving, setSpeedSaving] = useState(false);
@@ -219,6 +221,7 @@ export default function Profile() {
       ? [{ icon: Gauge, label: "Limite de velocidade", sublabel: `Alerta de excesso • ${speedVehicles.length} veículo(s)`, action: handleOpenSpeedConfig }]
       : []),
     { icon: Globe, label: t("language"), sublabel: LANGUAGE_LABELS[language], action: () => setShowLanguageConfig(true) },
+    { icon: Accessibility, label: "Acessibilidade", sublabel: "Texto, contraste, vibração", action: () => setShowA11y(true) },
     { icon: CreditCard, label: "Pagamento", sublabel: "Alterar forma de pagamento", action: () => setLocation("/payment") },
     { icon: Receipt, label: "Faturas", sublabel: "Histórico e 2ª via de boleto", action: () => setLocation("/payment/history") },
     { icon: Shield, label: "Segurança", sublabel: "Senha, Face ID", action: () => {} },
@@ -439,6 +442,9 @@ export default function Profile() {
       <p className="text-center text-xs text-gray-300 mt-6">
         GO Direction v1.0.0
       </p>
+
+      {/* Acessibilidade (visual e auditiva) */}
+      {showA11y && <AccessibilityPanel onClose={() => setShowA11y(false)} />}
 
       {/* Language Selection */}
       {showLanguageConfig && (

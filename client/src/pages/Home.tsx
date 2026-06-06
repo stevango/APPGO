@@ -17,6 +17,7 @@ import DistanceToVehicle from "@/components/DistanceToVehicle";
 import ActivationChecklist from "@/components/ActivationChecklist";
 import CampaignBanner from "@/components/CampaignBanner";
 import StatusLegend from "@/components/StatusLegend";
+import { alertHaptic } from "@/lib/haptics";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicles } from "@/lib/activeVehicle";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
@@ -67,7 +68,7 @@ export default function Home() {
   const speedLimit = vehicle?.speedLimit || 120;
   const isOverSpeed = currentSpeed > 0 && currentSpeed > speedLimit;
 
-  // Show toast on critical battery when app opens
+  // Show toast on critical battery when app opens (+ vibração p/ def. auditiva)
   useEffect(() => {
     if (isBatteryCritical && vehicle) {
       toast.error("Bateria crítica!", {
@@ -75,6 +76,7 @@ export default function Home() {
         duration: 8000,
         icon: <BatteryWarning className="w-5 h-5 text-red-500" />,
       });
+      void alertHaptic("critical");
     }
   }, [isBatteryCritical, vehicle?.id]);
 
