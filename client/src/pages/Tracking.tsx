@@ -1,8 +1,8 @@
 import { trpc } from "@/lib/trpc";
-import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, ChevronDown, Gauge, Compass, Battery, Satellite, Zap, Power, Activity, AlertTriangle, Layers, Check, X } from "lucide-react";
+import { MapPin, Navigation, Clock, Wifi, Car, ChevronLeft, Route, ChevronUp, ChevronDown, Gauge, Compass, Battery, Satellite, Zap, Power, Activity, AlertTriangle, Layers, Check } from "lucide-react";
 import { useLocation } from "wouter";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { createPortal } from "react-dom";
+import FullScreenModal from "@/components/FullScreenModal";
 import L from "leaflet";
 import { MapView, createAssetMarker, updateAssetMarker, createPolyline, fitToPoints } from "@/components/Map";
 import { getAssetIcon, isVehicleAsset } from "@/lib/assetIcons";
@@ -317,50 +317,41 @@ export default function Tracking() {
         </div>
       </div>
 
-      {/* Tracker switcher — tela cheia com X para fechar */}
-      {showSwitcher && vehicles && createPortal(
-        <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in duration-150">
-          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-            <h3 className="text-lg font-bold text-[#111111]">Trocar rastreador</h3>
-            <button onClick={() => setShowSwitcher(false)} aria-label="Fechar" className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center go-btn-active">
-              <X className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-2 max-w-md mx-auto">
-              {vehicles.map((v) => {
-                const Icon = getAssetIcon(v.iconType);
-                const active = vehicle != null && v.id != null && v.id === vehicle.id;
-                return (
-                  <button
-                    key={v.id}
-                    onClick={() => { setActiveVehicleId(v.id); setShowSwitcher(false); }}
-                    className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 go-btn-active ${
-                      active ? "border-[#243FF7] bg-[#243FF7]/5" : "border-gray-100 bg-white"
-                    }`}
-                  >
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-[#243FF7]/10" : "bg-gray-100"}`}>
-                      <Icon className={`w-5 h-5 ${active ? "text-[#243FF7]" : "text-gray-500"}`} />
+      {/* Tracker switcher — tela cheia com X (nav inferior continua visível) */}
+      {showSwitcher && vehicles && (
+        <FullScreenModal title="Trocar rastreador" onClose={() => setShowSwitcher(false)}>
+          <div className="space-y-2">
+            {vehicles.map((v) => {
+              const Icon = getAssetIcon(v.iconType);
+              const active = vehicle != null && v.id != null && v.id === vehicle.id;
+              return (
+                <button
+                  key={v.id}
+                  onClick={() => { setActiveVehicleId(v.id); setShowSwitcher(false); }}
+                  className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 go-btn-active ${
+                    active ? "border-[#243FF7] bg-[#243FF7]/5" : "border-gray-100 bg-white"
+                  }`}
+                >
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-[#243FF7]/10" : "bg-gray-100"}`}>
+                    <Icon className={`w-5 h-5 ${active ? "text-[#243FF7]" : "text-gray-500"}`} />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="font-bold text-sm text-[#111111] truncate">{v.brand ? v.brand + " " : ""}{v.model}</p>
+                    <div className="flex items-center gap-1.5">
+                      {(() => {
+                        const st = getTrackerStatus(v.lastSignalAt);
+                        return <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${st.text}`}><span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}</span>;
+                      })()}
+                      <span className="text-gray-300 text-[10px]">•</span>
+                      <span className="text-xs text-gray-400 font-mono">{v.plate}</span>
                     </div>
-                    <div className="flex-1 min-w-0 text-left">
-                      <p className="font-bold text-sm text-[#111111] truncate">{v.brand ? v.brand + " " : ""}{v.model}</p>
-                      <div className="flex items-center gap-1.5">
-                        {(() => {
-                          const st = getTrackerStatus(v.lastSignalAt);
-                          return <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${st.text}`}><span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />{st.label}</span>;
-                        })()}
-                        <span className="text-gray-300 text-[10px]">•</span>
-                        <span className="text-xs text-gray-400 font-mono">{v.plate}</span>
-                      </div>
-                    </div>
-                    {active && <Check className="w-5 h-5 text-[#243FF7] shrink-0" />}
-                  </button>
-                );
-              })}
-            </div>
+                  </div>
+                  {active && <Check className="w-5 h-5 text-[#243FF7] shrink-0" />}
+                </button>
+              );
+            })}
           </div>
-        </div>,
-        document.body,
+        </FullScreenModal>
       )}
 
       {/* Map */}

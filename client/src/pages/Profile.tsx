@@ -8,6 +8,7 @@ import {
   HelpCircle, FileText, LogOut, ChevronRight, Gauge, Check, Globe, Receipt, Trash2, Loader2, Sparkles, Star, FileSignature, MapPin, Route, Images, Pencil, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import FullScreenModal from "@/components/FullScreenModal";
 import { AddressSearch } from "@/components/AddressSearch";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -721,52 +722,46 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Editar perfil (tela cheia com X) */}
-      {showProfileEdit && createPortal(
-        <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in duration-150">
-          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-            <h3 className="text-lg font-bold text-[#111111]">Editar perfil</h3>
-            <button onClick={() => setShowProfileEdit(false)} aria-label="Fechar" className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center go-btn-active">
-              <X className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-5">
-            <div className="space-y-4 max-w-md mx-auto">
-              <div>
-                <label className="text-[12px] font-semibold text-gray-400">Nome completo</label>
-                <input
-                  value={profileForm.nome}
-                  onChange={(e) => setProfileForm((s) => ({ ...s, nome: e.target.value }))}
-                  className="w-full mt-1 border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#243FF7]"
-                  placeholder="Seu nome"
-                />
-              </div>
-              <div>
-                <label className="text-[12px] font-semibold text-gray-400">E-mail</label>
-                <input
-                  type="email"
-                  value={profileForm.email}
-                  onChange={(e) => setProfileForm((s) => ({ ...s, email: e.target.value }))}
-                  className="w-full mt-1 border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#243FF7]"
-                  placeholder="voce@email.com"
-                />
-              </div>
-              <p className="text-[11px] text-gray-400 leading-relaxed">
-                Seu CPF não pode ser alterado. As mudanças são salvas no GO360.
-              </p>
-            </div>
-          </div>
-          <div className="p-4 border-t border-gray-100">
+      {/* Editar perfil (tela cheia com X; nav continua visível) */}
+      {showProfileEdit && (
+        <FullScreenModal
+          title="Editar perfil"
+          onClose={() => setShowProfileEdit(false)}
+          footer={
             <Button
-              className="w-full max-w-md mx-auto flex h-12 bg-[#243FF7] hover:bg-[#1a2fd6] rounded-xl"
+              className="w-full flex h-12 bg-[#243FF7] hover:bg-[#1a2fd6] rounded-xl"
               onClick={saveProfile}
               disabled={updatePerfil.isPending}
             >
               {updatePerfil.isPending ? "Salvando..." : <span className="flex items-center gap-2"><Check className="w-4 h-4" /> Salvar</span>}
             </Button>
+          }
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="text-[12px] font-semibold text-gray-400">Nome completo</label>
+              <input
+                value={profileForm.nome}
+                onChange={(e) => setProfileForm((s) => ({ ...s, nome: e.target.value }))}
+                className="w-full mt-1 border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#243FF7]"
+                placeholder="Seu nome"
+              />
+            </div>
+            <div>
+              <label className="text-[12px] font-semibold text-gray-400">E-mail</label>
+              <input
+                type="email"
+                value={profileForm.email}
+                onChange={(e) => setProfileForm((s) => ({ ...s, email: e.target.value }))}
+                className="w-full mt-1 border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#243FF7]"
+                placeholder="voce@email.com"
+              />
+            </div>
+            <p className="text-[11px] text-gray-400 leading-relaxed">
+              Seu CPF não pode ser alterado. As mudanças são salvas no GO360.
+            </p>
           </div>
-        </div>,
-        document.body,
+        </FullScreenModal>
       )}
 
       {/* Speed Limit Configuration Sheet */}
