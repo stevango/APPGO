@@ -5,6 +5,7 @@ import type { InsertTrip, InsertShareLink, InsertEmergencyContact, EmergencyCont
 import type { InsertVehicle, InsertGeofence, InsertOccurrence, InsertNotification } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import { encryptSecret } from "./crypto";
+import { randomUUID } from "crypto";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -86,6 +87,24 @@ export async function getUserById(id: number) {
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return result[0];
+}
+
+/** Token estável p/ o widget nativo ler o resumo sem sessão. Cria se faltar. */
+export async function getOrCreateWidgetToken(userId: number): Promise<string | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const u = (await db.select({ t: users.widgetToken }).from(users).where(eq(users.id, userId)).limit(1))[0];
+  if (u?.t) return u.t;
+  const token = randomUUID().replace(/-/g, "");
+  await db.update(users).set({ widgetToken: token }).where(eq(users.id, userId));
+  return token;
+}
+
+export async function getUserByWidgetToken(token: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const r = await db.select().from(users).where(eq(users.widgetToken, token)).limit(1);
+  return r[0];
 }
 
 export async function createUserWithPassword(input: {

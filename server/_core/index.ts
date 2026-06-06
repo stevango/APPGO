@@ -176,6 +176,32 @@ async function startServer() {
     }
   });
 
+  // Resumo p/ o widget nativo (sem sessão; autenticado pelo token de widget).
+  //   GET /api/widget/summary?token=WIDGET_TOKEN
+  app.get("/api/widget/summary", async (req, res) => {
+    try {
+      const token = String(req.query.token || "");
+      if (!token) { res.status(401).json({ error: "token" }); return; }
+      const user = await db.getUserByWidgetToken(token);
+      if (!user) { res.status(401).json({ error: "invalid" }); return; }
+      const vehicles = await db.getUserVehicles(user.id);
+      const v = vehicles.find((x) => !x.isDemo) ?? vehicles[0];
+      if (!v) { res.json({ empty: true }); return; }
+      const ageH = v.lastSignalAt ? (Date.now() - new Date(v.lastSignalAt).getTime()) / 3600000 : Infinity;
+      const status = ageH >= 72 ? "offline" : ageH >= 24 ? "standby" : "online";
+      res.setHeader("Cache-Control", "private, max-age=60");
+      res.json({
+        plate: v.plate, brand: v.brand, model: v.model, status,
+        lastAddress: v.lastAddress ?? null,
+        lat: v.lastLatitude ?? null, lng: v.lastLongitude ?? null,
+        lastSignalAt: v.lastSignalAt ?? null,
+      });
+    } catch (e) {
+      console.error("[Widget] summary failed", e);
+      res.status(500).json({ error: "failed" });
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",

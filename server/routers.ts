@@ -820,6 +820,11 @@ export const appRouter = router({
     score: protectedProcedure.query(({ ctx }) => db.getDrivingScore(ctx.user.id)),
   }),
 
+  widget: router({
+    // Token estável p/ o app entregar ao widget nativo (iOS/Android).
+    token: protectedProcedure.query(({ ctx }) => db.getOrCreateWidgetToken(ctx.user.id)),
+  }),
+
   sos: router({
     trigger: protectedProcedure.input(z.object({
       vehicleId: z.number().optional(),

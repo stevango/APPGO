@@ -1,6 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Onboarding from "./pages/Onboarding";
@@ -95,6 +95,28 @@ function Router() {
   const { user, loading, isAuthenticated } = useAuth();
   const [showSplash, setShowSplash] = useState(false);
   const wasLoadingRef = useRef(true);
+  const [, navigate] = useLocation();
+
+  // Deep links nativos (ex.: widget abre go://vehicle/123 ou link universal).
+  useEffect(() => {
+    let remove: (() => void) | undefined;
+    (async () => {
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        if (!Capacitor?.isNativePlatform?.()) return;
+        const { App: CapApp } = await import("@capacitor/app");
+        const handle = await CapApp.addListener("appUrlOpen", ({ url }) => {
+          let path = "/";
+          if (url.startsWith("go://")) path = "/" + url.slice("go://".length);
+          else { try { path = new URL(url).pathname || "/"; } catch { /* ignore */ } }
+          navigate(path);
+        });
+        remove = () => handle.remove();
+      } catch { /* web: sem deep link nativo */ }
+    })();
+    return () => { try { remove?.(); } catch { /* ignore */ } };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Mostrar splash screen quando transiciona de loading para autenticado
   useEffect(() => {
