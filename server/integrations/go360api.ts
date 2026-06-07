@@ -9,8 +9,19 @@
  * Módulo de Promoções de Pagamento: a GO360 configura (métodos, badges, banner,
  * benefícios, vigência); o app só RENDERIZA. Auditoria de cada mudança fica lá.
  */
-const BASE = () =>
-  (process.env.GO360_API_V1_BASE || "https://go360.gogestao.com.br/api/v1/app").replace(/\/+$/, "");
+// Por padrão deriva do host do GO360_BASE_URL (.../api/app → .../api/v1/app),
+// que é o host já usado e acessível. Override por GO360_API_V1_BASE quando o
+// domínio canônico (ex.: go360.gogestao.com.br) estiver no ar.
+function defaultBase(): string {
+  const go360 = (process.env.GO360_BASE_URL || "https://go360id-production.up.railway.app/api/app").trim();
+  try {
+    const u = new URL(go360);
+    return `${u.protocol}//${u.host}/api/v1/app`;
+  } catch {
+    return "https://go360id-production.up.railway.app/api/v1/app";
+  }
+}
+const BASE = () => (process.env.GO360_API_V1_BASE || defaultBase()).replace(/\/+$/, "");
 const KEY = () => process.env.GO360_API_KEY || "";
 
 export function go360ApiEnabled(): boolean {
