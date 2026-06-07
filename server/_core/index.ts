@@ -241,8 +241,17 @@ async function startServer() {
       const metodos = await go360MetodosPagamento();
       out.metodosCount = metodos.length;
       out.metodos = metodos.map((m) => ({ codigo: m.codigo, nome: m.nome, badge: m.badge }));
-      const promo = await go360PromocaoPagamento("boleto");
-      out.promocaoBoleto = promo.promocao ? { id: promo.promocao.id, destino: promo.promocao.metodoDestino, beneficios: promo.beneficios.length } : null;
+      // Checa promoção para cada método de origem possível (boleto + os listados).
+      const origens = Array.from(new Set(["boleto", ...metodos.map((m) => m.codigo)]));
+      const promocoes: Record<string, unknown> = {};
+      for (const origem of origens) {
+        const p = await go360PromocaoPagamento(origem);
+        promocoes[origem] = p.promocao
+          ? { id: p.promocao.id, nome: p.promocao.nome, destino: p.promocao.metodoDestino, beneficios: p.beneficios.length }
+          : null;
+      }
+      out.promocoes = promocoes;
+      out.algumaPromocaoAtiva = Object.values(promocoes).some((v) => v !== null);
       res.json({ ...out, ok: out.healthOk === true });
     } catch (e: any) {
       res.json({ ...out, ok: false, error: e?.message || String(e), status: e?.status });
