@@ -30,14 +30,30 @@ export default function PaymentManagement() {
   const [cardBrand, setCardBrand] = useState("");
   const [billingDay, setBillingDay] = useState("10");
 
+  const [selectedBeneficioId, setSelectedBeneficioId] = useState<number | null>(null);
+  const [recusouBeneficio, setRecusouBeneficio] = useState(false);
+
   const currentQuery = trpc.payment.getCurrent.useQuery();
   const incentivesQuery = trpc.payment.getIncentives.useQuery(
     { newMethod: selectedMethod || "" },
     { enabled: !!selectedMethod }
   );
   const changeMutation = trpc.payment.changeMethod.useMutation();
+  // Promoção configurada no GO360 (se houver) — benefícios e auditoria oficiais.
+  const promoQuery = trpc.paymentPromo.promocao.useQuery(undefined, { retry: false });
+  const mudarMutation = trpc.paymentPromo.mudar.useMutation();
 
   const currentMethod = currentQuery.data;
+  const promo = promoQuery.data?.promocao ?? null;
+  const go360Beneficios = promoQuery.data?.beneficios ?? [];
+  // Mapa código local -> código GO360 (módulo de promoções).
+  const TO_GO360: Record<PaymentType, string> = {
+    boleto: "boleto", pix: "pix", credit_card: "cartao_credito",
+    debit_card: "cartao_debito", recurring_card: "cartao_recorrente",
+  };
+  // Mostra benefícios do GO360 quando o método novo é o destino da promoção.
+  const showGo360Benefits =
+    !!promo && !!selectedMethod && TO_GO360[selectedMethod] === promo.metodoDestino && go360Beneficios.length > 0;
 
   const handleMethodSelect = (method: PaymentType) => {
     setSelectedMethod(method);
@@ -66,6 +82,17 @@ export default function PaymentManagement() {
       onSuccess: () => {
         toast.success("Método de pagamento atualizado!");
         setStep("done");
+        // Auditoria oficial no GO360 (best-effort; não bloqueia o sucesso).
+        if (promo && selectedMethod) {
+          mudarMutation.mutate({
+            metodoAnterior: TO_GO360[(currentMethod?.type as PaymentType) || "boleto"],
+            metodoNovo: TO_GO360[selectedMethod],
+            promocaoId: promo.id,
+            beneficioId: selectedBeneficioId ?? undefined,
+            recusouBeneficio: recusouBeneficio || selectedBeneficioId == null,
+            contexto: { origem: "tela_pagamento" },
+          });
+        }
       },
       onError: () => {
         toast.error("Erro ao alterar pagamento. Tente novamente.");
@@ -245,44 +272,81 @@ export default function PaymentManagement() {
               <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Gift className="w-7 h-7 text-amber-600" />
               </div>
-              <h2 className="text-lg font-bold text-gray-900">Escolha seu benefício!</h2>
+              <h2 className="text-lg font-bold text-gray-900">{showGo360Benefits ? promo!.escolhaTitulo : "Escolha seu benefício!"}</h2>
               <p className="text-sm text-gray-500 mt-1">
-                Por mudar para {getMethodLabel(selectedMethod || "")}, você ganha:
+                {showGo360Benefits ? promo!.escolhaSubtitulo : `Por mudar para ${getMethodLabel(selectedMethod || "")}, você ganha:`}
               </p>
             </div>
 
             <div className="space-y-3">
-              {(incentivesQuery.data || []).map((incentive: any, i: number) => (
-                <button
-                  key={i}
-                  onClick={() => handleIncentiveSelect({ type: incentive.type, value: incentive.value })}
-                  className="w-full p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left active:scale-[0.98]"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      incentive.type === "discount" ? "bg-green-100" : "bg-purple-100"
-                    }`}>
-                      {incentive.type === "discount" ? (
-                        <Percent className="w-6 h-6 text-green-600" />
-                      ) : (
-                        <ShoppingBag className="w-6 h-6 text-purple-600" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-gray-900">{incentive.value}</p>
-                      <p className="text-sm text-gray-500 mt-0.5">{incentive.description}</p>
-                    </div>
-                    <Tag className="w-5 h-5 text-amber-400" />
-                  </div>
-                </button>
-              ))}
+              {showGo360Benefits ? (
+                <>
+                  {go360Beneficios.map((b) => (
+                    <button
+                      key={b.id}
+                      onClick={() => {
+                        setSelectedBeneficioId(b.id);
+                        setRecusouBeneficio(false);
+                        handleIncentiveSelect({ type: b.tipo === "brinde" ? "marketplace_product" : "discount", value: b.nome });
+                      }}
+                      className="w-full p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left active:scale-[0.98]"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${b.tipo === "brinde" ? "bg-purple-100" : "bg-green-100"}`}>
+                          {b.tipo === "brinde" ? <ShoppingBag className="w-6 h-6 text-purple-600" /> : <Percent className="w-6 h-6 text-green-600" />}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-gray-900">{b.nome}</p>
+                          <p className="text-sm text-gray-500 mt-0.5">{b.descricao}</p>
+                        </div>
+                        <Tag className="w-5 h-5 text-amber-400" />
+                      </div>
+                    </button>
+                  ))}
+                  {promo!.permiteRecusar && (
+                    <button
+                      onClick={() => { setSelectedBeneficioId(null); setRecusouBeneficio(true); handleIncentiveSelect(null); }}
+                      className="w-full p-4 text-center text-sm text-gray-500 hover:text-gray-600 border border-dashed border-gray-200 rounded-2xl"
+                    >
+                      Não quero benefício, apenas alterar
+                    </button>
+                  )}
+                </>
+              ) : (
+                <>
+                  {(incentivesQuery.data || []).map((incentive: any, i: number) => (
+                    <button
+                      key={i}
+                      onClick={() => handleIncentiveSelect({ type: incentive.type, value: incentive.value })}
+                      className="w-full p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-amber-200 transition-all text-left active:scale-[0.98]"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                          incentive.type === "discount" ? "bg-green-100" : "bg-purple-100"
+                        }`}>
+                          {incentive.type === "discount" ? (
+                            <Percent className="w-6 h-6 text-green-600" />
+                          ) : (
+                            <ShoppingBag className="w-6 h-6 text-purple-600" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-bold text-gray-900">{incentive.value}</p>
+                          <p className="text-sm text-gray-500 mt-0.5">{incentive.description}</p>
+                        </div>
+                        <Tag className="w-5 h-5 text-amber-400" />
+                      </div>
+                    </button>
+                  ))}
 
-              <button
-                onClick={() => handleIncentiveSelect(null)}
-                className="w-full p-4 text-center text-sm text-gray-500 hover:text-gray-600 border border-dashed border-gray-200 rounded-2xl"
-              >
-                Não quero benefício, apenas alterar
-              </button>
+                  <button
+                    onClick={() => handleIncentiveSelect(null)}
+                    className="w-full p-4 text-center text-sm text-gray-500 hover:text-gray-600 border border-dashed border-gray-200 rounded-2xl"
+                  >
+                    Não quero benefício, apenas alterar
+                  </button>
+                </>
+              )}
             </div>
 
             <button
