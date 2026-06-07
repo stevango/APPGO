@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#243FF7" />
+    <meta name="description" content="GO Direction — rastreamento e segurança veicular: localização em tempo real, bloqueio remoto, cerca eletrônica e SOS 24h." />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="GO" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <title>GO Direction</title>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Boot loader da marca: aparece na hora (antes do React) para nunca
+           mostrar tela branca no carregamento/refresh. É substituído quando o
+           app monta dentro de #root. -->
+      <div id="boot-loader" style="position:fixed;inset:0;background:#243FF7;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Inter,system-ui,-apple-system,sans-serif;z-index:99999">
+        <img src="/logo-go.png" alt="GO" style="height:104px;width:auto;object-fit:contain;filter:drop-shadow(0 8px 24px rgba(0,0,0,.18))" onerror="this.outerHTML='&lt;div style=&quot;font-size:64px;font-weight:900;color:#fff;letter-spacing:-.02em&quot;&gt;Go&lt;span style=&quot;color:#E2FF04&quot;&gt;!&lt;/span&gt;&lt;/div&gt;'" />
+
+        <div style="margin-top:34px;width:160px;height:4px;background:rgba(255,255,255,.15);border-radius:999px;overflow:hidden;position:relative">
+          <div style="position:absolute;top:0;bottom:0;width:42%;background:#E2FF04;border-radius:999px;animation:goBoot 1.1s ease-in-out infinite"></div>
+        </div>
+        <div style="position:absolute;bottom:32px;color:rgba(255,255,255,.35);font-size:12px;font-weight:500">GO Direction — Tecnologia que protege.</div>
+      </div>
+      <style>@keyframes goBoot{0%{left:-42%}100%{left:100%}}</style>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

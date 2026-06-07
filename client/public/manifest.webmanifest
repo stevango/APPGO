@@ -1,0 +1,18 @@
+{
+  "name": "GO Direction",
+  "short_name": "GO",
+  "description": "Rastreamento e segurança veicular: localização em tempo real, bloqueio remoto, cerca eletrônica e SOS 24h.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#243FF7",
+  "theme_color": "#243FF7",
+  "categories": ["navigation", "utilities", "lifestyle"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

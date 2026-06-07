@@ -1,0 +1,1 @@
+ALTER TABLE `notifications` MODIFY COLUMN `type` enum('cerca_entrada','cerca_saida','bloqueio','desbloqueio','sos','bateria_baixa','velocidade_excessiva','ignição_ligada','ignição_desligada','offline','furto_roubo','sistema') DEFAULT 'sistema';
