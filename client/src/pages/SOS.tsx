@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { alertHaptic } from "@/lib/haptics";
 import type { LucideIcon } from "lucide-react";
 
 type SosOption = {
@@ -229,6 +230,7 @@ export default function SOS() {
       setShowConfirmation(false);
       setShowSuccess(true);
       setCancelCountdown(10);
+      void alertHaptic("critical"); // confirmação tátil (não depende do som)
 
       const countdownInterval = setInterval(() => {
         setCancelCountdown((prev) => {

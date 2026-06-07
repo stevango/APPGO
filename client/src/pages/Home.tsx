@@ -81,6 +81,11 @@ export default function Home() {
     }
   }, [isBatteryCritical, vehicle?.id]);
 
+  // Vibração ao detectar excesso de velocidade (def. auditiva: pista não sonora)
+  useEffect(() => {
+    if (isOverSpeed && vehicle) void alertHaptic("warning");
+  }, [isOverSpeed, vehicle?.id]);
+
   // Time-based greeting
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -155,7 +160,7 @@ export default function Home() {
 
       {/* Speed Alert Banner */}
       {vehicle && isOverSpeed && (
-        <div className="mb-5 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 p-4 shadow-lg shadow-red-500/20 overflow-hidden stagger-item">
+        <div role="alert" aria-live="assertive" className="mb-5 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 p-4 shadow-lg shadow-red-500/20 overflow-hidden stagger-item">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center animate-pulse">
               <Gauge className="w-5 h-5 text-white" />
@@ -471,7 +476,7 @@ function BatteryAlertBanner({
   onPress: () => void;
 }) {
   return (
-    <div className={`relative mb-5 rounded-2xl p-4 shadow-lg overflow-hidden stagger-item ${
+    <div role="alert" aria-live={isCritical ? "assertive" : "polite"} className={`relative mb-5 rounded-2xl p-4 shadow-lg overflow-hidden stagger-item ${
       isCritical
         ? "bg-gradient-to-r from-red-500 to-red-600 shadow-red-500/15"
         : "bg-gradient-to-r from-amber-400 to-amber-500 shadow-amber-400/15"
