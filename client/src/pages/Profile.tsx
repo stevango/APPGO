@@ -297,6 +297,9 @@ export default function Profile() {
         </div>
       )}
 
+      {/* Roleta manual — aparece só se o GO360 liberar uma roleta deste tipo */}
+      <RoletaTrigger trigger="manual" />
+
       {/* Menu Items */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden mb-6">
         {menuItems.map((item, index) => (

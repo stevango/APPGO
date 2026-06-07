@@ -2,6 +2,7 @@ import { useLocation } from "wouter";
 import { ChevronLeft, FileSignature, Download, ExternalLink, ShieldCheck, Clock } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
+import RoletaTrigger from "@/components/RoletaTrigger";
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   pending: { label: "Aguardando", cls: "bg-amber-50 text-amber-700" },
@@ -34,6 +35,9 @@ export default function Contract() {
       </div>
 
       <div className="px-4 py-4 space-y-4">
+        {/* Roleta de retenção — se o GO360 liberar p/ quem pensa em cancelar */}
+        <RoletaTrigger trigger="intencao_cancelar_contrato" />
+
         {isLoading ? (
           <div className="go-card p-6 animate-pulse h-40" />
         ) : (
