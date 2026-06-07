@@ -15,7 +15,7 @@ import { startScheduler } from "../scheduler";
 import { ingestTelemetry } from "../telemetry";
 import { go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada } from "../integrations/go360";
 import { getCampaignTheme } from "../integrations/campanhas";
-import { go360ApiEnabled, go360Health, go360MetodosPagamento, go360PromocaoPagamento } from "../integrations/go360api";
+import { go360ApiEnabled, go360HealthProbe, go360ApiInfo, go360MetodosPagamento, go360PromocaoPagamento } from "../integrations/go360api";
 import { sdk } from "./sdk";
 import * as db from "../db";
 
@@ -235,7 +235,9 @@ async function startServer() {
       return;
     }
     try {
-      out.healthOk = await go360Health();
+      out.info = go360ApiInfo();
+      out.healthProbe = await go360HealthProbe();
+      out.healthOk = (out.healthProbe as any)?.ok === true;
       const metodos = await go360MetodosPagamento();
       out.metodosCount = metodos.length;
       out.metodos = metodos.map((m) => ({ codigo: m.codigo, nome: m.nome, badge: m.badge }));

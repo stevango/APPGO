@@ -17,6 +17,31 @@ export function go360ApiEnabled(): boolean {
   return !!KEY();
 }
 
+/** Base resolvida e prefixo da chave (mascarado) — para diagnóstico. */
+export function go360ApiInfo() {
+  const k = KEY();
+  return { base: BASE(), keyPrefix: k ? `${k.slice(0, 8)}…(${k.length})` : null };
+}
+
+/** Probe cru do /health: devolve status/erro reais (não engole o erro). */
+export async function go360HealthProbe(): Promise<{ ok: boolean; status?: number; error?: string }> {
+  if (!go360ApiEnabled()) return { ok: false, error: "no_key" };
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(`${BASE()}/health`, {
+      headers: { "X-API-Key": KEY(), Accept: "application/json" },
+      signal: ctrl.signal,
+    });
+    const body = await res.text().catch(() => "");
+    return { ok: res.ok, status: res.status, error: res.ok ? undefined : body.slice(0, 300) };
+  } catch (e: any) {
+    return { ok: false, error: String(e?.message || e) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export type PaymentMethodCfg = {
   id: number; codigo: string; nome: string; descricao: string; icone: string;
   badge: string | null; badgeCor: string | null; ativo: boolean; ordem: number;
