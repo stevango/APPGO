@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
+import RoletaTrigger from "@/components/RoletaTrigger";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -94,6 +95,9 @@ export default function PaymentManagement() {
       </div>
 
       <div className="px-4 pt-6 max-w-lg mx-auto">
+        {/* Roleta — aparece se o cliente tiver direito após trocar pagamento */}
+        <RoletaTrigger trigger="trocou_pagamento" />
+
         {/* Loading State */}
         {currentQuery.isLoading && (
           <div className="flex flex-col items-center justify-center py-20 animate-pulse">

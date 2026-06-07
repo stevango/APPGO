@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import FullScreenModal from "@/components/FullScreenModal";
 import AccessibilityPanel from "@/components/AccessibilityPanel";
+import RoletaTrigger from "@/components/RoletaTrigger";
 import { AddressSearch } from "@/components/AddressSearch";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -371,6 +372,8 @@ export default function Profile() {
               <>
                 <h3 className="text-lg font-bold text-[#111111]">Que pena que você quer ir 😢</h3>
                 <p className="text-sm text-gray-500 mt-1 mb-5">Antes de seguir, conte o que aconteceu — queremos cuidar disso pra você.</p>
+                {/* Roleta de retenção — se o GO360 liberar para quem quer sair */}
+                <RoletaTrigger trigger="intencao_excluir_conta" />
                 <div className="space-y-2">
                   {RETENTION_REASONS.map((r) => (
                     <button

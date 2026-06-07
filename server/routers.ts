@@ -69,6 +69,7 @@ import { processTelemetry } from "./telemetry";
 import { go360Enabled, go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada, go360FirstAccess, syncGo360Equipment, go360Historico, go360UpdateEquipamento, go360UpdatePerfil } from "./integrations/go360";
 import { cacadorEnabled, sendOcorrenciaToCacador, mapTipoOcorrencia } from "./integrations/cacador";
 import { getMonitoramento } from "./integrations/monitoramento";
+import { roletasDisponiveis, roletaGirar, roletaResgatar, roletaElegibilidade } from "./integrations/roletas";
 
 export const appRouter = router({
   system: systemRouter,
@@ -296,6 +297,61 @@ export const appRouter = router({
         const id = v.trackerSerial || v.plate || (v as any).chassi;
         if (!id) return null;
         return getMonitoramento(id);
+      }),
+  }),
+
+  // Roleta da Sorte — regras no GO360; roda só no app. Proxy com o token do
+  // cliente (não exposto ao front). O sorteio é server-side no GO360.
+  roletas: router({
+    disponiveis: protectedProcedure
+      .input(z.object({
+        trigger: z.enum(["acesso_app", "trocou_pagamento", "intencao_excluir_conta", "intencao_cancelar_contrato", "manual"]),
+      }))
+      .query(async ({ ctx, input }) => {
+        const token = go360TokenOf(ctx);
+        if (!token) return [];
+        try {
+          return await roletasDisponiveis(token, input.trigger);
+        } catch {
+          return [];
+        }
+      }),
+    elegibilidade: protectedProcedure
+      .input(z.object({ roletaId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        const token = go360TokenOf(ctx);
+        if (!token) return null;
+        return roletaElegibilidade(token, input.roletaId);
+      }),
+    girar: protectedProcedure
+      .input(z.object({
+        roletaId: z.number().int().positive(),
+        contexto: z.record(z.string(), z.any()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const token = go360TokenOf(ctx);
+        if (!token) throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão GO360 necessária." });
+        enforceRateLimit(`roleta-girar:${ctx.user.id}`, 10, 60_000);
+        try {
+          return await roletaGirar(token, input.roletaId, input.contexto);
+        } catch (err: any) {
+          if (err?.status === 401 || err?.status === 403) {
+            throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão GO360 expirada. Entre novamente." });
+          }
+          // Regras do GO360 (400) viram mensagem amigável pro cliente.
+          throw new TRPCError({ code: "BAD_REQUEST", message: err?.message || "Não foi possível girar agora." });
+        }
+      }),
+    resgatar: protectedProcedure
+      .input(z.object({ giroId: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        const token = go360TokenOf(ctx);
+        if (!token) throw new TRPCError({ code: "UNAUTHORIZED", message: "Sessão GO360 necessária." });
+        try {
+          return await roletaResgatar(token, input.giroId);
+        } catch (err: any) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err?.message || "Não foi possível resgatar." });
+        }
       }),
   }),
 

@@ -16,6 +16,7 @@ import { getTrackerStatus } from "@/lib/trackerStatus";
 import DistanceToVehicle from "@/components/DistanceToVehicle";
 import ActivationChecklist from "@/components/ActivationChecklist";
 import CampaignBanner from "@/components/CampaignBanner";
+import RoletaTrigger from "@/components/RoletaTrigger";
 import StatusLegend from "@/components/StatusLegend";
 import { alertHaptic } from "@/lib/haptics";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicles } from "@/lib/activeVehicle";
@@ -108,6 +109,9 @@ export default function Home() {
 
       {/* Faixa sazonal (sincronizada com a GO360) — some fora de campanha */}
       <CampaignBanner />
+
+      {/* Roleta da sorte (regras no GO360) — só aparece se houver direito a girar */}
+      <RoletaTrigger trigger="acesso_app" />
 
       {/* Resumo da frota (visão diária) — só com mais de um equipamento */}
       {!isLoading && vehicles && vehicles.length > 1 && <FleetSummary vehicles={vehicles} />}
