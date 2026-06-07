@@ -15,7 +15,7 @@ import { startScheduler } from "../scheduler";
 import { ingestTelemetry } from "../telemetry";
 import { go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada } from "../integrations/go360";
 import { getCampaignTheme } from "../integrations/campanhas";
-import { go360ApiEnabled, go360HealthProbe, go360ApiInfo, go360MetodosPagamento, go360PromocaoPagamento } from "../integrations/go360api";
+import { go360ApiEnabled, go360HealthProbe, go360ApiInfo, go360MetodosPagamento, go360PromocaoPagamento, go360PromoProbe } from "../integrations/go360api";
 import { sdk } from "./sdk";
 import * as db from "../db";
 
@@ -255,6 +255,8 @@ async function startServer() {
       }
       out.promocoes = promocoes;
       out.algumaPromocaoAtiva = Object.values(promocoes).some((v) => v !== null);
+      // Resposta crua do endpoint de promoção (status + body) p/ o time GO360 debugar.
+      out.promoProbe = await go360PromoProbe("boleto", cpf);
       res.json({ ...out, ok: out.healthOk === true });
     } catch (e: any) {
       res.json({ ...out, ok: false, error: e?.message || String(e), status: e?.status });

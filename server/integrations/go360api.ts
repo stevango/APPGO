@@ -122,6 +122,24 @@ async function cached<T>(key: string, ttlMs: number, fn: () => Promise<T>): Prom
   return data;
 }
 
+/** Probe cru de /pagamento/promocao: status + corpo reais (para o time GO360). */
+export async function go360PromoProbe(metodoAtual: string, cpf?: string): Promise<{ url: string; status?: number; body?: string; error?: string }> {
+  const params = new URLSearchParams({ metodoAtual });
+  if (cpf) params.set("cpf", cpf);
+  const url = `${BASE()}/pagamento/promocao?${params.toString()}`;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
+  try {
+    const res = await fetch(url, { headers: { "X-API-Key": KEY(), Accept: "application/json" }, signal: ctrl.signal });
+    const body = await res.text().catch(() => "");
+    return { url, status: res.status, body: body.slice(0, 500) };
+  } catch (e: any) {
+    return { url, error: String(e?.message || e) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function go360MetodosPagamento(): Promise<PaymentMethodCfg[]> {
   return cached("metodos", 6 * 60 * 60 * 1000, async () => {
     const j = await call("/config/pagamento/metodos").catch(() => null);
