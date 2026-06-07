@@ -122,10 +122,6 @@ async function cached<T>(key: string, ttlMs: number, fn: () => Promise<T>): Prom
   return data;
 }
 
-export async function go360Health(): Promise<boolean> {
-  try { const j = await call("/health"); return !!j?.ok; } catch { return false; }
-}
-
 export async function go360MetodosPagamento(): Promise<PaymentMethodCfg[]> {
   return cached("metodos", 6 * 60 * 60 * 1000, async () => {
     const j = await call("/config/pagamento/metodos").catch(() => null);
