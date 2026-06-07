@@ -129,9 +129,16 @@ export async function go360MetodosPagamento(): Promise<PaymentMethodCfg[]> {
   });
 }
 
-export async function go360PromocaoPagamento(metodoAtual: string): Promise<PromocaoResponse> {
-  return cached(`promo:${metodoAtual}`, 30 * 60 * 1000, async () => {
-    const j = await call(`/pagamento/promocao?metodoAtual=${encodeURIComponent(metodoAtual)}`).catch(() => null);
+export async function go360PromocaoPagamento(
+  metodoAtual: string,
+  cliente?: { cpf?: string | null; id?: string | null },
+): Promise<PromocaoResponse> {
+  const params = new URLSearchParams({ metodoAtual });
+  if (cliente?.cpf) params.set("cpf", cliente.cpf);
+  if (cliente?.id) params.set("clienteId", cliente.id);
+  const key = `promo:${metodoAtual}:${cliente?.cpf || cliente?.id || ""}`;
+  return cached(key, 30 * 60 * 1000, async () => {
+    const j = await call(`/pagamento/promocao?${params.toString()}`).catch(() => null);
     return { promocao: j?.promocao ?? null, beneficios: Array.isArray(j?.beneficios) ? j.beneficios : [] };
   });
 }

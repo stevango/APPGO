@@ -1277,9 +1277,10 @@ export const appRouter = router({
     // Promoção ativa para o cliente migrar a partir do método atual.
     promocao: protectedProcedure.query(async ({ ctx }) => {
       if (!go360ApiEnabled()) return { promocao: null, beneficios: [] };
+      const u = ctx.user as any;
       const current = await db.getCurrentPaymentMethod(ctx.user!.id);
       const metodoAtual = GO360_METHOD_MAP[current?.type || "boleto"] || (current?.type || "boleto");
-      return go360PromocaoPagamento(metodoAtual);
+      return go360PromocaoPagamento(metodoAtual, { cpf: u?.cpf, id: u?.go360ClienteId });
     }),
     // Registra a mudança + benefício escolhido/recusado (auditoria no GO360).
     mudar: protectedProcedure

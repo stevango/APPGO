@@ -242,10 +242,13 @@ async function startServer() {
       out.metodosCount = metodos.length;
       out.metodos = metodos.map((m) => ({ codigo: m.codigo, nome: m.nome, badge: m.badge }));
       // Checa promoção para cada método de origem possível (boleto + os listados).
+      // Aceita ?cpf= para simular um cliente (caso o endpoint seja por-cliente).
+      const cpf = (req.query.cpf as string) || undefined;
+      out.cpfUsado = cpf ? `${cpf.slice(0, 3)}…` : null;
       const origens = Array.from(new Set(["boleto", ...metodos.map((m) => m.codigo)]));
       const promocoes: Record<string, unknown> = {};
       for (const origem of origens) {
-        const p = await go360PromocaoPagamento(origem);
+        const p = await go360PromocaoPagamento(origem, cpf ? { cpf } : undefined);
         promocoes[origem] = p.promocao
           ? { id: p.promocao.id, nome: p.promocao.nome, destino: p.promocao.metodoDestino, beneficios: p.beneficios.length }
           : null;
