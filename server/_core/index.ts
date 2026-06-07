@@ -15,6 +15,7 @@ import { startScheduler } from "../scheduler";
 import { ingestTelemetry } from "../telemetry";
 import { go360Login, go360Me, go360Equipamento, go360Contrato, go360Cobranca, go360Jornada } from "../integrations/go360";
 import { getCampaignTheme } from "../integrations/campanhas";
+import { go360ApiEnabled, go360Health, go360MetodosPagamento, go360PromocaoPagamento } from "../integrations/go360api";
 import { sdk } from "./sdk";
 import * as db from "../db";
 
@@ -216,6 +217,33 @@ async function startServer() {
       console.error("[Campanhas] tema-vigente failed", e);
       res.setHeader("Cache-Control", "public, max-age=60");
       res.json({ vigente: false });
+    }
+  });
+
+  // ---- Diagnóstico da GO360 API v1 (verifica se a GO360_API_KEY funciona) ----
+  //   GET /api/diag/go360v1?token=CRON_SECRET
+  // Chama /health e lista métodos com a chave — confirma conectividade + scope.
+  app.get("/api/diag/go360v1", async (req, res) => {
+    const token = (req.query.token as string) || (req.headers["x-cron-secret"] as string);
+    if (!ENV.cronSecret || token !== ENV.cronSecret) {
+      res.status(401).json({ error: "unauthorized", hint: "defina CRON_SECRET e use ?token=" });
+      return;
+    }
+    const out: Record<string, unknown> = { keyConfigured: go360ApiEnabled() };
+    if (!go360ApiEnabled()) {
+      res.json({ ...out, ok: false, hint: "GO360_API_KEY não está definida no backend." });
+      return;
+    }
+    try {
+      out.healthOk = await go360Health();
+      const metodos = await go360MetodosPagamento();
+      out.metodosCount = metodos.length;
+      out.metodos = metodos.map((m) => ({ codigo: m.codigo, nome: m.nome, badge: m.badge }));
+      const promo = await go360PromocaoPagamento("boleto");
+      out.promocaoBoleto = promo.promocao ? { id: promo.promocao.id, destino: promo.promocao.metodoDestino, beneficios: promo.beneficios.length } : null;
+      res.json({ ...out, ok: out.healthOk === true });
+    } catch (e: any) {
+      res.json({ ...out, ok: false, error: e?.message || String(e), status: e?.status });
     }
   });
 
