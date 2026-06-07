@@ -17,6 +17,7 @@ import DistanceToVehicle from "@/components/DistanceToVehicle";
 import ActivationChecklist from "@/components/ActivationChecklist";
 import CampaignBanner from "@/components/CampaignBanner";
 import RoletaTrigger from "@/components/RoletaTrigger";
+import PaymentPromoBanner from "@/components/PaymentPromoBanner";
 import StatusLegend from "@/components/StatusLegend";
 import { alertHaptic } from "@/lib/haptics";
 import { useActiveVehicleId, setActiveVehicleId, pickActiveVehicle, dedupeVehicles } from "@/lib/activeVehicle";
@@ -130,33 +131,39 @@ export default function Home() {
       {/* Score de direção (aparece quando há eventos/telemetria) */}
       <DrivingScoreCard />
 
-      {/* TOP banner: recurring-card discount for everyone NOT on recurring card */}
-      {(!openInvoices.data || openInvoices.data.count === 0) &&
-        (!currentMethod.data || currentMethod.data.type !== "recurring_card") && (
-          <button
-            onClick={() => setLocation("/payment")}
-            className="mb-5 w-full rounded-2xl bg-gradient-to-br from-[#243FF7] to-[#1a2fd4] p-4 text-left go-btn-active shadow-lg shadow-[#243FF7]/25 relative overflow-hidden"
-          >
-            <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/5 rounded-full" />
-            <div className="flex items-center gap-3 relative">
-              <div className="w-12 h-12 bg-white/15 rounded-2xl flex items-center justify-center shrink-0">
-                <CreditCard className="w-6 h-6 text-[#E2FF04]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-white font-bold text-[15px]">Economize 15% todo mês</p>
-                  <span className="text-[10px] font-black text-[#111111] bg-[#E2FF04] rounded-full px-1.5 py-0.5">-15%</span>
+      {/* Banner de promoção de pagamento — configurado no GO360; cai no banner
+          padrão do app quando não há promoção ativa (e o cliente não está no
+          cartão recorrente, sem faturas em aberto). */}
+      <PaymentPromoBanner
+        fallback={
+          (!openInvoices.data || openInvoices.data.count === 0) &&
+          (!currentMethod.data || currentMethod.data.type !== "recurring_card") ? (
+            <button
+              onClick={() => setLocation("/payment")}
+              className="mb-5 w-full rounded-2xl bg-gradient-to-br from-[#243FF7] to-[#1a2fd4] p-4 text-left go-btn-active shadow-lg shadow-[#243FF7]/25 relative overflow-hidden"
+            >
+              <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/5 rounded-full" />
+              <div className="flex items-center gap-3 relative">
+                <div className="w-12 h-12 bg-white/15 rounded-2xl flex items-center justify-center shrink-0">
+                  <CreditCard className="w-6 h-6 text-[#E2FF04]" />
                 </div>
-                <p className="text-white/80 text-xs leading-snug mt-0.5">
-                  Ative o cartão recorrente e nunca mais se preocupe com vencimento.
-                </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-bold text-[15px]">Economize 15% todo mês</p>
+                    <span className="text-[10px] font-black text-[#111111] bg-[#E2FF04] rounded-full px-1.5 py-0.5">-15%</span>
+                  </div>
+                  <p className="text-white/80 text-xs leading-snug mt-0.5">
+                    Ative o cartão recorrente e nunca mais se preocupe com vencimento.
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="mt-3 bg-[#E2FF04] text-[#111111] text-center font-bold text-[13px] rounded-xl py-2.5 flex items-center justify-center gap-1 relative">
-              Ativar agora <ChevronRight className="w-4 h-4" />
-            </div>
-          </button>
-        )}
+              <div className="mt-3 bg-[#E2FF04] text-[#111111] text-center font-bold text-[13px] rounded-xl py-2.5 flex items-center justify-center gap-1 relative">
+                Ativar agora <ChevronRight className="w-4 h-4" />
+              </div>
+            </button>
+          ) : null
+        }
+      />
 
       {/* Speed Alert Banner */}
       {vehicle && isOverSpeed && (

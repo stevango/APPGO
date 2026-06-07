@@ -70,6 +70,16 @@ import { go360Enabled, go360Login, go360Me, go360Equipamento, go360Contrato, go3
 import { cacadorEnabled, sendOcorrenciaToCacador, mapTipoOcorrencia } from "./integrations/cacador";
 import { getMonitoramento } from "./integrations/monitoramento";
 import { roletasDisponiveis, roletaGirar, roletaResgatar, roletaElegibilidade } from "./integrations/roletas";
+import { go360ApiEnabled, go360MetodosPagamento, go360PromocaoPagamento, go360MudarPagamento } from "./integrations/go360api";
+
+// Mapeia o código de método local → código do GO360 (módulo de promoções).
+const GO360_METHOD_MAP: Record<string, string> = {
+  boleto: "boleto",
+  pix: "pix",
+  credit_card: "cartao_credito",
+  debit_card: "cartao_debito",
+  recurring_card: "cartao_recorrente",
+};
 
 export const appRouter = router({
   system: systemRouter,
@@ -1255,6 +1265,51 @@ export const appRouter = router({
     openSummary: protectedProcedure.query(async ({ ctx }) => {
       return db.getOpenInvoicesSummary(ctx.user!.id);
     }),
+  }),
+
+  // Promoções de pagamento configuradas no GO360 (app só renderiza). Usa a
+  // API Key server-to-server (/api/v1/app/*) — nunca exposta ao front.
+  paymentPromo: router({
+    metodos: protectedProcedure.query(async () => {
+      if (!go360ApiEnabled()) return [];
+      return go360MetodosPagamento();
+    }),
+    // Promoção ativa para o cliente migrar a partir do método atual.
+    promocao: protectedProcedure.query(async ({ ctx }) => {
+      if (!go360ApiEnabled()) return { promocao: null, beneficios: [] };
+      const current = await db.getCurrentPaymentMethod(ctx.user!.id);
+      const metodoAtual = GO360_METHOD_MAP[current?.type || "boleto"] || (current?.type || "boleto");
+      return go360PromocaoPagamento(metodoAtual);
+    }),
+    // Registra a mudança + benefício escolhido/recusado (auditoria no GO360).
+    mudar: protectedProcedure
+      .input(z.object({
+        metodoAnterior: z.string(),
+        metodoNovo: z.string(),
+        promocaoId: z.number().int().positive().optional(),
+        beneficioId: z.number().int().positive().optional(),
+        recusouBeneficio: z.boolean().optional(),
+        contexto: z.record(z.string(), z.any()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!go360ApiEnabled()) return { ok: false, reason: "disabled" as const };
+        const u = ctx.user as any;
+        if (!u?.go360ClienteId || !u?.cpf || !u?.email) return { ok: false, reason: "no_cliente" as const };
+        try {
+          const r = await go360MudarPagamento({
+            cliente: { id: String(u.go360ClienteId), cpf: String(u.cpf), email: String(u.email) },
+            metodoAnterior: input.metodoAnterior,
+            metodoNovo: input.metodoNovo,
+            promocaoId: input.promocaoId,
+            beneficioId: input.beneficioId,
+            recusouBeneficio: input.recusouBeneficio ?? false,
+            contexto: { origem: "tela_pagamento", ...(input.contexto || {}) },
+          });
+          return { ok: true, mudanca: r?.mudanca ?? null };
+        } catch (e: any) {
+          return { ok: false, reason: "unavailable" as const, message: e?.message };
+        }
+      }),
   }),
 
   // === CONTATOS DE EMERGÊNCIA ===
