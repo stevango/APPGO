@@ -643,8 +643,7 @@ function FleetSummary({ vehicles }: { vehicles: any[] }) {
 }
 
 function NotificationBadge() {
-  const { data: notifications } = trpc.notifications.list.useQuery();
-  const unread = notifications?.filter((n: any) => !n.read).length || 0;
+  const { data: unread = 0 } = trpc.notifications.unreadCount.useQuery();
   if (unread === 0) return null;
   return (
     <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] bg-red-500 rounded-full text-[9px] text-white font-bold flex items-center justify-center ring-2 ring-white">

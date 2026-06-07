@@ -42,15 +42,22 @@ const typeColors: Record<string, string> = {
 
 export default function Notifications() {
   const [, setLocation] = useLocation();
-  const { data: notifications, isLoading, isError, refetch, isRefetching } = trpc.notifications.list.useQuery();
+  const utils = trpc.useUtils();
+  const {
+    data, isLoading, isError, refetch, isRefetching,
+    fetchNextPage, hasNextPage, isFetchingNextPage,
+  } = trpc.notifications.list.useInfiniteQuery(
+    { limit: 30 },
+    { getNextPageParam: (last) => last.nextCursor ?? undefined },
+  );
+  const notifications = data?.pages.flatMap((p) => p.items) ?? [];
+  const { data: unreadCount = 0 } = trpc.notifications.unreadCount.useQuery();
   const markAllRead = trpc.notifications.markAllRead.useMutation({
     onSuccess: () => {
       utils.notifications.list.invalidate();
+      utils.notifications.unreadCount.invalidate();
     },
   });
-  const utils = trpc.useUtils();
-
-  const unreadCount = notifications?.filter((n: any) => !n.read).length || 0;
 
   return (
     <div className="px-4 pb-4">
@@ -151,6 +158,15 @@ export default function Notifications() {
               </div>
             );
           })}
+          {hasNextPage && (
+            <button
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+              className="w-full py-3 mt-1 text-sm font-semibold text-[#243FF7] go-btn-active disabled:opacity-60"
+            >
+              {isFetchingNextPage ? "Carregando..." : "Carregar mais"}
+            </button>
+          )}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-20">

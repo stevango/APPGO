@@ -365,10 +365,25 @@ export async function deleteGeofence(geofenceId: number) {
 }
 
 // Notification helpers
-export async function getUserNotifications(userId: number) {
+export async function getUserNotifications(userId: number, limit = 30, offset = 0) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
+  // Busca limit+1 para o chamador saber se há próxima página (cursor).
+  return db.select().from(notifications)
+    .where(eq(notifications.userId, userId))
+    .orderBy(desc(notifications.createdAt))
+    .limit(limit + 1)
+    .offset(offset);
+}
+
+export async function getUnreadNotificationCount(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db
+    .select({ n: sql<number>`count(*)` })
+    .from(notifications)
+    .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
+  return Number(rows?.[0]?.n ?? 0);
 }
 
 export async function createNotification(notification: InsertNotification) {

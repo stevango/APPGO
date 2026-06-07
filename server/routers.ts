@@ -792,8 +792,23 @@ export const appRouter = router({
   }),
 
   notifications: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
-      return db.getUserNotifications(ctx.user.id);
+    // Paginado por cursor (offset). Retorna { items, nextCursor } — nextCursor
+    // é null quando não há mais páginas. Evita carregar tudo de uma vez.
+    list: protectedProcedure
+      .input(z.object({
+        limit: z.number().int().min(1).max(100).default(30),
+        cursor: z.number().int().min(0).default(0),
+      }).optional())
+      .query(async ({ ctx, input }) => {
+        const limit = input?.limit ?? 30;
+        const cursor = input?.cursor ?? 0;
+        const rows = await db.getUserNotifications(ctx.user.id, limit, cursor);
+        const hasMore = rows.length > limit;
+        const items = hasMore ? rows.slice(0, limit) : rows;
+        return { items, nextCursor: hasMore ? cursor + limit : null };
+      }),
+    unreadCount: protectedProcedure.query(async ({ ctx }) => {
+      return db.getUnreadNotificationCount(ctx.user.id);
     }),
     markRead: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
       const n = await db.getNotificationById(input.id);
